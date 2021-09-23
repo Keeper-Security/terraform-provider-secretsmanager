@@ -1,0 +1,56 @@
+name: Publish to Maven
+on:
+  release:
+    types: [created]
+
+jobs:
+  release-matrix:
+    name: Release Go Binary
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        # build and publish in parallel: linux/amd64
+        goos: [linux]
+        goarch: [amd64]
+
+#    defaults:
+#      run:
+#        working-directory: ./sdk/java/core
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - run: ls -la
+
+      - name: Build binaries
+        run: make release-all
+
+      - run: ls -la
+
+
+#      - name: Set up Java 11
+#        uses: actions/setup-java@v2
+#        with:
+#          java-version: '11'
+#          distribution: 'adopt'
+#
+#      - name: Validate Gradle wrapper
+#        uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b
+#
+#      - name: Retrieve secrets from KSM
+#        id: ksmsecrets
+#        uses: Keeper-Security/ksm-action@master
+#        with:
+#          keeper-secret-config: ${{ secrets.KSM_ARTIFACT_JAVA_APP_CONFIG }}
+#          secrets: |
+#            zOVOneDczofWFlfizjC5Qw/file/90A46CD1-private-key.asc > file:/tmp/signing_secret_key_ring_file.asc
+#            zOVOneDczofWFlfizjC5Qw/custom_field/signing.keyId > env:SIGNING_KEY_ID
+#            zOVOneDczofWFlfizjC5Qw/custom_field/signing.password > env:SIGNING_PASSWORD
+#            zOVOneDczofWFlfizjC5Qw/custom_field/ossrhUsername > env:OSSRH_USERNAME
+#            zOVOneDczofWFlfizjC5Qw/custom_field/ossrhPassword > env:OSSRH_PASSWORD
+#
+#      - name: Publish package
+#        env:
+#          SIGNING_SECRET_KEY_RING_FILE: /tmp/signing_secret_key_ring_file.asc
+#        run: gradle publishMavenJavaPublicationToSonatypeRepository
