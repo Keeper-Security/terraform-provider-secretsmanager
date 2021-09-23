@@ -1,0 +1,152 @@
+<h1 align="center">Keeper Secrets Management For Terraform</h1>
+<p align="center">
+  <a href="https://docs.keeper.io/secrets-manager/">View docs</a>
+</p>
+<br/>
+
+Keeper Secrets Manager provides your DevOps, IT Security and software development teams with a fully cloud-based, zero-knowledge platform for managing all of your infrastructure secrets such as API keys, database passwords, access keys, certificates and any type of confidential data. Essential tool for every engineer who wants to securely provision passwords and keys throughout entire development stack with just a few lines of code.
+
+## Setup Secrets Manager
+
+In order to set up Secrets Manager on a Keeper Enterprise Account follow the [Quick Start Guide](https://docs.keeper.io/secrets-manager/secrets-manager/quick-start-guide).
+
+### Create Secrets Manager application
+- Using Keeper **Commander** CLI
+```bash
+My Vault> sm app create [NAME]
+My Vault> sm share add --app [NAME] --secret [UID] --editable
+My Vault> sm client add --app [NAME] --unlock-ip --count 1
+```
+- Using Keeper **Secrets Manager** CLI and token generated while creating client (_use_ `sm client add` command above) generate local configuration
+```bash
+$ ksm profile init --token [TOKEN]
+```
+
+- Find record UID of a shared secret you want to use
+```bash
+$ ksm secret list
+$ ksm secret get -u [UID]
+```
+
+### Plugin configuration
+- Keeper credential could be generated with `ksm profile init` command, read from file, or sourced from the `KEEPER_CREDENTIAL` environment variable.
+```
+terraform {
+  required_providers {
+    # add keeper secrets manager plugin
+    keeper = {
+      source  = "github.com/keeper-security/keeper"
+      version = ">= 0.1.0"
+    }
+  }
+}
+
+# Configure plugin
+provider "keeper" {
+  credential = file("~/.keeper/credential")
+}
+```
+- Data source usage - see working [examples](./examples) in this repo.
+
+## Support
+
+If you need help, send an e-mail to [sm@keepersecurity.com](mailto:sm@keepersecurity.com)
+
+## Development
+
+### Building
+
+Get the source code:
+
+```bash
+git clone https://github.com/keeper-security/terraform-provider-keeper
+```
+
+Build it using:
+
+```bash
+go build
+```
+
+### Testing
+
+To run the [acceptance tests](https://www.terraform.io/docs/extend/testing/acceptance-tests/index.html), the following environment variables need to be set up.
+
+* `KEEPER_CREDENTIAL` - Keeper Secrets Manager Credentials.
+
+The acceptance tests expect to find certain records shared to your application - use the script below to create and populate shared folder named `tf_acc_test_dir` with the required records (_use_ [Keeper Commander CLI](https://docs.keeper.io/secrets-manager/commander-cli))
+
+_Note:_ If you get `'throttled'` errors - it is safe to re-run the above command (_just ignore_ `'already exists'` _messages on consecutive runs_)
+
+`keeper tf_acc_test.cmd --batch-mode`
+
+Contents of `tf_acc_test.cmd`:
+```
+@mkdir -sf -a /tf_acc_test_dir
+@cd /tf_acc_test_dir
+@add title=tf_acc_test_field notes=tf_acc_test_field type=login fields.login=tf_acc_test_field
+@add title=tf_acc_test_login notes=tf_acc_test_login type=login
+@add title=tf_acc_test_general notes=tf_acc_test_general type=general
+@add title=tf_acc_test_bank_account notes=tf_acc_test_bank_account type=bankAccount fields.bankAccount.accountNumber=1234
+@add title=tf_acc_test_address notes=tf_acc_test_address type=address
+@add title=tf_acc_test_bank_card notes=tf_acc_test_bank_card type=bankCard
+@add title=tf_acc_test_birth_certificate notes=tf_acc_test_birth_certificate type=birthCertificate
+@add title=tf_acc_test_contact notes=tf_acc_test_contact type=contact fields.name.first=John fields.name.last=Doe
+@add title=tf_acc_test_driver_license notes=tf_acc_test_driver_license type=driverLicense
+@add title=tf_acc_test_encrypted_notes notes=tf_acc_test_encrypted_notes type=encryptedNotes
+@add title=tf_acc_test_file notes=tf_acc_test_file type=file
+@add title=tf_acc_test_health_insurance notes=tf_acc_test_health_insurance type=healthInsurance
+@add title=tf_acc_test_membership notes=tf_acc_test_membership type=membership
+@add title=tf_acc_test_passport notes=tf_acc_test_passport type=passport
+@add title=tf_acc_test_photo notes=tf_acc_test_photo type=photo
+@add title=tf_acc_test_server_credentials notes=tf_acc_test_server_credentials type=serverCredentials
+@add title=tf_acc_test_software_license notes=tf_acc_test_software_license type=softwareLicense
+@add title=tf_acc_test_ssn_card notes=tf_acc_test_ssn_card type=ssnCard
+@add title=tf_acc_test_ssh_keys notes=tf_acc_test_ssh_keys type=sshKeys
+@add title=tf_acc_test_database_credentials notes=tf_acc_test_database_credentials type=databaseCredentials
+```
+
+With the environment variables properly set up, run:
+
+```bash
+export TF_ACC=1 ; go test ./...
+```
+
+or set all required environment variables and run tests with a single command line
+```bash
+export TF_ACC=1 ; export KEEPER_CREDENTIAL=<XXX> ; go test ./...
+```
+------
+# Terraform Provider
+
+The Keeper Secrets Manager Terraform Provider lets you manage your secrets using Terraform.
+It is officially supported and actively maintained by Keeper Security.
+
+## Usage
+```
+terraform {
+  required_providers {
+    keeper = {
+      source  = "github.com/keeper-security/keeper"
+      version = ">= 0.1.0"
+    }
+  }
+}
+
+provider "keeper" {
+  credential = "<CREDENTIAL>"
+  # credential = file("~/.keeper/credential")
+}
+
+data "keeper_secret_database_credentials" "my_db_creds" {
+  path       = "<UID>"
+}
+
+output "db_type" {
+  value = data.keeper_secret_database_credentials.my_db_creds.db_type
+}
+
+output "login" {
+  value = data.keeper_secret_database_credentials.my_db_creds.login
+}
+```
