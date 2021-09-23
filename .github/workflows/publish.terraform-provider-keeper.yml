@@ -1,11 +1,12 @@
-name: Publish to Maven
+name: Release Terraform Binaries
 on:
+  workflow_dispatch:
   release:
     types: [created]
 
 jobs:
   release-matrix:
-    name: Release Go Binary
+    name: Release
     runs-on: ubuntu-latest
 
     strategy:
