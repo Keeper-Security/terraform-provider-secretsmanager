@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.7.1
-	github.com/keeper-security/secrets-manager-go/core v0.1.0
+	github.com/keeper-security/secrets-manager-go/core v0.3.0
 )
 
 require (
