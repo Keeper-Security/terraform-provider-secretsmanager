@@ -71,6 +71,10 @@ type providerMeta struct {
 	client *core.SecretsManager
 }
 
+func generateTotp(totpUrl string) (code string, seconds int, err error) {
+	return core.GenerateTotp(totpUrl)
+}
+
 func getAddressItemData(secret *core.Record) []interface{} {
 	fields := secret.GetFieldsByType("address")
 	if len(fields) == 0 {
