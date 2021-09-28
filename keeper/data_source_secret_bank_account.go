@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/keeper-security/secrets-manager-go/core"
 )
 
 func dataSourceSecretBankAccount() *schema.Resource {
@@ -302,7 +301,7 @@ func dataSourceSecretBankAccountRead(ctx context.Context, d *schema.ResourceData
 
 	totpItems := []interface{}{}
 	if totp := strings.TrimSpace(secret.GetFieldValueByType("oneTimeCode")); totp != "" {
-		if code, seconds, err := core.GenerateTotp(totp); err != nil {
+		if code, seconds, err := generateTotp(totp); err != nil {
 			return diag.FromErr(err)
 		} else {
 			totpItems = []interface{}{

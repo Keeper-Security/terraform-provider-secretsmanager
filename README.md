@@ -76,7 +76,7 @@ To run the [acceptance tests](https://www.terraform.io/docs/extend/testing/accep
 
 The acceptance tests expect to find certain records shared to your application - use the script below to create and populate shared folder named `tf_acc_test_dir` with the required records (_use_ [Keeper Commander CLI](https://docs.keeper.io/secrets-manager/commander-cli))
 
-_Note:_ If you get `'throttled'` errors - it is safe to re-run the above command (_just ignore_ `'already exists'` _messages on consecutive runs_)
+_Note:_ If you get **throttled** sumply re-run the same command again (_and ignore any_ `'...already exists'` _messages on consecutive runs_)
 
 `keeper tf_acc_test.cmd --batch-mode`
 
@@ -123,11 +123,12 @@ The Keeper Secrets Manager Terraform Provider lets you manage your secrets using
 It is officially supported and actively maintained by Keeper Security.
 
 ## Usage
-```
+### Terraform v0.13 or above ([Terraform Registry](https://registry.terraform.io/))
+```hcl
 terraform {
   required_providers {
     keeper = {
-      source  = "github.com/keeper-security/keeper"
+      source  = "keeper/keeper"
       version = ">= 0.1.0"
     }
   }
@@ -139,7 +140,7 @@ provider "keeper" {
 }
 
 data "keeper_secret_database_credentials" "my_db_creds" {
-  path       = "<UID>"
+  path  = "<UID>"
 }
 
 output "db_type" {
@@ -150,3 +151,55 @@ output "login" {
   value = data.keeper_secret_database_credentials.my_db_creds.login
 }
 ```
+
+### Terraform v0.13 and above ([GitHub](https://github.com/keeper-security/terraform-provider-keeper/) manual install)
+
+Download archive with the [latest release](https://github.com/keeper-security/terraform-provider-keeper/releases/latest) for your platform and copy it to the corresponding plugin folder (_Linux and MacOS:_ `~/.terraform.d/plugins/github.com/keeper-security/keeper` _Windows:_ `%APPDATA%/terraform.d/plugins/github.com/keeper-security/keeper`)  
+Use the same config from above just remember to initialize `source` with the full URL `source  = "github.com/keeper-security/keeper"`
+
+MacOS:
+```bash
+mkdir -p ~/.terraform.d/plugins/github.com/keeper-security/keeper && \
+cd ~/.terraform.d/plugins/github.com/keeper-security/keeper && \
+curl -SfL https://github.com/keeper-security/terraform-provider-keeper/releases/latest/download/terraform-provider-keeper_1.0.0_darwin_amd64.zip
+```
+Windows:
+```bash
+SETLOCAL EnableExtensions && \
+mkdir %APPDATA%\.terraform.d\plugins\github.com\keeper-security\keeper && \
+cd %APPDATA%\.terraform.d\plugins\github.com\keeper-security\keeper && \
+curl -SfL https://github.com/keeper-security/terraform-provider-keeper/releases/latest/download/terraform-provider-keeper_1.0.0_windows_amd64.zip
+```
+Have a look at some working [examples](./examples) in this repo.
+
+### Terraform v0.12 and below
+Manually install the Keeper Secrets Manager provider by downloading the corresponding archive for your platform then extract the executable and move it to `~/.terraform/plugins` or `%APPDATA%\terraform.d\plugins` on Windows.
+
+Afterwards you can run the following example with Terraform.
+```hcl
+terraform {
+  required_providers {
+    keeper = {
+      version = ">= 0.1.0"
+    }
+  }
+}
+
+provider "keeper" {
+  credential = "<CREDENTIAL>"
+  # credential = file("~/.keeper/credential")
+}
+
+data "keeper_secret_database_credentials" "my_db_creds" {
+  path  = "<UID>"
+}
+
+output "db_type" {
+  value = data.keeper_secret_database_credentials.my_db_creds.db_type
+}
+
+output "login" {
+  value = data.keeper_secret_database_credentials.my_db_creds.login
+}
+```
+Have a look at some working [examples](./examples) in this repo.

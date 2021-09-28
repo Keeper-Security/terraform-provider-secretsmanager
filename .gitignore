@@ -24,6 +24,7 @@ terraform.tfstate
 *.log
 *.bak
 
+terraform-provider-keeper
 terraform-provider-keeper*.zip
 terraform-provider-keeper*SHA256SUMS
 dist/
