@@ -1,5 +1,4 @@
 terraform {
-  required_version = ">= 1.0.0"
   required_providers {
     keeper = {
       source  = "github.com/keeper-security/keeper"

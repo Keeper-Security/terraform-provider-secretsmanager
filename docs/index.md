@@ -9,19 +9,7 @@ You can set environment variable `KEEPER_CREDENTIAL` or read it from disk using 
 
 ### Manual Install
 
-Get the latest version of the Terraform Provider from [GitHub](https://github.com/keeper-security/terraform-provider-keeper) as a single [zip](https://github.com/Keeper-Security/terraform-provider-keeper/releases) archive or clone with git
-```git
-git clone https://github.com/keeper-security/terraform-provider-keeper
-```
-Build
-```
-go build
-```
-Copy plugin to Terraform plugin folder
-```bash
-cp terraform-provider-keeper ~/.terraform.d/plugins/terraform-provider-keeper_v0.1.0
-```
-Note: Default plugin path is %APPDATA%\terraform.d\plugins for Windows and ~/.terraform.d/plugins for all other operating systems.
+Download archive from [latest release](https://github.com/keeper-security/terraform-provider-keeper/releases/latest) for your platform and copy it to the corresponding plugin folder (_Linux and MacOS:_ `~/.terraform.d/plugins/github.com/keeper-security/keeper` _Windows:_ `%APPDATA%/terraform.d/plugins/github.com/keeper-security/keeper`) 
 
 For help on manually installing Terraform Providers, please refer to the [official Terraform documentation](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins).
 
