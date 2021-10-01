@@ -29,7 +29,12 @@ $ ksm secret get -u [UID]
 ```
 
 ### Plugin configuration
-- Keeper credential could be generated with `ksm profile init` command, read from file, or sourced from the `KEEPER_CREDENTIAL` environment variable.
+- Keeper credential could be generated with `ksm profile init` command, read from file, or sourced from the `KEEPER_CREDENTIAL` environment variable.  
+Generate `credential` using Commander CLI
+```
+sm client add --app <APP_NAME> --unlock-ip --config-init=b64
+```
+`main.tf`
 ```
 terraform {
   required_providers {
@@ -76,7 +81,7 @@ To run the [acceptance tests](https://www.terraform.io/docs/extend/testing/accep
 
 The acceptance tests expect to find certain records shared to your application - use the script below to create and populate shared folder named `tf_acc_test_dir` with the required records (_use_ [Keeper Commander CLI](https://docs.keeper.io/secrets-manager/commander-cli))
 
-_Note:_ If you get **throttled** sumply re-run the same command again (_and ignore any_ `'...already exists'` _messages on consecutive runs_)
+_Note:_ If you get **throttled** simply re-run the same command again (_and ignore any_ `'...already exists'` _messages on consecutive runs_)
 
 `keeper tf_acc_test.cmd --batch-mode`
 
@@ -161,14 +166,14 @@ MacOS:
 ```bash
 mkdir -p ~/.terraform.d/plugins/github.com/keeper-security/keeper && \
 cd ~/.terraform.d/plugins/github.com/keeper-security/keeper && \
-curl -SfL https://github.com/keeper-security/terraform-provider-keeper/releases/latest/download/terraform-provider-keeper_1.0.0_darwin_amd64.zip
+curl -SfLOJ https://github.com/keeper-security/terraform-provider-keeper/releases/latest/download/terraform-provider-keeper_1.0.0_darwin_amd64.zip
 ```
 Windows:
 ```bash
-SETLOCAL EnableExtensions && \
-mkdir %APPDATA%\.terraform.d\plugins\github.com\keeper-security\keeper && \
-cd %APPDATA%\.terraform.d\plugins\github.com\keeper-security\keeper && \
-curl -SfL https://github.com/keeper-security/terraform-provider-keeper/releases/latest/download/terraform-provider-keeper_1.0.0_windows_amd64.zip
+SETLOCAL EnableExtensions && ^
+mkdir %APPDATA%\.terraform.d\plugins\github.com\keeper-security\keeper && ^
+cd %APPDATA%\.terraform.d\plugins\github.com\keeper-security\keeper && ^
+curl -SfLOJ https://github.com/keeper-security/terraform-provider-keeper/releases/latest/download/terraform-provider-keeper_1.0.0_windows_amd64.zip
 ```
 Have a look at some working [examples](./examples) in this repo.
 
