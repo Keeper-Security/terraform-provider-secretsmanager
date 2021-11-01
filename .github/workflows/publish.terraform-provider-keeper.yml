@@ -1,46 +1,50 @@
-#name: Release Terraform Provider Binaries
-#on:
-#  push:
-#    tags:
-#      - "v*.*.*"
+# This GitHub action can publish assets for release when a tag is created.
+# Currently, its setup to run on any tag that matches the pattern "v*" (ie. v0.1.0).
 #
-#jobs:
-#  release-matrix:
-#    name: Release
-#    runs-on: ubuntu-latest
-#
-#    strategy:
-#      matrix:
-#        go-version: [1.17.x ]
-#        goos: [linux]
-#        goarch: [amd64]
-#
-#    steps:
-#      - name: Set env
-#        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-#
-#      - uses: actions/setup-go@v2
-#        with:
-#          go-version: ${{ matrix.go-version }} # The Go version to download (if necessary) and use.
-#      - run: go version
-#
-#      - uses: actions/checkout@v2
-#        with:
-#          ref: ${{ env.RELEASE_VERSION }}
-#
-#
-#      - name: Build binaries
-#        run: |
-#          ./build-release.sh ${{ env.RELEASE_VERSION }}
-#          ls -la
-#
-#      # Publish to GitHub Commander Binary project
-#      - name: Release Binaries
-#        uses: svenstaro/upload-release-action@v2
-#        with:
-#          repo_token: ${{ secrets.GITHUB_TOKEN }}
-#          file: terraform-provider-keeper_*
-#          tag: ${{ env.RELEASE_VERSION }}
-#          overwrite: true
-#          file_glob: true
-#          body: "Keeper Secrets Manager Terraform provider release ${{ env.RELEASE_VERSION }}"
+name: release
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  goreleaser:
+    environment: prod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Retrieve secrets from Keeper
+        id: ksecrets
+        uses: Keeper-Security/ksm-action@master
+        with:
+          keeper-secret-config: ${{ secrets.KSM_PUBLISHER_CONFIG }}
+          secrets: |
+            sZ5fnzalziVolGvaVo8oKw/custom_field/PGP_PRIVATE_KEY_BLOCK_-_ASCII-armor_format > GPG_PRIVATE_KEY
+            sZ5fnzalziVolGvaVo8oKw/custom_field/Pass_Phrase > GPG_PASSPHRASE
+
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+
+      - name: Unshallow
+        run: git fetch --prune --unshallow
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: hashicorp/ghaction-import-gpg@v2.1.0
+        env:
+
+          GPG_PRIVATE_KEY: ${{ steps.ksecrets.outputs.GPG_PRIVATE_KEY }}
+          PASSPHRASE: ${{ steps.ksecrets.outputs.GPG_PASSPHRASE }}
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2.7.0
+        with:
+          version: latest
+          args: release --rm-dist
+        env:
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          # GitHub sets this automatically
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
