@@ -1,8 +1,8 @@
 terraform {
   required_providers {
-    keeper = {
-      source  = "github.com/keeper-security/keeper"
-      version = ">= 0.1.0"
+    secretsmanager = {
+      source  = "keeper-security/secretsmanager"
+      version = ">= 1.0.0"
     }
     local = {
       source = "hashicorp/local"
@@ -12,12 +12,12 @@ terraform {
 }
 
 provider "local" { }
-provider "keeper" {
+provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
 }
 
-data "keeper_secret_photo" "my_photos" {
+data "secretsmanager_photo" "my_photos" {
   path        = "<record UID>"
 }
 
@@ -25,15 +25,15 @@ resource "local_file" "out" {
   filename        = "${path.module}/out.txt"
   file_permission = "0644"
   content         = <<EOT
-UID:    ${ data.keeper_secret_photo.my_photos.path }
-Type:   ${ data.keeper_secret_photo.my_photos.type }
-Title:  ${ data.keeper_secret_photo.my_photos.title }
-Notes:  ${ data.keeper_secret_photo.my_photos.notes }
+UID:    ${ data.secretsmanager_photo.my_photos.path }
+Type:   ${ data.secretsmanager_photo.my_photos.type }
+Title:  ${ data.secretsmanager_photo.my_photos.title }
+Notes:  ${ data.secretsmanager_photo.my_photos.notes }
 ======
 
 FileRefs:
 ---------
-%{ for fr in data.keeper_secret_photo.my_photos.file_ref ~}
+%{ for fr in data.secretsmanager_photo.my_photos.file_ref ~}
 UID:      ${ fr.uid }
 Title:    ${ fr.title }
 Name:     ${ fr.name }
@@ -50,6 +50,6 @@ EOT
 }
 
 output "photo_count" {
-  value = length(data.keeper_secret_photo.my_photos.file_ref.*)
+  value = length(data.secretsmanager_photo.my_photos.file_ref.*)
   sensitive = true
 }

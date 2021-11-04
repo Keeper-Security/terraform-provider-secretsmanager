@@ -1,11 +1,11 @@
-# keeper_secret_ssn_card Data Source
+# secretsmanager_ssn_card Data Source
 
 Use this data source to read secrets of type `ssnCard` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_ssn_card" "ssn_card" {
+data "secretsmanager_ssn_card" "ssn_card" {
   path = "<record UID>"
 }
 ```

@@ -7,16 +7,34 @@ You can set environment variable `KEEPER_CREDENTIAL` or read it from disk using 
 
 ## Installation
 
+### Terraform 0.13+ ([Terraform Registry](https://registry.terraform.io/))
+To install this provider, copy and paste this code into your Terraform configuration. Then, run `terraform init`.
+```hcl
+terraform {
+  required_providers {
+    secretsmanager = {
+      source = "keeper-security/secretsmanager"
+      version = ">= 1.0.0"
+    }
+  }
+}
+
+provider "secretsmanager" {
+  # Configuration options
+}
+```
+
 ### Manual Install
 
-Download archive from [latest release](https://github.com/keeper-security/terraform-provider-keeper/releases/latest) for your platform and copy it to the corresponding plugin folder (_Linux and MacOS:_ `~/.terraform.d/plugins/github.com/keeper-security/keeper` _Windows:_ `%APPDATA%/terraform.d/plugins/github.com/keeper-security/keeper`) 
+Download archive with the [latest release](https://github.com/keeper-security/terraform-provider-secretsmanager/releases/latest) for your platform and copy it to the corresponding plugin folder (_Linux and MacOS:_ `~/.terraform.d/plugins/github.com/keeper-security/secretsmanager` _Windows:_ `%APPDATA%/terraform.d/plugins/github.com/keeper-security/secretsmanager`)  
+Use the same config from above just remember to initialize `source` with the full URL `source  = "github.com/keeper-security/secretsmanager"`
 
 For help on manually installing Terraform Providers, please refer to the [official Terraform documentation](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins).
 
 ## Example Usage
 
 ```hcl
-provider "keeper" {
+provider "secretsmanager" {
   credential = file("~/.keeper/credential")
 }
 ```

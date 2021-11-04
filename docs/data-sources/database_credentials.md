@@ -1,11 +1,11 @@
-# keeper_secret_database_credentials Data Source
+# secretsmanager_database_credentials Data Source
 
 Use this data source to read secrets of type `databaseCredentials` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_database_credentials" "database_credentials" {
+data "secretsmanager_database_credentials" "database_credentials" {
   path = "<record UID>"
 }
 ```

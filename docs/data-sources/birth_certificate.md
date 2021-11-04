@@ -1,11 +1,11 @@
-# keeper_secret_birth_certificate Data Source
+# secretsmanager_birth_certificate Data Source
 
 Use this data source to read secrets of type `birthCertificate` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_birth_certificate" "birth_certificate" {
+data "secretsmanager_birth_certificate" "birth_certificate" {
   path = "<record UID>"
 }
 ```

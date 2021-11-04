@@ -1,11 +1,11 @@
-# keeper_secret_bank_account Data Source
+# secretsmanager_bank_account Data Source
 
 Use this data source to read secrets of type `bankAccount` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_bank_account" "bank_account" {
+data "secretsmanager_bank_account" "bank_account" {
   path = "<record UID>"
 }
 ```

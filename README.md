@@ -39,15 +39,15 @@ sm client add --app <APP_NAME> --unlock-ip --config-init=b64
 terraform {
   required_providers {
     # add keeper secrets manager plugin
-    keeper = {
-      source  = "github.com/keeper-security/keeper"
-      version = ">= 0.1.0"
+    secretsmanager = {
+      source  = "keeper-security/secretsmanager"
+      version = ">= 1.0.0"
     }
   }
 }
 
 # Configure plugin
-provider "keeper" {
+provider "secretsmanager" {
   credential = file("~/.keeper/credential")
 }
 ```
@@ -64,7 +64,7 @@ If you need help, send an e-mail to [sm@keepersecurity.com](mailto:sm@keepersecu
 Get the source code:
 
 ```bash
-git clone https://github.com/keeper-security/terraform-provider-keeper
+git clone https://github.com/keeper-security/terraform-provider-secretsmanager
 ```
 
 Build it using:
@@ -132,48 +132,48 @@ It is officially supported and actively maintained by Keeper Security.
 ```hcl
 terraform {
   required_providers {
-    keeper = {
-      source  = "keeper/keeper"
-      version = ">= 0.1.0"
+    secretsmanager = {
+      source  = "keeper-security/secretsmanager"
+      version = ">= 1.0.0"
     }
   }
 }
 
-provider "keeper" {
+provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
 }
 
-data "keeper_secret_database_credentials" "my_db_creds" {
+data "secretsmanager_database_credentials" "my_db_creds" {
   path  = "<UID>"
 }
 
 output "db_type" {
-  value = data.keeper_secret_database_credentials.my_db_creds.db_type
+  value = data.secretsmanager_database_credentials.my_db_creds.db_type
 }
 
 output "login" {
-  value = data.keeper_secret_database_credentials.my_db_creds.login
+  value = data.secretsmanager_database_credentials.my_db_creds.login
 }
 ```
 
-### Terraform v0.13 and above ([GitHub](https://github.com/keeper-security/terraform-provider-keeper/) manual install)
+### Terraform v0.13 and above ([GitHub](https://github.com/keeper-security/terraform-provider-secretsmanager/) manual install)
 
-Download archive with the [latest release](https://github.com/keeper-security/terraform-provider-keeper/releases/latest) for your platform and copy it to the corresponding plugin folder (_Linux and MacOS:_ `~/.terraform.d/plugins/github.com/keeper-security/keeper` _Windows:_ `%APPDATA%/terraform.d/plugins/github.com/keeper-security/keeper`)  
-Use the same config from above just remember to initialize `source` with the full URL `source  = "github.com/keeper-security/keeper"`
+Download archive with the [latest release](https://github.com/keeper-security/terraform-provider-secretsmanager/releases/latest) for your platform and copy it to the corresponding plugin folder (_Linux and MacOS:_ `~/.terraform.d/plugins/github.com/keeper-security/secretsmanager` _Windows:_ `%APPDATA%/terraform.d/plugins/github.com/keeper-security/secretsmanager`)  
+Use the same config from above just remember to initialize `source` with the full URL `source  = "github.com/keeper-security/secretsmanager"`
 
 MacOS:
 ```bash
-mkdir -p ~/.terraform.d/plugins/github.com/keeper-security/keeper && \
-cd ~/.terraform.d/plugins/github.com/keeper-security/keeper && \
-curl -SfLOJ https://github.com/keeper-security/terraform-provider-keeper/releases/latest/download/terraform-provider-keeper_1.0.0_darwin_amd64.zip
+mkdir -p ~/.terraform.d/plugins/github.com/keeper-security/secretsmanager && \
+cd ~/.terraform.d/plugins/github.com/keeper-security/secretsmanager && \
+curl -SfLOJ https://github.com/keeper-security/terraform-provider-secretsmanager/releases/latest/download/terraform-provider-secretsmanager_1.0.0_darwin_amd64.zip
 ```
 Windows:
 ```bash
 SETLOCAL EnableExtensions && ^
-mkdir %APPDATA%\.terraform.d\plugins\github.com\keeper-security\keeper && ^
-cd %APPDATA%\.terraform.d\plugins\github.com\keeper-security\keeper && ^
-curl -SfLOJ https://github.com/keeper-security/terraform-provider-keeper/releases/latest/download/terraform-provider-keeper_1.0.0_windows_amd64.zip
+mkdir %APPDATA%\.terraform.d\plugins\github.com\keeper-security\secretsmanager && ^
+cd %APPDATA%\.terraform.d\plugins\github.com\keeper-security\secretsmanager && ^
+curl -SfLOJ https://github.com/keeper-security/terraform-provider-secretsmanager/releases/latest/download/terraform-provider-secretsmanager_1.0.0_windows_amd64.zip
 ```
 Have a look at some working [examples](./examples) in this repo.
 
@@ -184,28 +184,27 @@ Afterwards you can run the following example with Terraform.
 ```hcl
 terraform {
   required_providers {
-    keeper = {
-      version = ">= 0.1.0"
+    secretsmanager = {
+      version = ">= 1.0.0"
     }
   }
 }
 
-provider "keeper" {
+provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
 }
 
-data "keeper_secret_database_credentials" "my_db_creds" {
+data "secretsmanager_database_credentials" "my_db_creds" {
   path  = "<UID>"
 }
 
 output "db_type" {
-  value = data.keeper_secret_database_credentials.my_db_creds.db_type
+  value = data.secretsmanager_database_credentials.my_db_creds.db_type
 }
 
 output "login" {
-  value = data.keeper_secret_database_credentials.my_db_creds.login
+  value = data.secretsmanager_database_credentials.my_db_creds.login
 }
 ```
 Have a look at some working [examples](./examples) in this repo.
-

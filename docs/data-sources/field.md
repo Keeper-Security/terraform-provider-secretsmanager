@@ -1,11 +1,11 @@
-# keeper_secret_field Data Source
+# secretsmanager_field Data Source
 
 Use this data source to read fields of secrets of any type stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_field" "field" {
+data "secretsmanager_field" "field" {
   path = "<record UID>/field/type"
 }
 ```

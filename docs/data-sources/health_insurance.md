@@ -1,11 +1,11 @@
-# keeper_secret_health_insurance Data Source
+# secretsmanager_health_insurance Data Source
 
 Use this data source to read secrets of type `healthInsurance` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_health_insurance" "health_insurance" {
+data "secretsmanager_health_insurance" "health_insurance" {
   path = "<record UID>"
 }
 ```

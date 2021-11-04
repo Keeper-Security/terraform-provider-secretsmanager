@@ -1,8 +1,8 @@
 terraform {
   required_providers {
-    keeper = {
-      source  = "github.com/keeper-security/keeper"
-      version = ">= 0.1.0"
+    secretsmanager = {
+      source  = "keeper-security/secretsmanager"
+      version = ">= 1.0.0"
     }
     local = {
       source = "hashicorp/local"
@@ -12,12 +12,12 @@ terraform {
 }
 
 provider "local" { }
-provider "keeper" {
+provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
 }
 
-data "keeper_secret_encrypted_notes" "my_notes" {
+data "secretsmanager_encrypted_notes" "my_notes" {
   path        = "<record UID>"
 }
 
@@ -25,20 +25,20 @@ resource "local_file" "out" {
   filename        = "${path.module}/out.txt"
   file_permission = "0644"
   content         = <<EOT
-UID:    ${ data.keeper_secret_encrypted_notes.my_notes.path }
-Type:   ${ data.keeper_secret_encrypted_notes.my_notes.type }
-Title:  ${ data.keeper_secret_encrypted_notes.my_notes.title }
-Notes:  ${ data.keeper_secret_encrypted_notes.my_notes.notes }
+UID:    ${ data.secretsmanager_encrypted_notes.my_notes.path }
+Type:   ${ data.secretsmanager_encrypted_notes.my_notes.type }
+Title:  ${ data.secretsmanager_encrypted_notes.my_notes.title }
+Notes:  ${ data.secretsmanager_encrypted_notes.my_notes.notes }
 ======
 
-Notes:  ${ data.keeper_secret_encrypted_notes.my_notes.note }
+Notes:  ${ data.secretsmanager_encrypted_notes.my_notes.note }
 
-Date:   %{ if data.keeper_secret_encrypted_notes.my_notes.date != null ~}${ data.keeper_secret_encrypted_notes.my_notes.date }%{ endif ~}
+Date:   %{ if data.secretsmanager_encrypted_notes.my_notes.date != null ~}${ data.secretsmanager_encrypted_notes.my_notes.date }%{ endif ~}
 
 
 FileRefs:
 ---------
-%{ for fr in data.keeper_secret_encrypted_notes.my_notes.file_ref ~}
+%{ for fr in data.secretsmanager_encrypted_notes.my_notes.file_ref ~}
 UID:      ${ fr.uid }
 Title:    ${ fr.title }
 Name:     ${ fr.name }
@@ -55,9 +55,9 @@ EOT
 }
 
 output "notes" {
-  value = data.keeper_secret_encrypted_notes.my_notes.note
+  value = data.secretsmanager_encrypted_notes.my_notes.note
   sensitive = true
 }
 output "date" {
-  value = data.keeper_secret_encrypted_notes.my_notes.date
+  value = data.secretsmanager_encrypted_notes.my_notes.date
 }

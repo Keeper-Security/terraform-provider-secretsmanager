@@ -1,11 +1,11 @@
-# keeper_secret_file Data Source
+# secretsmanager_file Data Source
 
 Use this data source to read secrets of type `file` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_file" "file" {
+data "secretsmanager_file" "file" {
   path = "<record UID>"
 }
 ```

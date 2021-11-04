@@ -1,8 +1,8 @@
 terraform {
   required_providers {
-    keeper = {
-      source  = "github.com/keeper-security/keeper"
-      version = ">= 0.1.0"
+    secretsmanager = {
+      source  = "keeper-security/secretsmanager"
+      version = ">= 1.0.0"
     }
     local = {
       source = "hashicorp/local"
@@ -12,12 +12,12 @@ terraform {
 }
 
 provider "local" { }
-provider "keeper" {
+provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
 }
 
-data "keeper_secret_address" "address" {
+data "secretsmanager_address" "my_address" {
   path        = "<record UID>"
 }
 
@@ -25,15 +25,15 @@ resource "local_file" "out" {
   filename        = "${path.module}/out.txt"
   file_permission = "0644"
   content         = <<EOT
-UID:    ${ data.keeper_secret_address.address.path }
-Type:   ${ data.keeper_secret_address.address.type }
-Title:  ${ data.keeper_secret_address.address.title }
-Notes:  ${ data.keeper_secret_address.address.notes }
+UID:    ${ data.secretsmanager_address.my_address.path }
+Type:   ${ data.secretsmanager_address.my_address.type }
+Title:  ${ data.secretsmanager_address.my_address.title }
+Notes:  ${ data.secretsmanager_address.my_address.notes }
 ======
 
 Address:
 --------
-%{ for a in data.keeper_secret_address.address.address ~}
+%{ for a in data.secretsmanager_address.my_address.address ~}
 Street1:  ${ a.street1 }
 Street2:  ${ a.street2 }
 City:     ${ a.city }
@@ -44,7 +44,7 @@ Country:  ${ a.country }
 
 FileRefs:
 ---------
-%{ for fr in data.keeper_secret_address.address.file_ref ~}
+%{ for fr in data.secretsmanager_address.my_address.file_ref ~}
 UID:      ${ fr.uid }
 Title:    ${ fr.title }
 Name:     ${ fr.name }
@@ -61,15 +61,15 @@ EOT
 }
 
 output "files" {
-  value = data.keeper_secret_address.address.file_ref
+  value = data.secretsmanager_address.my_address.file_ref
   sensitive = true
 }
 
 output "first_file" {
-  value = length(data.keeper_secret_address.address.file_ref) < 1 ? "" : textdecodebase64(element(data.keeper_secret_address.address.file_ref, 0).content_base64, "UTF-8")
+  value = length(data.secretsmanager_address.my_address.file_ref) < 1 ? "" : textdecodebase64(element(data.secretsmanager_address.my_address.file_ref, 0).content_base64, "UTF-8")
   sensitive = true
 }
 
 output "zip_code" {
-  value = length(data.keeper_secret_address.address.address) < 1 ? "" : data.keeper_secret_address.address.address.0.zip
+  value = length(data.secretsmanager_address.my_address.address) < 1 ? "" : data.secretsmanager_address.my_address.address.0.zip
 }

@@ -1,8 +1,8 @@
 terraform {
   required_providers {
-    keeper = {
-      source  = "github.com/keeper-security/keeper"
-      version = ">= 0.1.0"
+    secretsmanager = {
+      source  = "keeper-security/secretsmanager"
+      version = ">= 1.0.0"
     }
     local = {
       source = "hashicorp/local"
@@ -12,12 +12,12 @@ terraform {
 }
 
 provider "local" { }
-provider "keeper" {
+provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
 }
 
-data "keeper_secret_bank_account" "my_account" {
+data "secretsmanager_bank_account" "my_account" {
   path        = "<record UID>"
 }
 
@@ -25,15 +25,15 @@ resource "local_file" "out" {
   filename        = "${path.module}/out.txt"
   file_permission = "0644"
   content         = <<EOT
-UID:    ${ data.keeper_secret_bank_account.my_account.path }
-Type:   ${ data.keeper_secret_bank_account.my_account.type }
-Title:  ${ data.keeper_secret_bank_account.my_account.title }
-Notes:  ${ data.keeper_secret_bank_account.my_account.notes }
+UID:    ${ data.secretsmanager_bank_account.my_account.path }
+Type:   ${ data.secretsmanager_bank_account.my_account.type }
+Title:  ${ data.secretsmanager_bank_account.my_account.title }
+Notes:  ${ data.secretsmanager_bank_account.my_account.notes }
 ======
 
 Bank Account:
 -------------
-%{ for a in data.keeper_secret_bank_account.my_account.bank_account ~}
+%{ for a in data.secretsmanager_bank_account.my_account.bank_account ~}
 Account Type:   ${ a.account_type }
 Other Type:     ${ a.other_type }
 Routing Number: ${ a.routing_number }
@@ -43,20 +43,20 @@ Account Number: ${ a.account_number }
 
 Name:
 -----
-%{ for n in data.keeper_secret_bank_account.my_account.name ~}
+%{ for n in data.secretsmanager_bank_account.my_account.name ~}
 First Name:   ${ n.first }
 Midlle Name:  ${ n.middle }
 Last Name:    ${ n.last }
 
 %{ endfor ~}
 
-Login:    ${ data.keeper_secret_bank_account.my_account.login }
-Password: ${ data.keeper_secret_bank_account.my_account.password }
-URL:      ${ data.keeper_secret_bank_account.my_account.url }
+Login:    ${ data.secretsmanager_bank_account.my_account.login }
+Password: ${ data.secretsmanager_bank_account.my_account.password }
+URL:      ${ data.secretsmanager_bank_account.my_account.url }
 
 Card Ref:
 ---------
-%{ for r in data.keeper_secret_bank_account.my_account.card_ref ~}
+%{ for r in data.secretsmanager_bank_account.my_account.card_ref ~}
  Card Reference#:  ${ r.uid }
  ----------------
 %{ for cc in r.payment_card ~}
@@ -70,7 +70,7 @@ Card Ref:
 
 FileRefs:
 ---------
-%{ for fr in data.keeper_secret_bank_account.my_account.file_ref ~}
+%{ for fr in data.secretsmanager_bank_account.my_account.file_ref ~}
 UID:      ${ fr.uid }
 Title:    ${ fr.title }
 Name:     ${ fr.name }
@@ -86,7 +86,7 @@ Content/Base64: ${ fr.content_base64 }
 
 TOTP:
 -----
-%{ for t in data.keeper_secret_bank_account.my_account.totp ~}
+%{ for t in data.secretsmanager_bank_account.my_account.totp ~}
 URL:    ${ t.url }
 Token:  ${ t.token }
 TTL:    ${ t.ttl }
@@ -97,11 +97,11 @@ EOT
 }
 
 output "name" {
-  value = data.keeper_secret_bank_account.my_account.name
+  value = data.secretsmanager_bank_account.my_account.name
 }
 output "totp" {
-  value = data.keeper_secret_bank_account.my_account.totp
+  value = data.secretsmanager_bank_account.my_account.totp
 }
 output "totp_token" {
-  value = length(data.keeper_secret_bank_account.my_account.totp) < 1 ? "" : data.keeper_secret_bank_account.my_account.totp.0.token
+  value = length(data.secretsmanager_bank_account.my_account.totp) < 1 ? "" : data.secretsmanager_bank_account.my_account.totp.0.token
 }

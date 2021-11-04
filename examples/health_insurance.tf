@@ -1,8 +1,8 @@
 terraform {
   required_providers {
-    keeper = {
-      source  = "github.com/keeper-security/keeper"
-      version = ">= 0.1.0"
+    secretsmanager = {
+      source  = "keeper-security/secretsmanager"
+      version = ">= 1.0.0"
     }
     local = {
       source = "hashicorp/local"
@@ -12,12 +12,12 @@ terraform {
 }
 
 provider "local" { }
-provider "keeper" {
+provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
 }
 
-data "keeper_secret_health_insurance" "my_insurance" {
+data "secretsmanager_health_insurance" "my_insurance" {
   path        = "<record UID>"
 }
 
@@ -25,20 +25,20 @@ resource "local_file" "out" {
   filename        = "${path.module}/out.txt"
   file_permission = "0644"
   content         = <<EOT
-UID:    ${ data.keeper_secret_health_insurance.my_insurance.path }
-Type:   ${ data.keeper_secret_health_insurance.my_insurance.type }
-Title:  ${ data.keeper_secret_health_insurance.my_insurance.title }
-Notes:  ${ data.keeper_secret_health_insurance.my_insurance.notes }
+UID:    ${ data.secretsmanager_health_insurance.my_insurance.path }
+Type:   ${ data.secretsmanager_health_insurance.my_insurance.type }
+Title:  ${ data.secretsmanager_health_insurance.my_insurance.title }
+Notes:  ${ data.secretsmanager_health_insurance.my_insurance.notes }
 ======
 
-Acct.#:   ${ data.keeper_secret_health_insurance.my_insurance.account_number }
-Login:    ${ data.keeper_secret_health_insurance.my_insurance.login }
-Password: ${ data.keeper_secret_health_insurance.my_insurance.password }
-URL:      ${ data.keeper_secret_health_insurance.my_insurance.url }
+Acct.#:   ${ data.secretsmanager_health_insurance.my_insurance.account_number }
+Login:    ${ data.secretsmanager_health_insurance.my_insurance.login }
+Password: ${ data.secretsmanager_health_insurance.my_insurance.password }
+URL:      ${ data.secretsmanager_health_insurance.my_insurance.url }
 
 Name:
 -----
-%{ for n in data.keeper_secret_health_insurance.my_insurance.name ~}
+%{ for n in data.secretsmanager_health_insurance.my_insurance.name ~}
 First Name:   ${ n.first }
 Midlle Name:  ${ n.middle }
 Last Name:    ${ n.last }
@@ -47,7 +47,7 @@ Last Name:    ${ n.last }
 
 FileRefs:
 ---------
-%{ for fr in data.keeper_secret_health_insurance.my_insurance.file_ref ~}
+%{ for fr in data.secretsmanager_health_insurance.my_insurance.file_ref ~}
 UID:      ${ fr.uid }
 Title:    ${ fr.title }
 Name:     ${ fr.name }
@@ -64,5 +64,5 @@ EOT
 }
 
 output "login" {
-  value = data.keeper_secret_health_insurance.my_insurance.login
+  value = data.secretsmanager_health_insurance.my_insurance.login
 }

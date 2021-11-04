@@ -1,11 +1,11 @@
-# keeper_secret_encrypted_notes Data Source
+# secretsmanager_encrypted_notes Data Source
 
 Use this data source to read secrets of type `encryptedNotes` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_encrypted_notes" "encrypted_notes" {
+data "secretsmanager_encrypted_notes" "encrypted_notes" {
   path = "<record UID>"
 }
 ```

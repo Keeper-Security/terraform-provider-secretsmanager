@@ -1,8 +1,8 @@
 terraform {
   required_providers {
-    keeper = {
-      source  = "github.com/keeper-security/keeper"
-      version = ">= 0.1.0"
+    secretsmanager = {
+      source  = "keeper-security/secretsmanager"
+      version = ">= 1.0.0"
     }
     local = {
       source = "hashicorp/local"
@@ -12,12 +12,12 @@ terraform {
 }
 
 provider "local" { }
-provider "keeper" {
+provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
 }
 
-data "keeper_secret_passport" "my_passport" {
+data "secretsmanager_passport" "my_passport" {
   path        = "<record UID>"
 }
 
@@ -25,36 +25,36 @@ resource "local_file" "out" {
   filename        = "${path.module}/out.txt"
   file_permission = "0644"
   content         = <<EOT
-UID:    ${ data.keeper_secret_passport.my_passport.path }
-Type:   ${ data.keeper_secret_passport.my_passport.type }
-Title:  ${ data.keeper_secret_passport.my_passport.title }
-Notes:  ${ data.keeper_secret_passport.my_passport.notes }
+UID:    ${ data.secretsmanager_passport.my_passport.path }
+Type:   ${ data.secretsmanager_passport.my_passport.type }
+Title:  ${ data.secretsmanager_passport.my_passport.title }
+Notes:  ${ data.secretsmanager_passport.my_passport.notes }
 ======
 
-Passport#: ${ data.keeper_secret_passport.my_passport.passport_number }
+Passport#: ${ data.secretsmanager_passport.my_passport.passport_number }
 
 Name:
 -----
-%{ for n in data.keeper_secret_passport.my_passport.name ~}
+%{ for n in data.secretsmanager_passport.my_passport.name ~}
 First Name:   ${ n.first }
 Midlle Name:  ${ n.middle }
 Last Name:    ${ n.last }
 
 %{ endfor ~}
 
-Birth Date:   %{ if data.keeper_secret_passport.my_passport.birth_date != null ~}${ data.keeper_secret_passport.my_passport.birth_date }%{ endif ~}
+Birth Date:   %{ if data.secretsmanager_passport.my_passport.birth_date != null ~}${ data.secretsmanager_passport.my_passport.birth_date }%{ endif ~}
 
-Exp.  Date:   %{ if data.keeper_secret_passport.my_passport.expiration_date != null ~}${ data.keeper_secret_passport.my_passport.expiration_date }%{ endif ~}
+Exp.  Date:   %{ if data.secretsmanager_passport.my_passport.expiration_date != null ~}${ data.secretsmanager_passport.my_passport.expiration_date }%{ endif ~}
 
-Date Issued:  %{ if data.keeper_secret_passport.my_passport.date_issued != null ~}${ data.keeper_secret_passport.my_passport.date_issued }%{ endif ~}
+Date Issued:  %{ if data.secretsmanager_passport.my_passport.date_issued != null ~}${ data.secretsmanager_passport.my_passport.date_issued }%{ endif ~}
 
 
-Password:     ${ data.keeper_secret_passport.my_passport.password }
+Password:     ${ data.secretsmanager_passport.my_passport.password }
 
 AddressRefs:
 ------------
-%{ if data.keeper_secret_passport.my_passport.address_ref != null }
-%{ for a in data.keeper_secret_passport.my_passport.address_ref ~}
+%{ if data.secretsmanager_passport.my_passport.address_ref != null }
+%{ for a in data.secretsmanager_passport.my_passport.address_ref ~}
 UID:      ${ a.uid }
 Street1:  ${ a.street1 }
 Street2:  ${ a.street2 }
@@ -68,7 +68,7 @@ Country:  ${ a.country }
 
 FileRefs:
 ---------
-%{ for fr in data.keeper_secret_passport.my_passport.file_ref ~}
+%{ for fr in data.secretsmanager_passport.my_passport.file_ref ~}
 UID:      ${ fr.uid }
 Title:    ${ fr.title }
 Name:     ${ fr.name }
@@ -85,5 +85,5 @@ EOT
 }
 
 output "passport_number" {
-  value = data.keeper_secret_passport.my_passport.passport_number
+  value = data.secretsmanager_passport.my_passport.passport_number
 }

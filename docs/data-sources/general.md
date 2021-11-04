@@ -1,11 +1,11 @@
-# keeper_secret_general Data Source
+# secretsmanager_general Data Source
 
 Use this data source to read secrets of type `general` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_general" "general" {
+data "secretsmanager_general" "general" {
   path = "<record UID>"
 }
 ```
