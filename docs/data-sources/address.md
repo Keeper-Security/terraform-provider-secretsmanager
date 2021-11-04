@@ -1,11 +1,11 @@
-# keeper_secret_address Data Source
+# secretsmanager_address Data Source
 
 Use this data source to read secrets of type `address` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_address" "address" {
+data "secretsmanager_address" "address" {
   path = "<record UID>"
 }
 ```

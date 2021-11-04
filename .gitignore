@@ -24,7 +24,7 @@ terraform.tfstate
 *.log
 *.bak
 
-terraform-provider-keeper
-terraform-provider-keeper*.zip
-terraform-provider-keeper*SHA256SUMS
+terraform-provider-secretsmanager
+terraform-provider-secretsmanager*.zip
+terraform-provider-secretsmanager*SHA256SUMS
 dist/

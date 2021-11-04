@@ -1,11 +1,11 @@
-# keeper_secret_membership Data Source
+# secretsmanager_membership Data Source
 
 Use this data source to read secrets of type `membership` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_membership" "membership" {
+data "secretsmanager_membership" "membership" {
   path = "<record UID>"
 }
 ```

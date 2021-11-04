@@ -1,11 +1,11 @@
-# keeper_secret_software_license Data Source
+# secretsmanager_software_license Data Source
 
 Use this data source to read secrets of type `softwareLicense` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_software_license" "software_license" {
+data "secretsmanager_software_license" "software_license" {
   path = "<record UID>"
 }
 ```

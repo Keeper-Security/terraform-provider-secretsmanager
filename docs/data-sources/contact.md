@@ -1,11 +1,11 @@
-# keeper_secret_contact Data Source
+# secretsmanager_contact Data Source
 
 Use this data source to read secrets of type `contact` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_contact" "contact" {
+data "secretsmanager_contact" "contact" {
   path = "<record UID>"
 }
 ```

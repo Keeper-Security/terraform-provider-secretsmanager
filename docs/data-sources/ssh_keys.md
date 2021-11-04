@@ -1,11 +1,11 @@
-# keeper_secret_ssh_keys Data Source
+# secretsmanager_ssh_keys Data Source
 
 Use this data source to read secrets of type `sshKeys` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_ssh_keys" "ssh_keys" {
+data "secretsmanager_ssh_keys" "ssh_keys" {
   path = "<record UID>"
 }
 ```

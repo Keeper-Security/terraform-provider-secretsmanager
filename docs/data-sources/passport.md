@@ -1,11 +1,11 @@
-# keeper_secret_passport Data Source
+# secretsmanager_passport Data Source
 
 Use this data source to read secrets of type `passport` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_passport" "passport" {
+data "secretsmanager_passport" "passport" {
   path = "<record UID>"
 }
 ```

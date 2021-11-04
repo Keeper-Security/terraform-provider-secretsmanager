@@ -1,11 +1,11 @@
-# keeper_secret_driver_license Data Source
+# secretsmanager_driver_license Data Source
 
 Use this data source to read secrets of type `driverLicense` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_driver_license" "driver_license" {
+data "secretsmanager_driver_license" "driver_license" {
   path = "<record UID>"
 }
 ```

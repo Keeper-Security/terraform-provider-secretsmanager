@@ -1,8 +1,8 @@
 terraform {
   required_providers {
-    keeper = {
-      source  = "github.com/keeper-security/keeper"
-      version = ">= 0.1.0"
+    secretsmanager = {
+      source  = "keeper-security/secretsmanager"
+      version = ">= 1.0.0"
     }
     local = {
       source = "hashicorp/local"
@@ -12,12 +12,12 @@ terraform {
 }
 
 provider "local" { }
-provider "keeper" {
+provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
 }
 
-data "keeper_secret_software_license" "my_license" {
+data "secretsmanager_software_license" "my_license" {
   path        = "<record UID>"
 }
 
@@ -25,19 +25,19 @@ resource "local_file" "out" {
   filename        = "${path.module}/out.txt"
   file_permission = "0644"
   content         = <<EOT
-UID:    ${ data.keeper_secret_software_license.my_license.path }
-Type:   ${ data.keeper_secret_software_license.my_license.type }
-Title:  ${ data.keeper_secret_software_license.my_license.title }
-Notes:  ${ data.keeper_secret_software_license.my_license.notes }
+UID:    ${ data.secretsmanager_software_license.my_license.path }
+Type:   ${ data.secretsmanager_software_license.my_license.type }
+Title:  ${ data.secretsmanager_software_license.my_license.title }
+Notes:  ${ data.secretsmanager_software_license.my_license.notes }
 ======
 
-License#:  ${ data.keeper_secret_software_license.my_license.license_number }
-Activation Date:  %{ if data.keeper_secret_software_license.my_license.activation_date != null ~}${ data.keeper_secret_software_license.my_license.activation_date }%{ endif }
-Expiration Date:  %{ if data.keeper_secret_software_license.my_license.expiration_date != null ~}${ data.keeper_secret_software_license.my_license.expiration_date }%{ endif }
+License#:  ${ data.secretsmanager_software_license.my_license.license_number }
+Activation Date:  %{ if data.secretsmanager_software_license.my_license.activation_date != null ~}${ data.secretsmanager_software_license.my_license.activation_date }%{ endif }
+Expiration Date:  %{ if data.secretsmanager_software_license.my_license.expiration_date != null ~}${ data.secretsmanager_software_license.my_license.expiration_date }%{ endif }
 
 FileRefs:
 ---------
-%{ for fr in data.keeper_secret_software_license.my_license.file_ref ~}
+%{ for fr in data.secretsmanager_software_license.my_license.file_ref ~}
 UID:      ${ fr.uid }
 Title:    ${ fr.title }
 Name:     ${ fr.name }
@@ -54,8 +54,8 @@ EOT
 }
 
 output "driver_license_number" {
-  value = data.keeper_secret_software_license.my_license.license_number
+  value = data.secretsmanager_software_license.my_license.license_number
 }
 output "expiration_date" {
-  value = data.keeper_secret_software_license.my_license.expiration_date
+  value = data.secretsmanager_software_license.my_license.expiration_date
 }

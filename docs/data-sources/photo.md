@@ -1,11 +1,11 @@
-# keeper_secret_photo Data Source
+# secretsmanager_photo Data Source
 
 Use this data source to read secrets of type `photo` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_photo" "photo" {
+data "secretsmanager_photo" "photo" {
   path = "<record UID>"
 }
 ```

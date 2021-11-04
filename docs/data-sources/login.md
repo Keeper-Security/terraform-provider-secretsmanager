@@ -1,11 +1,11 @@
-# keeper_secret_login Data Source
+# secretsmanager_login Data Source
 
 Use this data source to read secrets of type `login` stored in Keeper Vault
 
 ## Example Usage
 
 ```terraform
-data "keeper_secret_login" "login" {
+data "secretsmanager_login" "login" {
   path = "<record UID>"
 }
 ```
