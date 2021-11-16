@@ -301,7 +301,7 @@ func dataSourceBankAccountRead(ctx context.Context, d *schema.ResourceData, m in
 
 	totpItems := []interface{}{}
 	if totp := strings.TrimSpace(secret.GetFieldValueByType("oneTimeCode")); totp != "" {
-		if code, seconds, err := generateTotp(totp); err != nil {
+		if code, seconds, err := getTotpCode(totp); err != nil {
 			return diag.FromErr(err)
 		} else {
 			totpItems = []interface{}{
