@@ -63,7 +63,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diag.Errorf("bad credential: %s", creds)
 	}
 
-	client := core.NewSecretsManagerFromConfig(config)
+	client := core.NewSecretsManager(&core.ClientOptions{Config: config})
 	return providerMeta{client}, diags
 }
 
