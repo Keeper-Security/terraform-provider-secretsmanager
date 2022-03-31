@@ -1,6 +1,6 @@
 <h1 align="center">Keeper Secrets Management For Terraform</h1>
 <p align="center">
-  <a href="https://docs.keeper.io/secrets-manager/">View docs</a>
+  <a href="https://docs.keeper.io/secrets-manager/secrets-manager/integrations/terraform">View docs</a>
 </p>
 <br/>
 
