@@ -166,11 +166,6 @@ func dataSourcePassport() *schema.Resource {
 							Computed:    true,
 							Description: "The file last modified date.",
 						},
-						"url": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "The file URL.",
-						},
 						"content_base64": {
 							Type:        schema.TypeString,
 							Computed:    true,

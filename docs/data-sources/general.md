@@ -31,7 +31,6 @@ In addition to all arguments above, the following attributes are exported:
   - `type` - File content type
   - `size` - File size
   - `last_modified` - File last modification timestamp
-  - `url` - File download URL
   - `content_base64` - File content base64 encoded
 * `totp` - A list containing Time-based One-time password information:
   - `url` - TOTP URL
