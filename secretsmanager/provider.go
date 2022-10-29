@@ -1669,21 +1669,19 @@ func validateUid(uid string) bool {
 }
 
 func validateComplexity(length, uppercase, lowercase, digits, special int) error {
-	sumWeights := uppercase + lowercase + digits + special
-	if length >= 8 && length <= 100 {
-		if uppercase >= 0 && uppercase <= length &&
-			lowercase >= 0 && lowercase <= length &&
-			digits >= 0 && digits <= length &&
-			special >= 0 && special <= length &&
-			sumWeights <= length {
-			return nil
+	abs := func(x int) int {
+		if x < 0 {
+			return -x
 		}
+		return x
+	}
+	// charserts: len <= 0 means exact length, len > 0 means minimum length
+	sumWeights := abs(uppercase) + abs(lowercase) + abs(digits) + abs(special)
+	if length >= 8 || sumWeights >= 8 {
+		return nil
 	}
 
-	return fmt.Errorf("expected - length in [8..100],"+
-		" charset_len in [0..length], and the sum of all lengths in [0..length],"+
-		" got length: %v, sum: %v = %v + %v + %v + %v",
-		length, sumWeights, uppercase, lowercase, digits, special)
+	return fmt.Errorf("expected minimum password length >= 8, got min length: %v, sum: %v", length, sumWeights)
 }
 
 /*
@@ -1847,10 +1845,11 @@ func applyGeneratePassword(fieldData interface{}, field interface{}) (generated 
 		}
 		if generate, _ := ParseGeneratePassword(fieldData); generate {
 			if pwd, err := core.GeneratePassword(complexity.Length,
-				complexity.Lowercase,
-				complexity.Caps,
-				complexity.Digits,
-				complexity.Special); err != nil {
+				strconv.Itoa(complexity.Lowercase),
+				strconv.Itoa(complexity.Caps),
+				strconv.Itoa(complexity.Digits),
+				strconv.Itoa(complexity.Special),
+				""); err != nil {
 				return false, err
 			} else {
 				if len(fv.Value) > 0 {

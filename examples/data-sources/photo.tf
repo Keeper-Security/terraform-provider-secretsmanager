@@ -2,7 +2,7 @@ terraform {
   required_providers {
     secretsmanager = {
       source  = "keeper-security/secretsmanager"
-      version = ">= 1.1.1"
+      version = ">= 1.1.2"
     }
     local = {
       source = "hashicorp/local"
