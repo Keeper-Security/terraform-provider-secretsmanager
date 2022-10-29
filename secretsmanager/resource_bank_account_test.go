@@ -20,10 +20,6 @@ func TestAccResourceBankAccount_create(t *testing.T) {
 	secretTitle += "_resource_create"
 
 	config := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
-
 		resource "secretsmanager_bank_account" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
@@ -90,7 +86,7 @@ func TestAccResourceBankAccount_create(t *testing.T) {
 				value = "otpauth://totp/Acme:Buster?secret=6I4PI5EUKS66GPRY5TMLJJP25MAYWAVL&issuer=Acme&algorithm=SHA1&digits=6&period=30"
 			}
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
 	resourceName := fmt.Sprintf("secretsmanager_bank_account.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
@@ -122,28 +118,22 @@ func TestAccResourceBankAccount_update(t *testing.T) {
 	secretTitle2 := secretTitle + "2"
 
 	configInit := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
 		resource "secretsmanager_bank_account" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
 	configUpdate := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
 		resource "secretsmanager_bank_account" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle2)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle2)
 
 	resourceName := fmt.Sprintf("secretsmanager_bank_account.%v", secretTitle)
 
@@ -191,15 +181,12 @@ func TestAccResourceBankAccount_deleteDetection(t *testing.T) {
 	secretTitle += "_resource_delete"
 
 	config := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
 		resource "secretsmanager_bank_account" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
 
 	resource.Test(t, resource.TestCase{
 		Providers: testAccProviders,
@@ -235,17 +222,13 @@ func TestAccResourceBankAccount_import(t *testing.T) {
 	secretTitle += "_resource_import"
 
 	config := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
-
 		resource "secretsmanager_bank_account" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
 	resourceName := fmt.Sprintf("secretsmanager_bank_account.%v", secretTitle)
 
