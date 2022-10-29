@@ -20,10 +20,6 @@ func TestAccResourceSoftwareLicense_create(t *testing.T) {
 	secretTitle += "_resource_create"
 
 	config := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
-
 		resource "secretsmanager_software_license" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
@@ -48,7 +44,7 @@ func TestAccResourceSoftwareLicense_create(t *testing.T) {
 				value = 21651186276
 			}
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
 	resourceName := fmt.Sprintf("secretsmanager_software_license.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
@@ -80,28 +76,22 @@ func TestAccResourceSoftwareLicense_update(t *testing.T) {
 	secretTitle2 := secretTitle + "2"
 
 	configInit := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
 		resource "secretsmanager_software_license" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
 	configUpdate := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
 		resource "secretsmanager_software_license" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle2)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle2)
 
 	resourceName := fmt.Sprintf("secretsmanager_software_license.%v", secretTitle)
 
@@ -149,15 +139,12 @@ func TestAccResourceSoftwareLicense_deleteDetection(t *testing.T) {
 	secretTitle += "_resource_delete"
 
 	config := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
 		resource "secretsmanager_software_license" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
 
 	resource.Test(t, resource.TestCase{
 		Providers: testAccProviders,
@@ -193,17 +180,13 @@ func TestAccResourceSoftwareLicense_import(t *testing.T) {
 	secretTitle += "_resource_import"
 
 	config := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
-
 		resource "secretsmanager_software_license" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
 	resourceName := fmt.Sprintf("secretsmanager_software_license.%v", secretTitle)
 
