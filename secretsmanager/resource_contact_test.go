@@ -148,7 +148,6 @@ func TestAccResourceContact_update(t *testing.T) {
 	})
 }
 
-/*
 func TestAccResourceContact_deleteDetection(t *testing.T) {
 	secretType := "contact"
 	secretFolderUid := testAcc.getTestFolder()
@@ -178,8 +177,9 @@ func TestAccResourceContact_deleteDetection(t *testing.T) {
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
 					client := *testAccProvider.Meta().(providerMeta).client
-					err := client.Delete(secretUid)
-					assert.OK(t, err)
+					if err := deleteRecord(secretUid, client); err != nil {
+						t.Fail()
+					}
 				},
 				Config:             config,
 				PlanOnly:           true,
@@ -188,7 +188,6 @@ func TestAccResourceContact_deleteDetection(t *testing.T) {
 		},
 	})
 }
-*/
 
 func TestAccResourceContact_import(t *testing.T) {
 	secretType := "contact"

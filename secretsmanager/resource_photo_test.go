@@ -113,7 +113,6 @@ func TestAccResourcePhoto_update(t *testing.T) {
 	})
 }
 
-/*
 func TestAccResourcePhoto_deleteDetection(t *testing.T) {
 	secretType := "photo"
 	secretFolderUid := testAcc.getTestFolder()
@@ -143,8 +142,9 @@ func TestAccResourcePhoto_deleteDetection(t *testing.T) {
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
 					client := *testAccProvider.Meta().(providerMeta).client
-					err := client.Delete(secretUid)
-					assert.OK(t, err)
+					if err := deleteRecord(secretUid, client); err != nil {
+						t.Fail()
+					}
 				},
 				Config:             config,
 				PlanOnly:           true,
@@ -153,7 +153,6 @@ func TestAccResourcePhoto_deleteDetection(t *testing.T) {
 		},
 	})
 }
-*/
 
 func TestAccResourcePhoto_import(t *testing.T) {
 	secretType := "photo"

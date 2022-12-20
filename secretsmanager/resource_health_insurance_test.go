@@ -152,7 +152,6 @@ func TestAccResourceHealthInsurance_update(t *testing.T) {
 	})
 }
 
-/*
 func TestAccResourceHealthInsurance_deleteDetection(t *testing.T) {
 	secretType := "healthInsurance"
 	secretFolderUid := testAcc.getTestFolder()
@@ -182,8 +181,9 @@ func TestAccResourceHealthInsurance_deleteDetection(t *testing.T) {
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
 					client := *testAccProvider.Meta().(providerMeta).client
-					err := client.Delete(secretUid)
-					assert.OK(t, err)
+					if err := deleteRecord(secretUid, client); err != nil {
+						t.Fail()
+					}
 				},
 				Config:             config,
 				PlanOnly:           true,
@@ -192,7 +192,6 @@ func TestAccResourceHealthInsurance_deleteDetection(t *testing.T) {
 		},
 	})
 }
-*/
 
 func TestAccResourceHealthInsurance_import(t *testing.T) {
 	secretType := "healthInsurance"

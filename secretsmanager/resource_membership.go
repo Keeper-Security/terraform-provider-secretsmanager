@@ -3,6 +3,7 @@ package secretsmanager
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -141,7 +142,7 @@ func resourceMembershipCreate(ctx context.Context, d *schema.ResourceData, m int
 			folderUid = fuid
 		}
 	}
-	uid, err := client.CreateSecretWithRecordData(uid, folderUid, nrc)
+	uid, err := createRecord(uid, folderUid, nrc, client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -281,7 +282,7 @@ func resourceMembershipUpdate(ctx context.Context, d *schema.ResourceData, m int
 	}
 
 	secret.RawJson = core.DictToJson(secret.RecordDict)
-	if err := client.Save(secret); err != nil {
+	if err := saveRecord(secret, client); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -290,20 +291,32 @@ func resourceMembershipUpdate(ctx context.Context, d *schema.ResourceData, m int
 }
 
 func resourceMembershipDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	provider := m.(providerMeta)
+	client := *provider.client
 	var diags diag.Diagnostics
-	// provider := m.(providerMeta)
-	// client := *provider.client
 
-	// uid := strings.TrimSpace(d.Get("uid").(string))
-	// if uid == "" {
-	// 	return diag.Errorf("'uid' is required to delete existing resource")
-	// }
+	uid := strings.TrimSpace(d.Get("uid").(string))
+	if uid == "" {
+		return diag.Errorf("'uid' is required to delete existing resource")
+	}
 
-	// if err := client.DeleteSecret(uid); err != nil && !strings.HasPrefix(err.Error(), "record not found") {
-	// 	return diag.FromErr(err)
-	// }
-	// // NB! Do not return an error if resource already deleted by the vault/app
-	// // This allows users to manually delete resources without breaking Terraform.
+	if err := deleteRecord(uid, client); err != nil {
+		if strings.HasSuffix(err.Error(), "unexpected status: ''") {
+			// record UID no longer exists - probably deleted externally
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  fmt.Sprintf("Record UID: %s not found - probably already deleted (externally)", uid),
+				Detail: fmt.Sprintf("Delete record UID: %s returned empty status."+
+					" That usually means the record doesn't exist -"+
+					" either already deleted (externally),"+
+					" or no longer shared to the corresponding KSM Application.", uid),
+			})
+		} else {
+			return diag.FromErr(err)
+		}
+	}
+	// NB! Do not return an error if resource already deleted by the vault/app
+	// This allows users to manually delete resources without breaking Terraform.
 	d.SetId("")
 	return diags
 }

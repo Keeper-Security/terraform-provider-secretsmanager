@@ -143,7 +143,6 @@ func TestAccResourceDriverLicense_update(t *testing.T) {
 	})
 }
 
-/*
 func TestAccResourceDriverLicense_deleteDetection(t *testing.T) {
 	secretType := "driverLicense"
 	secretFolderUid := testAcc.getTestFolder()
@@ -173,8 +172,9 @@ func TestAccResourceDriverLicense_deleteDetection(t *testing.T) {
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
 					client := *testAccProvider.Meta().(providerMeta).client
-					err := client.Delete(secretUid)
-					assert.OK(t, err)
+					if err := deleteRecord(secretUid, client); err != nil {
+						t.Fail()
+					}
 				},
 				Config:             config,
 				PlanOnly:           true,
@@ -183,7 +183,6 @@ func TestAccResourceDriverLicense_deleteDetection(t *testing.T) {
 		},
 	})
 }
-*/
 
 func TestAccResourceDriverLicense_import(t *testing.T) {
 	secretType := "driverLicense"
