@@ -153,7 +153,6 @@ func TestAccResourceLogin_generate(t *testing.T) {
 	})
 }
 
-/*
 func TestAccResourceLogin_deleteDetection(t *testing.T) {
 	secretType := "login"
 	secretFolderUid := testAcc.getTestFolder()
@@ -183,8 +182,9 @@ func TestAccResourceLogin_deleteDetection(t *testing.T) {
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
 					client := *testAccProvider.Meta().(providerMeta).client
-					err := client.Delete(secretUid)
-					assert.OK(t, err)
+					if err := deleteRecord(secretUid, client); err != nil {
+						t.Fail()
+					}
 				},
 				Config:             config,
 				PlanOnly:           true,
@@ -193,7 +193,6 @@ func TestAccResourceLogin_deleteDetection(t *testing.T) {
 		},
 	})
 }
-*/
 
 func TestAccResourceLogin_import(t *testing.T) {
 	secretType := "login"

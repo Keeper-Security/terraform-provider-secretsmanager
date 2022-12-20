@@ -140,7 +140,6 @@ func TestAccResourceMembership_update(t *testing.T) {
 	})
 }
 
-/*
 func TestAccResourceMembership_deleteDetection(t *testing.T) {
 	secretType := "membership"
 	secretFolderUid := testAcc.getTestFolder()
@@ -170,8 +169,9 @@ func TestAccResourceMembership_deleteDetection(t *testing.T) {
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
 					client := *testAccProvider.Meta().(providerMeta).client
-					err := client.Delete(secretUid)
-					assert.OK(t, err)
+					if err := deleteRecord(secretUid, client); err != nil {
+						t.Fail()
+					}
 				},
 				Config:             config,
 				PlanOnly:           true,
@@ -180,7 +180,6 @@ func TestAccResourceMembership_deleteDetection(t *testing.T) {
 		},
 	})
 }
-*/
 
 func TestAccResourceMembership_import(t *testing.T) {
 	secretType := "membership"
