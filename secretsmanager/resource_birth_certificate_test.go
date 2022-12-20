@@ -20,10 +20,6 @@ func TestAccResourceBirthCertificate_create(t *testing.T) {
 	secretTitle += "_resource_create"
 
 	config := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
-
 		resource "secretsmanager_birth_certificate" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
@@ -46,7 +42,7 @@ func TestAccResourceBirthCertificate_create(t *testing.T) {
 				value = 21651186276
 			}
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
 	resourceName := fmt.Sprintf("secretsmanager_birth_certificate.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
@@ -78,28 +74,22 @@ func TestAccResourceBirthCertificate_update(t *testing.T) {
 	secretTitle2 := secretTitle + "2"
 
 	configInit := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
 		resource "secretsmanager_birth_certificate" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
 	configUpdate := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
 		resource "secretsmanager_birth_certificate" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle2)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle2)
 
 	resourceName := fmt.Sprintf("secretsmanager_birth_certificate.%v", secretTitle)
 
@@ -147,15 +137,12 @@ func TestAccResourceBirthCertificate_deleteDetection(t *testing.T) {
 	secretTitle += "_resource_delete"
 
 	config := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
 		resource "secretsmanager_birth_certificate" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
 
 	resource.Test(t, resource.TestCase{
 		Providers: testAccProviders,
@@ -191,17 +178,13 @@ func TestAccResourceBirthCertificate_import(t *testing.T) {
 	secretTitle += "_resource_import"
 
 	config := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
-
 		resource "secretsmanager_birth_certificate" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
 	resourceName := fmt.Sprintf("secretsmanager_birth_certificate.%v", secretTitle)
 
