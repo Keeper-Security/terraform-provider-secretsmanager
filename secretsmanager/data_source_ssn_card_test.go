@@ -15,15 +15,11 @@ func TestAccDataSourceSsnCard(t *testing.T) {
 	}
 
 	config := fmt.Sprintf(`
-		provider "secretsmanager" {
-			credential = "%v"
-		}
-
 		data "secretsmanager_ssn_card" "%v" {
 			path = "%v"
 			title = "%v"
 		}
-	`, testAcc.credential, secretTitle, secretUid, secretTitle)
+	`, secretTitle, secretUid, secretTitle)
 
 	resource.Test(t, resource.TestCase{
 		Providers: testAccProviders,
