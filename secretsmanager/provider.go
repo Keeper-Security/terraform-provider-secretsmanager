@@ -723,6 +723,74 @@ func getRecord(path string, title string, client core.SecretsManager) (secret *c
 	}
 }
 
+func createRecord(recordUid string, folderUid string, record *core.RecordCreate, client core.SecretsManager) (uid string, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - createRecord: %v", r)
+			}
+		}
+	}()
+
+	ruid, err := client.CreateSecretWithRecordData(recordUid, folderUid, record)
+	return ruid, err
+}
+
+func saveRecord(record *core.Record, client core.SecretsManager) (e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - saveRecord: %v", r)
+			}
+		}
+	}()
+
+	err := client.Save(record)
+	return err
+}
+
+func deleteRecord(recordUid string, client core.SecretsManager) (e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - deleteRecord: %v", r)
+			}
+		}
+	}()
+
+	statuses, err := client.DeleteSecrets([]string{recordUid})
+	if err != nil {
+		return err
+	}
+
+	status := ""
+	if len(statuses) > 0 {
+		if recordStatus, found := statuses[recordUid]; found {
+			status = recordStatus
+		}
+	}
+	if strings.ToLower(status) != "ok" {
+		return fmt.Errorf("error in provider - deleteRecord (UID: %s) returned unexpected status: '%s'", recordUid, status)
+	}
+
+	return nil
+}
+
 /*
 // deprecated - use NewRecordCreate
 func getTemplateRecord(folderUid string, recordType string, templateTitle string, client core.SecretsManager) (secret *core.Record, e error) {

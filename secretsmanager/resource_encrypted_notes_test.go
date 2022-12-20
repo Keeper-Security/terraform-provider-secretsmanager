@@ -121,7 +121,6 @@ func TestAccResourceEncryptedNotes_update(t *testing.T) {
 	})
 }
 
-/*
 func TestAccResourceEncryptedNotes_deleteDetection(t *testing.T) {
 	secretType := "encryptedNotes"
 	secretFolderUid := testAcc.getTestFolder()
@@ -151,8 +150,9 @@ func TestAccResourceEncryptedNotes_deleteDetection(t *testing.T) {
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
 					client := *testAccProvider.Meta().(providerMeta).client
-					err := client.Delete(secretUid)
-					assert.OK(t, err)
+					if err := deleteRecord(secretUid, client); err != nil {
+						t.Fail()
+					}
 				},
 				Config:             config,
 				PlanOnly:           true,
@@ -161,7 +161,6 @@ func TestAccResourceEncryptedNotes_deleteDetection(t *testing.T) {
 		},
 	})
 }
-*/
 
 func TestAccResourceEncryptedNotes_import(t *testing.T) {
 	secretType := "encryptedNotes"
