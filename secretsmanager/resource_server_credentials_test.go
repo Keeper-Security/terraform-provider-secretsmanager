@@ -139,7 +139,6 @@ func TestAccResourceServerCredentials_update(t *testing.T) {
 	})
 }
 
-/*
 func TestAccResourceServerCredentials_deleteDetection(t *testing.T) {
 	secretType := "serverCredentials"
 	secretFolderUid := testAcc.getTestFolder()
@@ -169,8 +168,9 @@ func TestAccResourceServerCredentials_deleteDetection(t *testing.T) {
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
 					client := *testAccProvider.Meta().(providerMeta).client
-					err := client.Delete(secretUid)
-					assert.OK(t, err)
+					if err := deleteRecord(secretUid, client); err != nil {
+						t.Fail()
+					}
 				},
 				Config:             config,
 				PlanOnly:           true,
@@ -179,7 +179,6 @@ func TestAccResourceServerCredentials_deleteDetection(t *testing.T) {
 		},
 	})
 }
-*/
 
 func TestAccResourceServerCredentials_import(t *testing.T) {
 	secretType := "serverCredentials"
