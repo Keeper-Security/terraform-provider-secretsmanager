@@ -708,7 +708,7 @@ func getRecord(path string, title string, client core.SecretsManager) (secret *c
 			return nil, fmt.Errorf("record not found - title: %s", title)
 		}
 		return secret, nil
-	} else {
+	} else { // find by UID
 		secrets, err := client.GetSecrets([]string{path})
 		if err != nil {
 			return nil, err
@@ -717,7 +717,18 @@ func getRecord(path string, title string, client core.SecretsManager) (secret *c
 			return nil, fmt.Errorf("record not found - UID: %s", path)
 		}
 		if len(secrets) > 1 {
-			return nil, fmt.Errorf("expected 1 record - found %d records for UID: %s", len(secrets), path)
+			// linked records a.k.a. shortcuts:
+			// vault does not allow duplicate UIDs but we can get an UID multiple times
+			// if the record is linked across multiple shared folders all shared to the same KSM App
+			dupes := 0
+			for i := range secrets {
+				if secrets[0].Uid == secrets[i].Uid {
+					dupes++
+				}
+			}
+			if len(secrets) != dupes {
+				return nil, fmt.Errorf("expected 1 record - found %d records for UID: %s", len(secrets), path)
+			}
 		}
 		return secrets[0], nil
 	}
