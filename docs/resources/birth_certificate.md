@@ -8,7 +8,7 @@ Use this resource to access secrets of type `birthCertificate` stored in Keeper 
 
 - **birth_date** (Block List, Max: 1) Birth date field data. (see [below for nested schema](#nestedblock--birth_date))
 - **file_ref** (Block List, Max: 1) FileRef field data. (see [below for nested schema](#nestedblock--file_ref))
-- **folder_uid** (String) The folder UID where the secret is stored. The shared folder must be non empty.
+- **folder_uid** (String) The folder UID where the secret is stored. The parent shared folder must be non empty.
 - **id** (String) The ID of this resource.
 - **name** (Block List, Max: 1) Name field data. (see [below for nested schema](#nestedblock--name))
 - **notes** (String) The secret notes.

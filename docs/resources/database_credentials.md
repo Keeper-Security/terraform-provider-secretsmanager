@@ -8,7 +8,7 @@ Use this resource to access secrets of type `databaseCredentials` stored in Keep
 
 - **db_type** (Block List, Max: 1) Text field data. (see [below for nested schema](#nestedblock--db_type))
 - **file_ref** (Block List, Max: 1) FileRef field data. (see [below for nested schema](#nestedblock--file_ref))
-- **folder_uid** (String) The folder UID where the secret is stored. The shared folder must be non empty.
+- **folder_uid** (String) The folder UID where the secret is stored. The parent shared folder must be non empty.
 - **host** (Block List, Max: 1) Host field data. (see [below for nested schema](#nestedblock--host))
 - **id** (String) The ID of this resource.
 - **login** (Block List, Max: 1) Login field data. (see [below for nested schema](#nestedblock--login))

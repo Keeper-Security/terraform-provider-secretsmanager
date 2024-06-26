@@ -7,7 +7,7 @@ Use this resource to access secrets of type `sshKeys` stored in Keeper Vault
 ### Optional
 
 - **file_ref** (Block List, Max: 1) FileRef field data. (see [below for nested schema](#nestedblock--file_ref))
-- **folder_uid** (String) The folder UID where the secret is stored. The shared folder must be non empty.
+- **folder_uid** (String) The folder UID where the secret is stored. The parent shared folder must be non empty.
 - **host** (Block List, Max: 1) Host field data. (see [below for nested schema](#nestedblock--host))
 - **id** (String) The ID of this resource.
 - **key_pair** (Block List, Max: 1) Key pair field data. (see [below for nested schema](#nestedblock--key_pair))

@@ -8,7 +8,7 @@ Use this resource to access secrets of type `encryptedNotes` stored in Keeper Va
 
 - **date** (Block List, Max: 1) Date field data. (see [below for nested schema](#nestedblock--date))
 - **file_ref** (Block List, Max: 1) FileRef field data. (see [below for nested schema](#nestedblock--file_ref))
-- **folder_uid** (String) The folder UID where the secret is stored. The shared folder must be non empty.
+- **folder_uid** (String) The folder UID where the secret is stored. The parent shared folder must be non empty.
 - **id** (String) The ID of this resource.
 - **note** (Block List, Max: 1) Secure note field data. (see [below for nested schema](#nestedblock--note))
 - **notes** (String) The secret notes.

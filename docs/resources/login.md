@@ -7,7 +7,7 @@ Use this resource to access secrets of type `login` stored in Keeper Vault
 ### Optional
 
 - **file_ref** (Block List, Max: 1) FileRef field data. (see [below for nested schema](#nestedblock--file_ref))
-- **folder_uid** (String) The folder UID where the secret is stored. The shared folder must be non empty.
+- **folder_uid** (String) The folder UID where the secret is stored. The parent shared folder must be non empty.
 - **id** (String) The ID of this resource.
 - **login** (Block List, Max: 1) Login field data. (see [below for nested schema](#nestedblock--login))
 - **notes** (String) The secret notes.

@@ -708,7 +708,7 @@ func getRecord(path string, title string, client core.SecretsManager) (secret *c
 			return nil, fmt.Errorf("record not found - title: %s", title)
 		}
 		return secret, nil
-	} else {
+	} else { // find by UID
 		secrets, err := client.GetSecrets([]string{path})
 		if err != nil {
 			return nil, err
@@ -717,7 +717,18 @@ func getRecord(path string, title string, client core.SecretsManager) (secret *c
 			return nil, fmt.Errorf("record not found - UID: %s", path)
 		}
 		if len(secrets) > 1 {
-			return nil, fmt.Errorf("expected 1 record - found %d records for UID: %s", len(secrets), path)
+			// linked records a.k.a. shortcuts:
+			// vault does not allow duplicate UIDs but we can get an UID multiple times
+			// if the record is linked across multiple shared folders all shared to the same KSM App
+			dupes := 0
+			for i := range secrets {
+				if secrets[0].Uid == secrets[i].Uid {
+					dupes++
+				}
+			}
+			if len(secrets) != dupes {
+				return nil, fmt.Errorf("expected 1 record - found %d records for UID: %s", len(secrets), path)
+			}
 		}
 		return secrets[0], nil
 	}
@@ -737,7 +748,11 @@ func createRecord(recordUid string, folderUid string, record *core.RecordCreate,
 		}
 	}()
 
-	ruid, err := client.CreateSecretWithRecordData(recordUid, folderUid, record)
+	co, err := buildCreateOptions(folderUid, client, nil)
+	if err != nil {
+		return "", err
+	}
+	ruid, err := client.CreateSecretWithRecordDataUidAndOptions(recordUid, co, record, nil)
 	return ruid, err
 }
 
@@ -885,6 +900,90 @@ func getTemplateFolder(folderUid string, client core.SecretsManager) (fuid strin
 	}
 
 	return fuid, e
+}
+
+// getSharedFolder tries to find closest parent shared folder
+func getSharedFolder(folderUid string, client core.SecretsManager, folders []*core.KeeperFolder) (fuid string, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			fuid = ""
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - getSharedFolder: %v", r)
+			}
+		}
+	}()
+
+	folderUid = strings.TrimSpace(folderUid)
+	if len(folders) == 0 {
+		if folders, e = client.GetFolders(); e != nil {
+			return "", e
+		}
+	}
+
+	fldr := struct {
+		ParentUid string
+		FolderUid string
+	}{
+		ParentUid: "",
+		FolderUid: "",
+	}
+	// initial lookup
+	for _, f := range folders {
+		if f.FolderUid == folderUid {
+			fldr.ParentUid = f.ParentUid
+			fldr.FolderUid = f.FolderUid
+			break
+		}
+	}
+	if fldr.FolderUid == "" {
+		return "", fmt.Errorf("folder not found: %v", folderUid)
+	} else if fldr.ParentUid == "" {
+		return fldr.FolderUid, nil
+	}
+	//main lookup
+	for {
+		tmpf := fldr.FolderUid
+		for _, f := range folders {
+			if f.FolderUid == fldr.ParentUid {
+				fldr.ParentUid = f.ParentUid
+				fldr.FolderUid = f.FolderUid
+				break
+			}
+		}
+		if fldr.ParentUid == "" || tmpf == fldr.FolderUid {
+			break
+		}
+	}
+	if fldr.ParentUid == "" {
+		return fldr.FolderUid, nil
+	} else {
+		return "", fmt.Errorf("unable to find parent folder for: %v, lookup stopped at: %v", folderUid, fldr.ParentUid)
+	}
+}
+
+// buildCreateOptions finds parent shared folder and returns CreateOptions
+func buildCreateOptions(folderUid string, client core.SecretsManager, folders []*core.KeeperFolder) (co *core.CreateOptions, e error) {
+	if len(folders) == 0 {
+		if folders, e = client.GetFolders(); e != nil {
+			return nil, e
+		}
+	}
+
+	fuid, err := getSharedFolder(folderUid, client, folders)
+	if err != nil {
+		return nil, err
+	}
+
+	copt := core.CreateOptions{FolderUid: fuid, SubFolderUid: folderUid}
+	if fuid == folderUid {
+		copt.SubFolderUid = ""
+	}
+	return &copt, nil
 }
 
 // getStringListData splits a string into list using the separator and skipping empty parts
