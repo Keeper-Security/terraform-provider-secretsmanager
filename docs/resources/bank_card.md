@@ -9,7 +9,7 @@ Use this resource to access secrets of type `bankCard` stored in Keeper Vault
 - **address_ref** (Block List, Max: 1) AddressRef field data. (see [below for nested schema](#nestedblock--address_ref))
 - **cardholder_name** (Block List, Max: 1) Text field data. (see [below for nested schema](#nestedblock--cardholder_name))
 - **file_ref** (Block List, Max: 1) FileRef field data. (see [below for nested schema](#nestedblock--file_ref))
-- **folder_uid** (String) The folder UID where the secret is stored. The shared folder must be non empty.
+- **folder_uid** (String) The folder UID where the secret is stored. The parent shared folder must be non empty.
 - **id** (String) The ID of this resource.
 - **notes** (String) The secret notes.
 - **payment_card** (Block List, Max: 1) Payment card field data. (see [below for nested schema](#nestedblock--payment_card))
