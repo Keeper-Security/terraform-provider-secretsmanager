@@ -8,7 +8,7 @@ Use this resource to access secrets of type `address` stored in Keeper Vault
 
 - **address** (Block List, Max: 1) Address field data. (see [below for nested schema](#nestedblock--address))
 - **file_ref** (Block List, Max: 1) FileRef field data. (see [below for nested schema](#nestedblock--file_ref))
-- **folder_uid** (String) The folder UID where the secret is stored. The shared folder must be non empty.
+- **folder_uid** (String) The folder UID where the secret is stored. The parent shared folder must be non empty.
 - **notes** (String) The secret notes.
 - **title** (String) The secret title.
 - **uid** (String) The UID of the new secret (using RFC4648 URL and Filename Safe Alphabet).

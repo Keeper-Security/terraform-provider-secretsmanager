@@ -9,7 +9,7 @@ Use this resource to access secrets of type `softwareLicense` stored in Keeper V
 - **activation_date** (Block List, Max: 1) Date field data. (see [below for nested schema](#nestedblock--activation_date))
 - **expiration_date** (Block List, Max: 1) Expiration date field data. (see [below for nested schema](#nestedblock--expiration_date))
 - **file_ref** (Block List, Max: 1) FileRef field data. (see [below for nested schema](#nestedblock--file_ref))
-- **folder_uid** (String) The folder UID where the secret is stored. The shared folder must be non empty.
+- **folder_uid** (String) The folder UID where the secret is stored. The parent shared folder must be non empty.
 - **id** (String) The ID of this resource.
 - **license_number** (Block List, Max: 1) License number field data. (see [below for nested schema](#nestedblock--license_number))
 - **notes** (String) The secret notes.

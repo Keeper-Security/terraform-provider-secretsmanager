@@ -26,7 +26,7 @@ func resourceSshKeys() *schema.Resource {
 				Computed:     true,
 				Optional:     true,
 				AtLeastOneOf: []string{"folder_uid", "uid"},
-				Description:  "The folder UID where the secret is stored. The shared folder must be non empty.",
+				Description:  "The folder UID where the secret is stored. The parent shared folder must be non empty.",
 			},
 			"uid": {
 				Type:         schema.TypeString,
@@ -205,9 +205,15 @@ func resourceSshKeysRead(ctx context.Context, d *schema.ResourceData, m interfac
 			return diag.FromErr(err)
 		}
 	}
-	if err = d.Set("folder_uid", secret.FolderUid()); err != nil {
-		return diag.FromErr(err)
+	fuid := secret.InnerFolderUid() // in subfolder
+	if fuid == "" {                 // directly in shared folder
+		fuid = secret.FolderUid()
 	}
+	if fuid != "" {
+		if err = d.Set("folder_uid", fuid); err != nil {
+			return diag.FromErr(err)
+		}
+	} // else - directly shared to the KSM App (not through shared folder)
 	if err = d.Set("type", recordType); err != nil {
 		return diag.FromErr(err)
 	}
