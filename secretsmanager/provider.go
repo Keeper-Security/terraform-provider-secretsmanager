@@ -83,7 +83,11 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	config := core.NewMemoryKeyValueStorage(creds)
 	if config.Get(core.KEY_APP_KEY) == "" || config.Get(core.KEY_CLIENT_ID) == "" || config.Get(core.KEY_PRIVATE_KEY) == "" {
-		return nil, diag.Errorf("bad credential: %s", creds)
+		maskedCred := strings.Repeat("*", min(100, len(creds)))
+		if len(maskedCred) >= 80 {
+			maskedCred += "..."
+		}
+		return nil, diag.Errorf("bad credential: %s", maskedCred)
 	}
 
 	client := core.NewSecretsManager(&core.ClientOptions{Config: config})
