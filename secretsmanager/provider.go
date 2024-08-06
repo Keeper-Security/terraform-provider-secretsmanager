@@ -83,7 +83,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	config := core.NewMemoryKeyValueStorage(creds)
 	if config.Get(core.KEY_APP_KEY) == "" || config.Get(core.KEY_CLIENT_ID) == "" || config.Get(core.KEY_PRIVATE_KEY) == "" {
-		return nil, diag.Errorf("bad credential - valid base64 encoded KSM config is required (do not use one time token)")
+		return nil, diag.Errorf("Invalid credentials - please provide a valid base64 encoded KSM config. One-time tokens are not allowed.")
 	}
 
 	client := core.NewSecretsManager(&core.ClientOptions{Config: config})
