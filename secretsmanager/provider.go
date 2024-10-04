@@ -39,7 +39,6 @@ func Provider() *schema.Provider {
 			"secretsmanager_encrypted_notes":      dataSourceEncryptedNotes(),
 			"secretsmanager_field":                dataSourceField(),
 			"secretsmanager_file":                 dataSourceFile(),
-			"secretsmanager_general":              dataSourceGeneral(),
 			"secretsmanager_health_insurance":     dataSourceHealthInsurance(),
 			"secretsmanager_login":                dataSourceLogin(),
 			"secretsmanager_membership":           dataSourceMembership(),
@@ -130,7 +129,7 @@ var mapSchemaToRecordFieldName map[string]string = map[string]string{
 	"cardholder_name":       "text",          // bankCard
 	"db_type":               "text",          // databaseCredentials
 	"driver_license_number": "accountNumber", // driverLicense
-	"totp":                  "oneTimeCode",   // login/general, bankAccount
+	"totp":                  "oneTimeCode",   // login, bankAccount
 	"passport_number":       "accountNumber", // passport
 	"date_issued":           "date",          // passport
 	"activation_date":       "date",          // softwareLicense
