@@ -52,7 +52,6 @@ func init() {
 			"encryptedNotes":      {"uid": "*", "title": "tf_acc_test_encrypted_notes"},
 			"field":               {"uid": "*/field/login", "title": "tf_acc_test_field"},
 			"file":                {"uid": "*", "title": "tf_acc_test_file"},
-			"general":             {"uid": "*", "title": "tf_acc_test_general"},
 			"healthInsurance":     {"uid": "*", "title": "tf_acc_test_health_insurance"},
 			"login":               {"uid": "*", "title": "tf_acc_test_login"},
 			"membership":          {"uid": "*", "title": "tf_acc_test_membership"},
