@@ -9,6 +9,84 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func schemaGenericField() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeList,
+		Optional:    true,
+		Description: "Generic field data.",
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"type": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Description: "Field type.",
+				},
+				"label": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Description: "Field label.",
+				},
+				"required": {
+					Type:        schema.TypeBool,
+					Computed:    true,
+					Description: "Required flag.",
+				},
+				"privacy_screen": {
+					Type:        schema.TypeBool,
+					Computed:    true,
+					Description: "Privacy screen flag.",
+				},
+				"enforce_generation": {
+					Type:        schema.TypeBool,
+					Computed:    true,
+					Description: "Enforce generation flag.",
+				},
+				"complexity": {
+					Type:        schema.TypeList,
+					Optional:    true,
+					MaxItems:    1,
+					Description: "Password complexity.",
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"length": {
+								Type:        schema.TypeInt,
+								Optional:    true,
+								Description: "Password length.",
+							},
+							"caps": {
+								Type:        schema.TypeInt,
+								Optional:    true,
+								Description: "Number of uppercase characters.",
+							},
+							"lowercase": {
+								Type:        schema.TypeInt,
+								Optional:    true,
+								Description: "Number of lowercase characters.",
+							},
+							"digits": {
+								Type:        schema.TypeInt,
+								Optional:    true,
+								Description: "Number of digits.",
+							},
+							"special": {
+								Type:        schema.TypeInt,
+								Optional:    true,
+								Description: "Number of special characters.",
+							},
+						},
+					},
+				},
+				"value": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Sensitive:   true,
+					Description: "Field value.",
+				},
+			},
+		},
+	}
+}
+
 func schemaAccountNumberField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,

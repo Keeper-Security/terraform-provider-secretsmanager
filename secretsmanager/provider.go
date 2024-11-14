@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -44,6 +45,7 @@ func Provider() *schema.Provider {
 			"secretsmanager_membership":           dataSourceMembership(),
 			"secretsmanager_passport":             dataSourcePassport(),
 			"secretsmanager_photo":                dataSourcePhoto(),
+			"secretsmanager_record":               dataSourceRecord(),
 			"secretsmanager_server_credentials":   dataSourceServerCredentials(),
 			"secretsmanager_software_license":     dataSourceSoftwareLicense(),
 			"secretsmanager_ssh_keys":             dataSourceSshKeys(),
@@ -170,6 +172,92 @@ var mapFieldTypeToFieldValueType map[string]string = map[string]string{
 	"url":              "url", // Multiple: optional
 }
 */
+
+func getFieldItemsData(recordDict map[string]interface{}, section string) []interface{} {
+	sections := []string{"fields", "custom"}
+	if len(recordDict) == 0 || !slices.Contains(sections, section) {
+		return nil
+	}
+
+	iFlds, found := recordDict[section]
+	if !found {
+		return nil
+	}
+
+	fMap := []map[string]interface{}{}
+	if sFlds, ok := iFlds.([]interface{}); ok && len(sFlds) > 0 {
+		for _, item := range sFlds {
+			if mFld, ok := item.(map[string]interface{}); ok {
+				fMap = append(fMap, mFld)
+			}
+		}
+	}
+
+	fis := []interface{}{}
+	for _, item := range fMap {
+		fi := map[string]interface{}{}
+		if v, found := item["type"]; found {
+			fi["type"] = fmt.Sprintf("%v", v)
+		}
+		if v, found := item["label"]; found {
+			fi["label"] = fmt.Sprintf("%v", v)
+		}
+		if v, found := item["required"]; found {
+			if strings.ToLower(fmt.Sprintf("%v", v)) == "true" {
+				fi["required"] = true
+			}
+		}
+		if v, found := item["privacyScreen"]; found {
+			if strings.ToLower(fmt.Sprintf("%v", v)) == "true" {
+				fi["privacy_screen"] = true
+			}
+		}
+		if v, found := item["enforceGeneration"]; found {
+			if strings.ToLower(fmt.Sprintf("%v", v)) == "true" {
+				fi["enforce_generation"] = true
+			}
+		}
+
+		if v, found := item["complexity"]; found {
+			if sVals, ok := v.(map[string]interface{}); ok && len(sVals) > 0 {
+				fi["complexity"] = []interface{}{sVals}
+			}
+		}
+
+		v, found := item["value"]
+		if found && strings.ToLower(fi["type"].(string)) == "date" {
+			// TF timestamp() uses RFC3339 we truncate to date parts only
+			if sVals, ok := v.([]interface{}); ok && len(sVals) > 0 {
+				dates := []interface{}{}
+				for _, date := range sVals {
+					if d, success := date.(float64); success {
+						value := time.Unix(int64(d/1000), 0).Format("2006-01-02") // date only
+						dates = append(dates, value)
+					}
+				}
+				if len(dates) > 0 {
+					v = dates
+				}
+			}
+		}
+
+		if found && v != nil {
+			if sVals, ok := v.([]interface{}); ok {
+				if len(sVals) == 1 {
+					fi["value"] = fmt.Sprintf("%+v", sVals[0])
+				} else if len(sVals) > 1 {
+					fi["value"] = fmt.Sprintf("%+v", v)
+				}
+			} else {
+				fi["value"] = fmt.Sprintf("%+v", v)
+			}
+		}
+
+		fis = append(fis, fi)
+	}
+
+	return fis
+}
 
 func getTotpCode(totpUrl string) (code string, seconds int, err error) {
 	if totp, err := core.GetTotpCode(totpUrl); err == nil {
@@ -961,7 +1049,7 @@ func getSharedFolder(folderUid string, client core.SecretsManager, folders []*co
 	if fldr.ParentUid == "" {
 		return fldr.FolderUid, nil
 	} else {
-		return "", fmt.Errorf("unable to find parent folder for: %v, lookup stopped at: %v", folderUid, fldr.ParentUid)
+		return "", fmt.Errorf("unable to find parent shared folder for: %v, lookup stopped at: %v", folderUid, fldr.ParentUid)
 	}
 }
 
@@ -1008,6 +1096,30 @@ func GetStringListData(data string, separator string) []interface{} {
 	return items
 }
 
+// GetStringList parses resource data from schema.TypeList into []string
+func GetStringList(data interface{}) ([]string, error) {
+	if data == nil {
+		return nil, nil
+	}
+
+	itemsRaw, ok := data.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("GetStringList expects data to be []interface{}, got: %T", data)
+	}
+
+	items := make([]string, len(itemsRaw))
+	for i, raw := range itemsRaw {
+		item, ok := raw.(string)
+		if !ok {
+			return items, fmt.Errorf("GetStringList failed to parse as string item[%v] = %v", i, raw)
+		}
+
+		items[i] = item
+	}
+
+	return items, nil
+}
+
 // converts string to bool, returns default value if conversion fails
 func StrToBoolDef(boolString string, defaultValue bool) bool {
 	if value, err := strconv.ParseBool(boolString); err == nil {
@@ -1039,6 +1151,14 @@ type genericFieldJson struct {
 	Complexity        *core.PasswordComplexity `json:"complexity,omitempty"`
 	Value             interface{}              `json:"value,omitempty"`
 	ValueString       []string
+}
+
+func GetGenericFieldSchemaValueBool(field *genericFieldSchema) (value bool, ok bool) {
+	// for simple field values of type schema.TypeBool
+	if val, ok := field.Value.(bool); ok {
+		return val, true
+	}
+	return false, false
 }
 
 func GetGenericFieldSchemaValueInt64(field *genericFieldSchema) (value int64, ok bool) {
