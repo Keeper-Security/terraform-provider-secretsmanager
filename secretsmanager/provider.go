@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"slices"
 	"strconv"
@@ -173,6 +174,17 @@ var mapFieldTypeToFieldValueType map[string]string = map[string]string{
 }
 */
 
+func toJsonDefault(v interface{}, defaultValue string) string {
+	if v == nil {
+		return defaultValue
+	}
+	content, err := json.Marshal(v)
+	if err != nil {
+		content = []byte(defaultValue)
+	}
+	return string(content)
+}
+
 func getFieldItemsData(recordDict map[string]interface{}, section string) []interface{} {
 	sections := []string{"fields", "custom"}
 	if len(recordDict) == 0 || !slices.Contains(sections, section) {
@@ -242,14 +254,25 @@ func getFieldItemsData(recordDict map[string]interface{}, section string) []inte
 		}
 
 		if found && v != nil {
+			processed := false
 			if sVals, ok := v.([]interface{}); ok {
-				if len(sVals) == 1 {
-					fi["value"] = fmt.Sprintf("%+v", sVals[0])
-				} else if len(sVals) > 1 {
-					fi["value"] = fmt.Sprintf("%+v", v)
+				if len(sVals) == 0 {
+					processed = true // empty value is OK
+				} else if len(sVals) == 1 {
+					switch reflect.TypeOf(sVals[0]).Kind() {
+					case reflect.Slice, reflect.Array: // no-op: processed == false already
+					case reflect.Struct, reflect.Map:
+						processed = true
+						fi["value"] = toJsonDefault(sVals[0], "")
+					default: // bool, int, uint, float, string etc.
+						processed = true
+						fi["value"] = fmt.Sprintf("%+v", sVals[0])
+					}
 				}
-			} else {
-				fi["value"] = fmt.Sprintf("%+v", v)
+				//else if len(sVals) > 1 {processed = false} already
+			}
+			if !processed { // not single or not simple value - print as JSON
+				fi["value"] = toJsonDefault(v, "")
 			}
 		}
 
