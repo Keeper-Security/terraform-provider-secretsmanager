@@ -41,6 +41,8 @@ func Provider() *schema.Provider {
 			"secretsmanager_encrypted_notes":      dataSourceEncryptedNotes(),
 			"secretsmanager_field":                dataSourceField(),
 			"secretsmanager_file":                 dataSourceFile(),
+			"secretsmanager_folder":               dataSourceFolder(),
+			"secretsmanager_folders":              dataSourceFolders(),
 			"secretsmanager_health_insurance":     dataSourceHealthInsurance(),
 			"secretsmanager_login":                dataSourceLogin(),
 			"secretsmanager_membership":           dataSourceMembership(),
@@ -62,6 +64,7 @@ func Provider() *schema.Provider {
 			"secretsmanager_driver_license":       resourceDriverLicense(),
 			"secretsmanager_encrypted_notes":      resourceEncryptedNotes(),
 			"secretsmanager_file":                 resourceFile(),
+			"secretsmanager_folder":               resourceFolder(),
 			"secretsmanager_health_insurance":     resourceHealthInsurance(),
 			"secretsmanager_login":                resourceLogin(),
 			"secretsmanager_membership":           resourceMembership(),
@@ -90,6 +93,22 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	client := core.NewSecretsManager(&core.ClientOptions{Config: config})
 	return providerMeta{client}, diags
+}
+
+func getConfiguredProvider(creds string) (*providerMeta, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	if strings.TrimSpace(creds) == "" {
+		return nil, diag.Errorf("empty credential")
+	}
+
+	config := core.NewMemoryKeyValueStorage(creds)
+	if config.Get(core.KEY_APP_KEY) == "" || config.Get(core.KEY_CLIENT_ID) == "" || config.Get(core.KEY_PRIVATE_KEY) == "" {
+		return nil, diag.Errorf("Invalid credentials - please provide a valid base64 encoded KSM config. One-time tokens are not allowed.")
+	}
+
+	client := core.NewSecretsManager(&core.ClientOptions{Config: config})
+	return &providerMeta{client}, diags
 }
 
 type providerMeta struct {
@@ -911,6 +930,173 @@ func deleteRecord(recordUid string, client core.SecretsManager) (e error) {
 	}
 	if strings.ToLower(status) != "ok" {
 		return fmt.Errorf("error in provider - deleteRecord (UID: %s) returned unexpected status: '%s'", recordUid, status)
+	}
+
+	return nil
+}
+
+// Lookup folders by name or UID where parentFolder (if present) is direct parent folder (name or UID)
+func findFolder(parentFolder, folderUid, folderName string, client core.SecretsManager) (folders []*core.KeeperFolder, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - findSubFolder: %v", r)
+			}
+		}
+	}()
+
+	folders = []*core.KeeperFolder{}
+	allFolders, e := client.GetFolders()
+	if e != nil {
+		return folders, e
+	}
+
+	// lookup parent folder UID
+	parentFolderUid := ""
+	if parentFolder != "" {
+		for _, f := range allFolders {
+			if parentFolder == f.ParentUid {
+				parentFolderUid = parentFolder
+				break
+			} else if parentFolder == f.FolderUid || parentFolder == f.Name {
+				parentFolderUid = f.FolderUid
+				break
+			}
+		}
+		if parentFolderUid == "" {
+			return folders, nil
+		}
+	}
+
+	// lookup by folder name (inside parent folder) - direct children only
+	for _, f := range allFolders {
+		if ((folderUid != "" && folderUid == f.FolderUid) || // && folderName == f.Name) ||
+			(folderUid == "" && (folderName == f.Name || folderName == f.FolderUid))) &&
+			(parentFolderUid == "" || parentFolderUid == f.ParentUid) {
+			folders = append(folders, f)
+		}
+	}
+	return folders, nil
+}
+
+func findSubFolder(parentFolderUid, folderUid, folderName string, client core.SecretsManager) (folders []*core.KeeperFolder, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - findSubFolder: %v", r)
+			}
+		}
+	}()
+
+	folders = []*core.KeeperFolder{}
+	allFolders, e := client.GetFolders()
+	if e != nil {
+		return folders, e
+	}
+
+	// folder UID is unique - direct lookup
+	if folderUid != "" {
+		for _, f := range allFolders {
+			if f.FolderUid == folderUid {
+				return []*core.KeeperFolder{f}, nil
+			}
+		}
+		return []*core.KeeperFolder{}, nil
+	}
+
+	// lookup by folder name inside parent folder (direct children only)
+	for _, f := range allFolders {
+		if f.ParentUid == parentFolderUid && f.Name == folderName {
+			folders = append(folders, f)
+		}
+	}
+	return folders, nil
+}
+
+func createFolder(parentFolder, folderName string, client core.SecretsManager) (FolderUid string, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - createFolder: %v", r)
+			}
+		}
+	}()
+
+	FolderUid = ""
+	folders, err := client.GetFolders()
+	if err != nil {
+		return FolderUid, err
+	}
+	if len(folders) == 0 {
+		return FolderUid, fmt.Errorf("error in provider - createFolder: couldn't find any folders shared to the KSM App")
+	}
+
+	uniq := map[string]struct{}{}
+	for _, fldr := range folders {
+		if fldr.FolderUid == parentFolder || fldr.Name == parentFolder {
+			uniq[fldr.FolderUid] = struct{}{}
+		}
+	}
+	if len(uniq) < 1 {
+		return FolderUid, fmt.Errorf("error in provider - createFolder: couldn't find parent folder '%v'", parentFolder)
+	} else if len(uniq) > 1 {
+		return FolderUid, fmt.Errorf("error in provider - createFolder: multiple folders match parent folder '%v'", parentFolder)
+	}
+	for uid := range uniq {
+		FolderUid = uid
+		break
+	}
+
+	co, err := buildCreateOptions(FolderUid, client, folders)
+	if err != nil {
+		return FolderUid, err
+	}
+	fuid, err := client.CreateFolder(*co, folderName, folders)
+	return fuid, err
+}
+
+func deleteFolder(folderUid string, forceDelete bool, client core.SecretsManager) (e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - deleteFolder: %v", r)
+			}
+		}
+	}()
+
+	statuses, err := client.DeleteFolder([]string{folderUid}, forceDelete)
+	if err != nil {
+		return err
+	}
+
+	status := ""
+	if len(statuses) > 0 {
+		if recordStatus, found := statuses[folderUid]; found {
+			status = recordStatus
+		}
+	}
+	if strings.ToLower(status) != "ok" {
+		return fmt.Errorf("error in provider - deleteFolder (UID: %s) returned unexpected status: '%s'", folderUid, status)
 	}
 
 	return nil
