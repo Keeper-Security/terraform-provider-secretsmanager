@@ -128,6 +128,25 @@ func checkSecretExistsRemotely(uid string) resource.TestCheckFunc {
 	}
 }
 
+func checkFolderExistsRemotely(uid, name string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		client := *testAccProvider.Meta().(providerMeta).client
+
+		folders, err := client.GetFolders()
+		if err != nil {
+			return err
+		}
+
+		for _, f := range folders {
+			if (uid != "" && f.FolderUid == uid) || (name != "" && name == f.Name) {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("resource '%v' doesn't exist remotely", uid)
+	}
+}
+
 func checkSecretResourceState(resourceName string, check func(s *terraform.InstanceState) error) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		resourceState := s.RootModule().Resources[resourceName]

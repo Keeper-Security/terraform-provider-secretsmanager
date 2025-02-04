@@ -189,6 +189,7 @@ func TestAccResourceAddress_import(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
+				// No need to create/delete - Import step takes care of these
 				Config: config,
 			},
 			{
