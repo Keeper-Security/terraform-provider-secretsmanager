@@ -2,6 +2,10 @@ name: "Terraform Provider SBOM Publisher"
 
 on:
   workflow_dispatch:
+    inputs:
+      provider_version:
+        description: 'Terraform Provider Version'
+        required: true
   release:
     types: [published]
 
@@ -17,7 +21,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.24'
           check-latest: true
 
 #      - name: Cleanup unwanted files and directories for scanning
@@ -92,11 +96,18 @@ jobs:
                 search-indexed-archives: true
           EOF
           
-          # Get version from go.mod or use git tag
-          VERSION=$(grep -oP "go [0-9]+\.[0-9]+(\.[0-9]+)?" go.mod | cut -d' ' -f2)
-          if [ -z "$VERSION" ]; then
-            VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          # Set provider version
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Use the version provided in the workflow_dispatch input
+            PROVIDER_VERSION="${{ github.event.inputs.provider_version }}"
+          else
+            # For release events, extract version from the release tag
+            PROVIDER_VERSION="${{ github.ref_name }}"
+            # Remove 'v' prefix if present
+            PROVIDER_VERSION="${PROVIDER_VERSION#v}"
           fi
+          
+          echo "Provider version: ${PROVIDER_VERSION}"
           
           # Debug: show what will be scanned
           echo "Files to be scanned:"
@@ -106,7 +117,7 @@ jobs:
           manifest sbom . \
             --generator=syft \
             --name=terraform-provider-secretsmanager \
-            --version=${VERSION} \
+            --version=${PROVIDER_VERSION} \
             --output=spdx-json \
             --file=sbom.json \
             --api-key=${{ secrets.MANIFEST_TOKEN }} \
