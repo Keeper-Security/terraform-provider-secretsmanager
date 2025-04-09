@@ -97,7 +97,7 @@ jobs:
             --version=${PROVIDER_VERSION} \
             --output=spdx-json \
             --file=sbom.json \
-            --api-key=${{ secrets.MANIFEST_TOKEN }} \
+            --api-key=${{ secrets.MANIFEST_TOKEN || '' }} \
             --publish=true \
             --asset-label=terraform-provider,sbom-generated,golang \
             --generator-config=syft-config.yaml
@@ -150,7 +150,7 @@ jobs:
         id: ksecrets
         uses: Keeper-Security/ksm-action@master
         with:
-          keeper-secret-config: ${{ secrets.KSM_PUBLISHER_CONFIG }}
+          keeper-secret-config: ${{ secrets.KSM_PUBLISHER_CONFIG || '' }}
           secrets: |
             sZ5fnzalziVolGvaVo8oKw/custom_field/PGP_PRIVATE_KEY_BLOCK_-_ASCII-armor_format > GPG_PRIVATE_KEY
             sZ5fnzalziVolGvaVo8oKw/custom_field/Pass_Phrase > GPG_PASSPHRASE
@@ -161,8 +161,14 @@ jobs:
           fetch-depth: 0
           ref: ${{ needs.create-tag.outputs.tag_name }}
 
-      - name: Unshallow
-        run: git fetch --prune --unshallow
+      - name: Fetch git history
+        run: |
+          # Check if it's a shallow repository
+          if git rev-parse --is-shallow-repository | grep -q "true"; then
+            git fetch --prune --unshallow
+          else
+            git fetch --prune
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5
