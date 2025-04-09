@@ -143,7 +143,7 @@ jobs:
   goreleaser:
     name: "Release with GoReleaser"
     needs: create-tag
-    # environment: prod
+    environment: prod
     runs-on: ubuntu-latest
     steps:
       - name: Retrieve secrets from Keeper
