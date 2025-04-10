@@ -91,7 +91,6 @@ Contents of `tf_acc_test.cmd`:
 @cd /tf_acc_test_dir
 @add title=tf_acc_test_field notes=tf_acc_test_field type=login fields.login=tf_acc_test_field
 @add title=tf_acc_test_login notes=tf_acc_test_login type=login
-@add title=tf_acc_test_general notes=tf_acc_test_general type=general
 @add title=tf_acc_test_bank_account notes=tf_acc_test_bank_account type=bankAccount fields.bankAccount.accountNumber=1234
 @add title=tf_acc_test_address notes=tf_acc_test_address type=address
 @add title=tf_acc_test_bank_card notes=tf_acc_test_bank_card type=bankCard

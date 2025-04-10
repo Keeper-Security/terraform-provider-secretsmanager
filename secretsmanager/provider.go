@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -39,12 +41,14 @@ func Provider() *schema.Provider {
 			"secretsmanager_encrypted_notes":      dataSourceEncryptedNotes(),
 			"secretsmanager_field":                dataSourceField(),
 			"secretsmanager_file":                 dataSourceFile(),
-			"secretsmanager_general":              dataSourceGeneral(),
+			"secretsmanager_folder":               dataSourceFolder(),
+			"secretsmanager_folders":              dataSourceFolders(),
 			"secretsmanager_health_insurance":     dataSourceHealthInsurance(),
 			"secretsmanager_login":                dataSourceLogin(),
 			"secretsmanager_membership":           dataSourceMembership(),
 			"secretsmanager_passport":             dataSourcePassport(),
 			"secretsmanager_photo":                dataSourcePhoto(),
+			"secretsmanager_record":               dataSourceRecord(),
 			"secretsmanager_server_credentials":   dataSourceServerCredentials(),
 			"secretsmanager_software_license":     dataSourceSoftwareLicense(),
 			"secretsmanager_ssh_keys":             dataSourceSshKeys(),
@@ -60,6 +64,7 @@ func Provider() *schema.Provider {
 			"secretsmanager_driver_license":       resourceDriverLicense(),
 			"secretsmanager_encrypted_notes":      resourceEncryptedNotes(),
 			"secretsmanager_file":                 resourceFile(),
+			"secretsmanager_folder":               resourceFolder(),
 			"secretsmanager_health_insurance":     resourceHealthInsurance(),
 			"secretsmanager_login":                resourceLogin(),
 			"secretsmanager_membership":           resourceMembership(),
@@ -83,11 +88,27 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	config := core.NewMemoryKeyValueStorage(creds)
 	if config.Get(core.KEY_APP_KEY) == "" || config.Get(core.KEY_CLIENT_ID) == "" || config.Get(core.KEY_PRIVATE_KEY) == "" {
-		return nil, diag.Errorf("bad credential: %s", creds)
+		return nil, diag.Errorf("Invalid credentials - please provide a valid base64 encoded KSM config. One-time tokens are not allowed.")
 	}
 
 	client := core.NewSecretsManager(&core.ClientOptions{Config: config})
 	return providerMeta{client}, diags
+}
+
+func getConfiguredProvider(creds string) (*providerMeta, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	if strings.TrimSpace(creds) == "" {
+		return nil, diag.Errorf("empty credential")
+	}
+
+	config := core.NewMemoryKeyValueStorage(creds)
+	if config.Get(core.KEY_APP_KEY) == "" || config.Get(core.KEY_CLIENT_ID) == "" || config.Get(core.KEY_PRIVATE_KEY) == "" {
+		return nil, diag.Errorf("Invalid credentials - please provide a valid base64 encoded KSM config. One-time tokens are not allowed.")
+	}
+
+	client := core.NewSecretsManager(&core.ClientOptions{Config: config})
+	return &providerMeta{client}, diags
 }
 
 type providerMeta struct {
@@ -130,7 +151,7 @@ var mapSchemaToRecordFieldName map[string]string = map[string]string{
 	"cardholder_name":       "text",          // bankCard
 	"db_type":               "text",          // databaseCredentials
 	"driver_license_number": "accountNumber", // driverLicense
-	"totp":                  "oneTimeCode",   // login/general, bankAccount
+	"totp":                  "oneTimeCode",   // login, bankAccount
 	"passport_number":       "accountNumber", // passport
 	"date_issued":           "date",          // passport
 	"activation_date":       "date",          // softwareLicense
@@ -171,6 +192,114 @@ var mapFieldTypeToFieldValueType map[string]string = map[string]string{
 	"url":              "url", // Multiple: optional
 }
 */
+
+func toJsonDefault(v interface{}, defaultValue string) string {
+	if v == nil {
+		return defaultValue
+	}
+	content, err := json.Marshal(v)
+	if err != nil {
+		content = []byte(defaultValue)
+	}
+	return string(content)
+}
+
+func getFieldItemsData(recordDict map[string]interface{}, section string) []interface{} {
+	sections := []string{"fields", "custom"}
+	if len(recordDict) == 0 || !slices.Contains(sections, section) {
+		return nil
+	}
+
+	iFlds, found := recordDict[section]
+	if !found {
+		return nil
+	}
+
+	fMap := []map[string]interface{}{}
+	if sFlds, ok := iFlds.([]interface{}); ok && len(sFlds) > 0 {
+		for _, item := range sFlds {
+			if mFld, ok := item.(map[string]interface{}); ok {
+				fMap = append(fMap, mFld)
+			}
+		}
+	}
+
+	fis := []interface{}{}
+	for _, item := range fMap {
+		fi := map[string]interface{}{}
+		if v, found := item["type"]; found {
+			fi["type"] = fmt.Sprintf("%v", v)
+		}
+		if v, found := item["label"]; found {
+			fi["label"] = fmt.Sprintf("%v", v)
+		}
+		if v, found := item["required"]; found {
+			if strings.ToLower(fmt.Sprintf("%v", v)) == "true" {
+				fi["required"] = true
+			}
+		}
+		if v, found := item["privacyScreen"]; found {
+			if strings.ToLower(fmt.Sprintf("%v", v)) == "true" {
+				fi["privacy_screen"] = true
+			}
+		}
+		if v, found := item["enforceGeneration"]; found {
+			if strings.ToLower(fmt.Sprintf("%v", v)) == "true" {
+				fi["enforce_generation"] = true
+			}
+		}
+
+		if v, found := item["complexity"]; found {
+			if sVals, ok := v.(map[string]interface{}); ok && len(sVals) > 0 {
+				fi["complexity"] = []interface{}{sVals}
+			}
+		}
+
+		v, found := item["value"]
+		if found && strings.ToLower(fi["type"].(string)) == "date" {
+			// TF timestamp() uses RFC3339 we truncate to date parts only
+			if sVals, ok := v.([]interface{}); ok && len(sVals) > 0 {
+				dates := []interface{}{}
+				for _, date := range sVals {
+					if d, success := date.(float64); success {
+						value := time.Unix(int64(d/1000), 0).Format("2006-01-02") // date only
+						dates = append(dates, value)
+					}
+				}
+				if len(dates) > 0 {
+					v = dates
+				}
+			}
+		}
+
+		if found && v != nil {
+			processed := false
+			if sVals, ok := v.([]interface{}); ok {
+				if len(sVals) == 0 {
+					processed = true // empty value is OK
+				} else if len(sVals) == 1 {
+					switch reflect.TypeOf(sVals[0]).Kind() {
+					case reflect.Slice, reflect.Array: // no-op: processed == false already
+					case reflect.Struct, reflect.Map:
+						processed = true
+						fi["value"] = toJsonDefault(sVals[0], "")
+					default: // bool, int, uint, float, string etc.
+						processed = true
+						fi["value"] = fmt.Sprintf("%+v", sVals[0])
+					}
+				}
+				//else if len(sVals) > 1 {processed = false} already
+			}
+			if !processed { // not single or not simple value - print as JSON
+				fi["value"] = toJsonDefault(v, "")
+			}
+		}
+
+		fis = append(fis, fi)
+	}
+
+	return fis
+}
 
 func getTotpCode(totpUrl string) (code string, seconds int, err error) {
 	if totp, err := core.GetTotpCode(totpUrl); err == nil {
@@ -806,6 +935,173 @@ func deleteRecord(recordUid string, client core.SecretsManager) (e error) {
 	return nil
 }
 
+// Lookup folders by name or UID where parentFolder (if present) is direct parent folder (name or UID)
+func findFolder(parentFolder, folderUid, folderName string, client core.SecretsManager) (folders []*core.KeeperFolder, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - findSubFolder: %v", r)
+			}
+		}
+	}()
+
+	folders = []*core.KeeperFolder{}
+	allFolders, e := client.GetFolders()
+	if e != nil {
+		return folders, e
+	}
+
+	// lookup parent folder UID
+	parentFolderUid := ""
+	if parentFolder != "" {
+		for _, f := range allFolders {
+			if parentFolder == f.ParentUid {
+				parentFolderUid = parentFolder
+				break
+			} else if parentFolder == f.FolderUid || parentFolder == f.Name {
+				parentFolderUid = f.FolderUid
+				break
+			}
+		}
+		if parentFolderUid == "" {
+			return folders, nil
+		}
+	}
+
+	// lookup by folder name (inside parent folder) - direct children only
+	for _, f := range allFolders {
+		if ((folderUid != "" && folderUid == f.FolderUid) || // && folderName == f.Name) ||
+			(folderUid == "" && (folderName == f.Name || folderName == f.FolderUid))) &&
+			(parentFolderUid == "" || parentFolderUid == f.ParentUid) {
+			folders = append(folders, f)
+		}
+	}
+	return folders, nil
+}
+
+func findSubFolder(parentFolderUid, folderUid, folderName string, client core.SecretsManager) (folders []*core.KeeperFolder, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - findSubFolder: %v", r)
+			}
+		}
+	}()
+
+	folders = []*core.KeeperFolder{}
+	allFolders, e := client.GetFolders()
+	if e != nil {
+		return folders, e
+	}
+
+	// folder UID is unique - direct lookup
+	if folderUid != "" {
+		for _, f := range allFolders {
+			if f.FolderUid == folderUid {
+				return []*core.KeeperFolder{f}, nil
+			}
+		}
+		return []*core.KeeperFolder{}, nil
+	}
+
+	// lookup by folder name inside parent folder (direct children only)
+	for _, f := range allFolders {
+		if f.ParentUid == parentFolderUid && f.Name == folderName {
+			folders = append(folders, f)
+		}
+	}
+	return folders, nil
+}
+
+func createFolder(parentFolder, folderName string, client core.SecretsManager) (FolderUid string, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - createFolder: %v", r)
+			}
+		}
+	}()
+
+	FolderUid = ""
+	folders, err := client.GetFolders()
+	if err != nil {
+		return FolderUid, err
+	}
+	if len(folders) == 0 {
+		return FolderUid, fmt.Errorf("error in provider - createFolder: couldn't find any folders shared to the KSM App")
+	}
+
+	uniq := map[string]struct{}{}
+	for _, fldr := range folders {
+		if fldr.FolderUid == parentFolder || fldr.Name == parentFolder {
+			uniq[fldr.FolderUid] = struct{}{}
+		}
+	}
+	if len(uniq) < 1 {
+		return FolderUid, fmt.Errorf("error in provider - createFolder: couldn't find parent folder '%v'", parentFolder)
+	} else if len(uniq) > 1 {
+		return FolderUid, fmt.Errorf("error in provider - createFolder: multiple folders match parent folder '%v'", parentFolder)
+	}
+	for uid := range uniq {
+		FolderUid = uid
+		break
+	}
+
+	co, err := buildCreateOptions(FolderUid, client, folders)
+	if err != nil {
+		return FolderUid, err
+	}
+	fuid, err := client.CreateFolder(*co, folderName, folders)
+	return fuid, err
+}
+
+func deleteFolder(folderUid string, forceDelete bool, client core.SecretsManager) (e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - deleteFolder: %v", r)
+			}
+		}
+	}()
+
+	statuses, err := client.DeleteFolder([]string{folderUid}, forceDelete)
+	if err != nil {
+		return err
+	}
+
+	status := ""
+	if len(statuses) > 0 {
+		if recordStatus, found := statuses[folderUid]; found {
+			status = recordStatus
+		}
+	}
+	if strings.ToLower(status) != "ok" {
+		return fmt.Errorf("error in provider - deleteFolder (UID: %s) returned unexpected status: '%s'", folderUid, status)
+	}
+
+	return nil
+}
+
 /*
 // deprecated - use NewRecordCreate
 func getTemplateRecord(folderUid string, recordType string, templateTitle string, client core.SecretsManager) (secret *core.Record, e error) {
@@ -962,7 +1258,7 @@ func getSharedFolder(folderUid string, client core.SecretsManager, folders []*co
 	if fldr.ParentUid == "" {
 		return fldr.FolderUid, nil
 	} else {
-		return "", fmt.Errorf("unable to find parent folder for: %v, lookup stopped at: %v", folderUid, fldr.ParentUid)
+		return "", fmt.Errorf("unable to find parent shared folder for: %v, lookup stopped at: %v", folderUid, fldr.ParentUid)
 	}
 }
 
@@ -1009,6 +1305,30 @@ func GetStringListData(data string, separator string) []interface{} {
 	return items
 }
 
+// GetStringList parses resource data from schema.TypeList into []string
+func GetStringList(data interface{}) ([]string, error) {
+	if data == nil {
+		return nil, nil
+	}
+
+	itemsRaw, ok := data.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("GetStringList expects data to be []interface{}, got: %T", data)
+	}
+
+	items := make([]string, len(itemsRaw))
+	for i, raw := range itemsRaw {
+		item, ok := raw.(string)
+		if !ok {
+			return items, fmt.Errorf("GetStringList failed to parse as string item[%v] = %v", i, raw)
+		}
+
+		items[i] = item
+	}
+
+	return items, nil
+}
+
 // converts string to bool, returns default value if conversion fails
 func StrToBoolDef(boolString string, defaultValue bool) bool {
 	if value, err := strconv.ParseBool(boolString); err == nil {
@@ -1040,6 +1360,14 @@ type genericFieldJson struct {
 	Complexity        *core.PasswordComplexity `json:"complexity,omitempty"`
 	Value             interface{}              `json:"value,omitempty"`
 	ValueString       []string
+}
+
+func GetGenericFieldSchemaValueBool(field *genericFieldSchema) (value bool, ok bool) {
+	// for simple field values of type schema.TypeBool
+	if val, ok := field.Value.(bool); ok {
+		return val, true
+	}
+	return false, false
 }
 
 func GetGenericFieldSchemaValueInt64(field *genericFieldSchema) (value int64, ok bool) {
