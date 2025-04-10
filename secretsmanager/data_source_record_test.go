@@ -7,15 +7,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceGeneral(t *testing.T) {
-	secretType := "general"
-	secretUid, secretTitle := testAcc.getRecordInfo(secretType)
-	if secretUid == "" || secretTitle == "" {
-		t.Fatal("Failed to access test data - missing secret UID and/or Title")
-	}
+func TestAccDataSourceRecord(t *testing.T) {
+	secretType := "login"
+	secretUid := "*"
+	secretTitle := "tf_acc_test_field"
 
 	config := fmt.Sprintf(`
-		data "secretsmanager_general" "%v" {
+		data "secretsmanager_record" "%v" {
 			path = "%v"
 			title = "%v"
 		}
@@ -29,18 +27,28 @@ func TestAccDataSourceGeneral(t *testing.T) {
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						fmt.Sprintf("data.secretsmanager_general.%v", secretTitle),
+						fmt.Sprintf("data.secretsmanager_record.%v", secretTitle),
 						"type",
 						secretType,
 					),
 					resource.TestCheckResourceAttr(
-						fmt.Sprintf("data.secretsmanager_general.%v", secretTitle),
+						fmt.Sprintf("data.secretsmanager_record.%v", secretTitle),
 						"title",
 						secretTitle,
 					),
 					resource.TestCheckResourceAttr(
-						fmt.Sprintf("data.secretsmanager_general.%v", secretTitle),
+						fmt.Sprintf("data.secretsmanager_record.%v", secretTitle),
 						"notes",
+						secretTitle,
+					),
+					resource.TestCheckResourceAttr(
+						fmt.Sprintf("data.secretsmanager_record.%v", secretTitle),
+						"fields.0.type",
+						secretType,
+					),
+					resource.TestCheckResourceAttr(
+						fmt.Sprintf("data.secretsmanager_record.%v", secretTitle),
+						"fields.0.value",
 						secretTitle,
 					),
 				),

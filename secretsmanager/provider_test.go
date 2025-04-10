@@ -52,7 +52,6 @@ func init() {
 			"encryptedNotes":      {"uid": "*", "title": "tf_acc_test_encrypted_notes"},
 			"field":               {"uid": "*/field/login", "title": "tf_acc_test_field"},
 			"file":                {"uid": "*", "title": "tf_acc_test_file"},
-			"general":             {"uid": "*", "title": "tf_acc_test_general"},
 			"healthInsurance":     {"uid": "*", "title": "tf_acc_test_health_insurance"},
 			"login":               {"uid": "*", "title": "tf_acc_test_login"},
 			"membership":          {"uid": "*", "title": "tf_acc_test_membership"},
@@ -126,6 +125,25 @@ func checkSecretExistsRemotely(uid string) resource.TestCheckFunc {
 		}
 
 		return nil
+	}
+}
+
+func checkFolderExistsRemotely(uid, name string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		client := *testAccProvider.Meta().(providerMeta).client
+
+		folders, err := client.GetFolders()
+		if err != nil {
+			return err
+		}
+
+		for _, f := range folders {
+			if (uid != "" && f.FolderUid == uid) || (name != "" && name == f.Name) {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("resource '%v' doesn't exist remotely", uid)
 	}
 }
 

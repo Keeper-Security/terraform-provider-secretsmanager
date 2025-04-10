@@ -9,9 +9,33 @@ on:
         type: string
 
 jobs:
-  # First job: Generate SBOM
+  # First job: Check if tag already exists
+  check-tag:
+    name: "Check Tag Existence"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      
+      - name: Check if tag exists
+        run: |
+          TAG_NAME="v${{ github.event.inputs.provider_version }}"
+          echo "Checking if tag $TAG_NAME already exists..."
+          
+          # Check if the tag already exists in the remote repository
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG_NAME$"; then
+            echo "::error::Tag $TAG_NAME already exists in the repository. Please use a different version number."
+            exit 1
+          fi
+          
+          echo "Tag $TAG_NAME does not exist, proceeding with release process."
+
+  # Second job: Generate SBOM
   sbom:
     name: "Generate SBOM for Terraform Provider"
+    needs: check-tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -97,7 +121,7 @@ jobs:
             --version=${PROVIDER_VERSION} \
             --output=spdx-json \
             --file=sbom.json \
-            --api-key=${{ secrets.MANIFEST_TOKEN }} \
+            --api-key=${{ secrets.MANIFEST_TOKEN || '' }} \
             --publish=true \
             --asset-label=terraform-provider,sbom-generated,golang \
             --generator-config=syft-config.yaml
@@ -111,14 +135,12 @@ jobs:
             ./*.xml
           retention-days: 10
 
-  # Second job: Create Tag
-  create-tag:
-    name: "Create Release Tag"
+  # Third job: Create Tag and Release (with approval)
+  tag-and-release:
+    name: "Create Tag and Release"
     needs: sbom
     environment: prod
     runs-on: ubuntu-latest
-    outputs:
-      tag_name: ${{ steps.set-tag.outputs.tag_name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -139,30 +161,39 @@ jobs:
           git push origin $TAG_NAME
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
 
-  # Third job: Run GoReleaser
-  goreleaser:
-    name: "Release with GoReleaser"
-    needs: create-tag
-    # environment: prod
-    runs-on: ubuntu-latest
-    steps:
       - name: Retrieve secrets from Keeper
         id: ksecrets
         uses: Keeper-Security/ksm-action@master
         with:
-          keeper-secret-config: ${{ secrets.KSM_PUBLISHER_CONFIG }}
+          keeper-secret-config: ${{ secrets.KSM_PUBLISHER_CONFIG || '' }}
           secrets: |
             sZ5fnzalziVolGvaVo8oKw/custom_field/PGP_PRIVATE_KEY_BLOCK_-_ASCII-armor_format > GPG_PRIVATE_KEY
             sZ5fnzalziVolGvaVo8oKw/custom_field/Pass_Phrase > GPG_PASSPHRASE
 
-      - name: Checkout
-        uses: actions/checkout@v2.3.4
+      - name: Checkout with tag
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ needs.create-tag.outputs.tag_name }}
+          ref: ${{ steps.set-tag.outputs.tag_name }}
 
-      - name: Unshallow
-        run: git fetch --prune --unshallow
+      - name: Fetch git history
+        run: |
+          # Check if it's a shallow repository
+          if git rev-parse --is-shallow-repository | grep -q "true"; then
+            git fetch --prune --unshallow
+          else
+            git fetch --prune
+          fi
+
+      - name: Check GoReleaser configuration
+        run: |
+          if [ -f .goreleaser.yaml ] || [ -f .goreleaser.yml ]; then
+            echo "Checking for deprecated 'format' in archives section..."
+            if grep -q "format:" .goreleaser.y*ml; then
+              echo "WARNING: Your .goreleaser file uses the deprecated 'format' property. Consider updating to 'formats' array."
+              echo "See https://goreleaser.com/deprecations/#archivesformat for more information."
+            fi
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5

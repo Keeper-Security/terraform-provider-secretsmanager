@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceGeneral() *schema.Resource {
+func dataSourceRecord() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceGeneralRead,
+		ReadContext: dataSourceRecordRead,
 		Schema: map[string]*schema.Schema{
 			"path": {
 				Type:        schema.TypeString,
@@ -32,23 +32,8 @@ func dataSourceGeneral() *schema.Resource {
 				Computed:    true,
 				Description: "The secret notes.",
 			},
-			// fields[]
-			"login": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The secret login.",
-			},
-			"password": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Sensitive:   true,
-				Description: "The secret password.",
-			},
-			"url": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The secret url.",
-			},
+			"fields": schemaGenericField(),
+			"custom": schemaGenericField(),
 			"file_ref": {
 				Type:        schema.TypeList,
 				Computed:    true,
@@ -94,36 +79,11 @@ func dataSourceGeneral() *schema.Resource {
 					},
 				},
 			},
-			"totp": {
-				Type:        schema.TypeList,
-				Computed:    true,
-				Description: "The one time password.",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"url": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "TOTP URL.",
-						},
-						"token": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Sensitive:   true,
-							Description: "Generated TOTP token.",
-						},
-						"ttl": {
-							Type:        schema.TypeInt,
-							Computed:    true,
-							Description: "Time to live for TOTP token in seconds.",
-						},
-					},
-				},
-			},
 		},
 	}
 }
 
-func dataSourceGeneralRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceRecordRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	provider := m.(providerMeta)
 	client := *provider.client
 	var diags diag.Diagnostics
@@ -135,12 +95,7 @@ func dataSourceGeneralRead(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
-	dataSourceType := "general"
-	recordType := secret.Type()
-	if recordType != dataSourceType {
-		return diag.Errorf("record type '%s' is not the expected type '%s' for this data source", recordType, dataSourceType)
-	}
-	if err = d.Set("type", recordType); err != nil {
+	if err = d.Set("type", secret.Type()); err != nil {
 		return diag.FromErr(err)
 	}
 	if err = d.Set("title", secret.Title()); err != nil {
@@ -149,36 +104,18 @@ func dataSourceGeneralRead(ctx context.Context, d *schema.ResourceData, m interf
 	if err = d.Set("notes", secret.Notes()); err != nil {
 		return diag.FromErr(err)
 	}
-	if err = d.Set("login", secret.GetFieldValueByType("login")); err != nil {
+
+	fieldItems := getFieldItemsData(secret.RecordDict, "fields")
+	if err := d.Set("fields", fieldItems); err != nil {
 		return diag.FromErr(err)
 	}
-	if err = d.Set("password", secret.GetFieldValueByType("password")); err != nil {
-		return diag.FromErr(err)
-	}
-	if err = d.Set("url", secret.GetFieldValueByType("url")); err != nil {
+	fieldItems = getFieldItemsData(secret.RecordDict, "custom")
+	if err := d.Set("custom", fieldItems); err != nil {
 		return diag.FromErr(err)
 	}
 
 	fileItems := getFileItemsData(secret.Files)
 	if err := d.Set("file_ref", fileItems); err != nil {
-		return diag.FromErr(err)
-	}
-
-	totpItems := []interface{}{}
-	if totp := strings.TrimSpace(secret.GetFieldValueByType("oneTimeCode")); totp != "" {
-		if code, seconds, err := getTotpCode(totp); err != nil {
-			return diag.FromErr(err)
-		} else {
-			totpItems = []interface{}{
-				map[string]interface{}{
-					"url":   totp,
-					"token": code,
-					"ttl":   seconds,
-				},
-			}
-		}
-	}
-	if err := d.Set("totp", totpItems); err != nil {
 		return diag.FromErr(err)
 	}
 
