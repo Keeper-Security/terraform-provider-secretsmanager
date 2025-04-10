@@ -157,13 +157,6 @@ jobs:
         run: |
           TAG_NAME="v${{ github.event.inputs.provider_version }}"
           echo "Creating new tag: $TAG_NAME"
-          
-          # Check if the tag already exists in the remote repository
-          if git ls-remote --tags origin | grep -q "refs/tags/$TAG_NAME$"; then
-            echo "::error::Tag $TAG_NAME already exists in the repository. Please use a different version number."
-            exit 1
-          fi
-          
           git tag -a $TAG_NAME -m "Release $TAG_NAME"
           git push origin $TAG_NAME
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
