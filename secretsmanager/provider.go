@@ -49,6 +49,7 @@ func Provider() *schema.Provider {
 			"secretsmanager_passport":             dataSourcePassport(),
 			"secretsmanager_photo":                dataSourcePhoto(),
 			"secretsmanager_record":               dataSourceRecord(),
+			"secretsmanager_records":              dataSourceRecords(),
 			"secretsmanager_server_credentials":   dataSourceServerCredentials(),
 			"secretsmanager_software_license":     dataSourceSoftwareLicense(),
 			"secretsmanager_ssh_keys":             dataSourceSshKeys(),
