@@ -281,7 +281,7 @@ func dataSourceBankAccountRead(ctx context.Context, d *schema.ResourceData, m in
 	// - external cardRef UID present but its record may not be shared to the app or externally deleted
 	if cardRef := strings.TrimSpace(secret.GetFieldValueByType("cardRef")); cardRef != "" {
 		cardItems := []interface{}{map[string]interface{}{"uid": cardRef}}
-		if secretCardRefs, err := client.GetSecrets([]string{cardRef}); err == nil && len(secretCardRefs) > 0 {
+		if secretCardRefs, err := getSecrets(client, []string{cardRef}); err == nil && len(secretCardRefs) > 0 {
 			cardItems = getCardRefItemData(secretCardRefs[0], cardRef)
 		}
 		if err = d.Set("card_ref", cardItems); err != nil {

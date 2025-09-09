@@ -43,7 +43,7 @@ func dataSourceFieldRead(ctx context.Context, d *schema.ResourceData, m interfac
 	// find by title requested
 	if title != "" && strings.Contains(path, "*") {
 		uids := []string{}
-		records, err := client.GetSecrets([]string{})
+		records, err := getSecrets(client, []string{})
 		if err != nil {
 			return diag.FromErr(err)
 		}

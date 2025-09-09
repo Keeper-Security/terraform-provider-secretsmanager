@@ -116,7 +116,7 @@ func checkSecretExistsRemotely(uid string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		client := *testAccProvider.Meta().(providerMeta).client
 
-		records, err := client.GetSecrets([]string{uid})
+		records, err := getSecrets(client, []string{uid})
 		if err != nil {
 			return err
 		}

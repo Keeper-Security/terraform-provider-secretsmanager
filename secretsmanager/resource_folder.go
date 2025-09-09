@@ -146,7 +146,7 @@ func resourceFolderUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 
 	folderName := strings.TrimSpace(d.Get("name").(string))
 	if d.HasChange("name") {
-		if err := client.UpdateFolder(folderUid, folderName, nil); err != nil {
+		if err := updateFolder(client, folderUid, folderName, nil); err != nil {
 			return diag.FromErr(err)
 		}
 	}
