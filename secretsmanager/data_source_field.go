@@ -62,7 +62,7 @@ func dataSourceFieldRead(ctx context.Context, d *schema.ResourceData, m interfac
 		}
 	}
 
-	value, err := client.GetNotation(path)
+	value, err := getNotation(client, path)
 	if err != nil {
 		return diag.FromErr(err)
 	}

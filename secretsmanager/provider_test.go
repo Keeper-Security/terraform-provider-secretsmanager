@@ -132,7 +132,7 @@ func checkFolderExistsRemotely(uid, name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		client := *testAccProvider.Meta().(providerMeta).client
 
-		folders, err := client.GetFolders()
+		folders, err := getFolders(client)
 		if err != nil {
 			return err
 		}
