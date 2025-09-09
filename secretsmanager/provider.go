@@ -2474,3 +2474,29 @@ func updateFolder(client core.SecretsManager, folderUid string, folderName strin
 	}
 	return e
 }
+
+func getNotation(client core.SecretsManager, notation string) (fieldValue []interface{}, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - getNotation: %v", r)
+			}
+		}
+	}()
+
+	// retry after being throttled
+	for range MaxThrottledRetries {
+		fieldValue, e = client.GetNotation(notation)
+		if isThrottled(e) {
+			time.Sleep(11 * time.Second)
+			continue
+		}
+		break
+	}
+	return fieldValue, e
+}
