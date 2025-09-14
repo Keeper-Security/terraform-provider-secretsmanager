@@ -1,3 +1,5 @@
+![Keeper Secrets Management For Terraform Header](https://github.com/user-attachments/assets/73ac989e-deb1-4946-bcee-4d34fb96bdcf)
+
 <h1 align="center">Keeper Secrets Management For Terraform</h1>
 <p align="center">
   <a href="https://docs.keeper.io/secrets-manager/secrets-manager/integrations/terraform">View docs</a>
