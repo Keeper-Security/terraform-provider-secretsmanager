@@ -14,7 +14,7 @@ terraform {
   required_providers {
     secretsmanager = {
       source = "keeper-security/secretsmanager"
-      version = ">= 1.1.5"
+      version = ">= 1.1.7"
     }
   }
 }
