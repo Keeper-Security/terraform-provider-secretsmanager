@@ -237,7 +237,7 @@ func dataSourceContactRead(ctx context.Context, d *schema.ResourceData, m interf
 	// - external addredsRef UID present but its record may not be shared to the app or externally deleted
 	if addressRef := strings.TrimSpace(secret.GetFieldValueByType("addressRef")); addressRef != "" {
 		addrItems := []interface{}{map[string]interface{}{"uid": addressRef}}
-		if secretAddrRefs, err := client.GetSecrets([]string{addressRef}); err == nil && len(secretAddrRefs) > 0 {
+		if secretAddrRefs, err := getSecrets(client, []string{addressRef}); err == nil && len(secretAddrRefs) > 0 {
 			addrItems = getAddressRefItemData(secretAddrRefs[0], addressRef)
 		}
 		if err = d.Set("address_ref", addrItems); err != nil {

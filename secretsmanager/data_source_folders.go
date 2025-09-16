@@ -52,7 +52,7 @@ func dataSourceFoldersRead(ctx context.Context, d *schema.ResourceData, m interf
 	client := *provider.client
 	var diags diag.Diagnostics
 
-	folders, err := client.GetFolders()
+	folders, err := getFolders(client)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -18,6 +18,8 @@ import (
 	"github.com/keeper-security/secrets-manager-go/core"
 )
 
+const MaxThrottledRetries = 32
+
 // Provider returns the Keeper Secrets Manager Terraform provider
 func Provider() *schema.Provider {
 	return &schema.Provider{
@@ -49,6 +51,7 @@ func Provider() *schema.Provider {
 			"secretsmanager_passport":             dataSourcePassport(),
 			"secretsmanager_photo":                dataSourcePhoto(),
 			"secretsmanager_record":               dataSourceRecord(),
+			"secretsmanager_records":              dataSourceRecords(),
 			"secretsmanager_server_credentials":   dataSourceServerCredentials(),
 			"secretsmanager_software_license":     dataSourceSoftwareLicense(),
 			"secretsmanager_ssh_keys":             dataSourceSshKeys(),
@@ -817,7 +820,7 @@ func getRecord(path string, title string, client core.SecretsManager) (secret *c
 	title = strings.TrimSpace(title)
 	path = strings.TrimSpace(path)
 	if title != "" && path == "*" { // find by title requested
-		secrets, err := client.GetSecrets([]string{})
+		secrets, err := getSecrets(client, []string{})
 		if err != nil {
 			return nil, err
 		}
@@ -838,7 +841,7 @@ func getRecord(path string, title string, client core.SecretsManager) (secret *c
 		}
 		return secret, nil
 	} else { // find by UID
-		secrets, err := client.GetSecrets([]string{path})
+		secrets, err := getSecrets(client, []string{path})
 		if err != nil {
 			return nil, err
 		}
@@ -863,26 +866,12 @@ func getRecord(path string, title string, client core.SecretsManager) (secret *c
 	}
 }
 
-func createRecord(recordUid string, folderUid string, record *core.RecordCreate, client core.SecretsManager) (uid string, e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch x := r.(type) {
-			case string:
-				e = errors.New(x)
-			case error:
-				e = x
-			default:
-				e = fmt.Errorf("error in provider - createRecord: %v", r)
-			}
-		}
-	}()
-
+func createRecord(recordUid string, folderUid string, record *core.RecordCreate, client core.SecretsManager) (string, error) {
 	co, err := buildCreateOptions(folderUid, client, nil)
 	if err != nil {
 		return "", err
 	}
-	ruid, err := client.CreateSecretWithRecordDataUidAndOptions(recordUid, co, record, nil)
-	return ruid, err
+	return createSecretWithRecordDataUidAndOptions(client, recordUid, co, record, nil)
 }
 
 func saveRecord(record *core.Record, client core.SecretsManager) (e error) {
@@ -899,8 +888,16 @@ func saveRecord(record *core.Record, client core.SecretsManager) (e error) {
 		}
 	}()
 
-	err := client.Save(record)
-	return err
+	// retry after being throttled
+	for range MaxThrottledRetries {
+		e = client.Save(record)
+		if isThrottled(e) {
+			time.Sleep(11 * time.Second)
+			continue
+		}
+		break
+	}
+	return e
 }
 
 func deleteRecord(recordUid string, client core.SecretsManager) (e error) {
@@ -917,9 +914,20 @@ func deleteRecord(recordUid string, client core.SecretsManager) (e error) {
 		}
 	}()
 
-	statuses, err := client.DeleteSecrets([]string{recordUid})
-	if err != nil {
-		return err
+	statuses := map[string]string{}
+
+	// retry after being throttled
+	for range MaxThrottledRetries {
+		statuses, e = client.DeleteSecrets([]string{recordUid})
+		if isThrottled(e) {
+			time.Sleep(11 * time.Second)
+			continue
+		}
+		break
+	}
+
+	if e != nil {
+		return e
 	}
 
 	status := ""
@@ -937,21 +945,8 @@ func deleteRecord(recordUid string, client core.SecretsManager) (e error) {
 
 // Lookup folders by name or UID where parentFolder (if present) is direct parent folder (name or UID)
 func findFolder(parentFolder, folderUid, folderName string, client core.SecretsManager) (folders []*core.KeeperFolder, e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch x := r.(type) {
-			case string:
-				e = errors.New(x)
-			case error:
-				e = x
-			default:
-				e = fmt.Errorf("error in provider - findSubFolder: %v", r)
-			}
-		}
-	}()
-
 	folders = []*core.KeeperFolder{}
-	allFolders, e := client.GetFolders()
+	allFolders, e := getFolders(client)
 	if e != nil {
 		return folders, e
 	}
@@ -985,21 +980,8 @@ func findFolder(parentFolder, folderUid, folderName string, client core.SecretsM
 }
 
 func findSubFolder(parentFolderUid, folderUid, folderName string, client core.SecretsManager) (folders []*core.KeeperFolder, e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch x := r.(type) {
-			case string:
-				e = errors.New(x)
-			case error:
-				e = x
-			default:
-				e = fmt.Errorf("error in provider - findSubFolder: %v", r)
-			}
-		}
-	}()
-
 	folders = []*core.KeeperFolder{}
-	allFolders, e := client.GetFolders()
+	allFolders, e := getFolders(client)
 	if e != nil {
 		return folders, e
 	}
@@ -1023,27 +1005,14 @@ func findSubFolder(parentFolderUid, folderUid, folderName string, client core.Se
 	return folders, nil
 }
 
-func createFolder(parentFolder, folderName string, client core.SecretsManager) (FolderUid string, e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch x := r.(type) {
-			case string:
-				e = errors.New(x)
-			case error:
-				e = x
-			default:
-				e = fmt.Errorf("error in provider - createFolder: %v", r)
-			}
-		}
-	}()
-
-	FolderUid = ""
-	folders, err := client.GetFolders()
+func createFolder(parentFolder, folderName string, client core.SecretsManager) (folderUid string, e error) {
+	folderUid = ""
+	folders, err := getFolders(client)
 	if err != nil {
-		return FolderUid, err
+		return folderUid, err
 	}
 	if len(folders) == 0 {
-		return FolderUid, fmt.Errorf("error in provider - createFolder: couldn't find any folders shared to the KSM App")
+		return folderUid, fmt.Errorf("error in provider - createFolder: couldn't find any folders shared to the KSM App")
 	}
 
 	uniq := map[string]struct{}{}
@@ -1053,38 +1022,24 @@ func createFolder(parentFolder, folderName string, client core.SecretsManager) (
 		}
 	}
 	if len(uniq) < 1 {
-		return FolderUid, fmt.Errorf("error in provider - createFolder: couldn't find parent folder '%v'", parentFolder)
+		return folderUid, fmt.Errorf("error in provider - createFolder: couldn't find parent folder '%v'", parentFolder)
 	} else if len(uniq) > 1 {
-		return FolderUid, fmt.Errorf("error in provider - createFolder: multiple folders match parent folder '%v'", parentFolder)
+		return folderUid, fmt.Errorf("error in provider - createFolder: multiple folders match parent folder '%v'", parentFolder)
 	}
 	for uid := range uniq {
-		FolderUid = uid
+		folderUid = uid
 		break
 	}
 
-	co, err := buildCreateOptions(FolderUid, client, folders)
+	co, err := buildCreateOptions(folderUid, client, folders)
 	if err != nil {
-		return FolderUid, err
+		return folderUid, err
 	}
-	fuid, err := client.CreateFolder(*co, folderName, folders)
-	return fuid, err
+	return createFolderWithOptions(client, co, folderName, folders)
 }
 
 func deleteFolder(folderUid string, forceDelete bool, client core.SecretsManager) (e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch x := r.(type) {
-			case string:
-				e = errors.New(x)
-			case error:
-				e = x
-			default:
-				e = fmt.Errorf("error in provider - deleteFolder: %v", r)
-			}
-		}
-	}()
-
-	statuses, err := client.DeleteFolder([]string{folderUid}, forceDelete)
+	statuses, err := deleteFolders(client, []string{folderUid}, forceDelete)
 	if err != nil {
 		return err
 	}
@@ -1124,7 +1079,7 @@ func getTemplateRecord(folderUid string, recordType string, templateTitle string
 	folderUid = strings.TrimSpace(folderUid)
 	recordType = strings.TrimSpace(recordType)
 	if folderUid != "" && recordType != "" {
-		secrets, err := client.GetSecrets([]string{})
+		secrets, err := getSecrets(client, []string{})
 		if err != nil {
 			return nil, err
 		}
@@ -1177,7 +1132,7 @@ func getTemplateFolder(folderUid string, client core.SecretsManager) (fuid strin
 	fuid = ""
 	folderUid = strings.TrimSpace(folderUid)
 	if folderUid == "" || folderUid == "*" {
-		secrets, err := client.GetSecrets([]string{})
+		secrets, err := getSecrets(client, []string{})
 		if err != nil {
 			return "", err
 		}
@@ -1200,23 +1155,9 @@ func getTemplateFolder(folderUid string, client core.SecretsManager) (fuid strin
 
 // getSharedFolder tries to find closest parent shared folder
 func getSharedFolder(folderUid string, client core.SecretsManager, folders []*core.KeeperFolder) (fuid string, e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			fuid = ""
-			switch x := r.(type) {
-			case string:
-				e = errors.New(x)
-			case error:
-				e = x
-			default:
-				e = fmt.Errorf("error in provider - getSharedFolder: %v", r)
-			}
-		}
-	}()
-
 	folderUid = strings.TrimSpace(folderUid)
 	if len(folders) == 0 {
-		if folders, e = client.GetFolders(); e != nil {
+		if folders, e = getFolders(client); e != nil {
 			return "", e
 		}
 	}
@@ -1265,7 +1206,7 @@ func getSharedFolder(folderUid string, client core.SecretsManager, folders []*co
 // buildCreateOptions finds parent shared folder and returns CreateOptions
 func buildCreateOptions(folderUid string, client core.SecretsManager, folders []*core.KeeperFolder) (co *core.CreateOptions, e error) {
 	if len(folders) == 0 {
-		if folders, e = client.GetFolders(); e != nil {
+		if folders, e = getFolders(client); e != nil {
 			return nil, e
 		}
 	}
@@ -2116,11 +2057,12 @@ func ParseGeneratePassword(data interface{}) (bool, error) {
 		if m, ok := s[0].(map[string]interface{}); ok {
 			if igen, ok := m["generate"]; ok {
 				if sgen, ok := igen.(string); ok {
-					if sgen == "" {
+					switch sgen {
+					case "":
 						return false, nil
-					} else if sgen == "true" || sgen == "yes" {
+					case "true", "yes":
 						return true, nil
-					} else {
+					default:
 						return false, fmt.Errorf("generate = %s - expected one of ('true', 'yes' or '')", sgen)
 					}
 				} else {
@@ -2363,4 +2305,199 @@ func applyGeneratePassword(fieldData interface{}, field interface{}) (generated 
 		return false, fmt.Errorf("applyGeneratePassword expects field to be of type *core.Password")
 	}
 	return false, nil
+}
+
+func isThrottled(e error) bool {
+	if e != nil {
+		msg := strings.ToLower(e.Error())
+		if strings.Contains(msg, "throttled") ||
+			strings.Contains(msg, "httpstatus=429") ||
+			strings.Contains(msg, "httpstatus=403") ||
+			strings.Contains(msg, "httpstatus=503") {
+			return true
+		}
+	}
+	return false
+}
+
+func createFolderWithOptions(client core.SecretsManager, co *core.CreateOptions, folderName string, folders []*core.KeeperFolder) (uid string, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - createFolder: %v", r)
+			}
+		}
+	}()
+
+	// retry after being throttled
+	for range MaxThrottledRetries {
+		uid, e = client.CreateFolder(*co, folderName, folders)
+		if isThrottled(e) {
+			time.Sleep(11 * time.Second)
+			continue
+		}
+		break
+	}
+	return uid, e
+}
+
+func getFolders(client core.SecretsManager) (folders []*core.KeeperFolder, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - getFolders: %v", r)
+			}
+		}
+	}()
+
+	// retry after being throttled
+	for range MaxThrottledRetries {
+		folders, e = client.GetFolders()
+		if isThrottled(e) {
+			time.Sleep(11 * time.Second)
+			continue
+		}
+		break
+	}
+	return folders, e
+}
+
+func getSecrets(client core.SecretsManager, uids []string) (records []*core.Record, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - getSecrets: %v", r)
+			}
+		}
+	}()
+
+	// retry after being throttled
+	for range MaxThrottledRetries {
+		records, e = client.GetSecrets(uids)
+		if isThrottled(e) {
+			time.Sleep(11 * time.Second)
+			continue
+		}
+		break
+	}
+	return records, e
+}
+
+func createSecretWithRecordDataUidAndOptions(client core.SecretsManager, recordUid string, createOptions *core.CreateOptions, recordData *core.RecordCreate, folders []*core.KeeperFolder) (uid string, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - createSecretWithRecordDataUidAndOptions: %v", r)
+			}
+		}
+	}()
+
+	// retry after being throttled
+	for range MaxThrottledRetries {
+		uid, e = client.CreateSecretWithRecordDataUidAndOptions(recordUid, createOptions, recordData, folders)
+		if isThrottled(e) {
+			time.Sleep(11 * time.Second)
+			continue
+		}
+		break
+	}
+	return uid, e
+}
+
+func deleteFolders(client core.SecretsManager, folderUids []string, forceDelete bool) (statuses map[string]string, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - deleteFolders: %v", r)
+			}
+		}
+	}()
+
+	// retry after being throttled
+	for range MaxThrottledRetries {
+		statuses, e = client.DeleteFolder(folderUids, forceDelete)
+		if isThrottled(e) {
+			time.Sleep(11 * time.Second)
+			continue
+		}
+		break
+	}
+	return statuses, e
+}
+
+func updateFolder(client core.SecretsManager, folderUid string, folderName string, folders []*core.KeeperFolder) (e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - updateFolder: %v", r)
+			}
+		}
+	}()
+
+	// retry after being throttled
+	for range MaxThrottledRetries {
+		e = client.UpdateFolder(folderUid, folderName, folders)
+		if isThrottled(e) {
+			time.Sleep(11 * time.Second)
+			continue
+		}
+		break
+	}
+	return e
+}
+
+func getNotation(client core.SecretsManager, notation string) (fieldValue []interface{}, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				e = errors.New(x)
+			case error:
+				e = x
+			default:
+				e = fmt.Errorf("error in provider - getNotation: %v", r)
+			}
+		}
+	}()
+
+	// retry after being throttled
+	for range MaxThrottledRetries {
+		fieldValue, e = client.GetNotation(notation)
+		if isThrottled(e) {
+			time.Sleep(11 * time.Second)
+			continue
+		}
+		break
+	}
+	return fieldValue, e
 }
