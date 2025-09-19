@@ -116,7 +116,7 @@ func checkSecretExistsRemotely(uid string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		client := *testAccProvider.Meta().(providerMeta).client
 
-		records, err := client.GetSecrets([]string{uid})
+		records, err := getSecrets(client, []string{uid})
 		if err != nil {
 			return err
 		}
@@ -132,7 +132,7 @@ func checkFolderExistsRemotely(uid, name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		client := *testAccProvider.Meta().(providerMeta).client
 
-		folders, err := client.GetFolders()
+		folders, err := getFolders(client)
 		if err != nil {
 			return err
 		}
