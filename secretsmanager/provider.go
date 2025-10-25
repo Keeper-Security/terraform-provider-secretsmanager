@@ -48,6 +48,9 @@ func Provider() *schema.Provider {
 			"secretsmanager_health_insurance":     dataSourceHealthInsurance(),
 			"secretsmanager_login":                dataSourceLogin(),
 			"secretsmanager_membership":           dataSourceMembership(),
+			"secretsmanager_pam_database":         dataSourcePamDatabase(),
+			"secretsmanager_pam_machine":          dataSourcePamMachine(),
+			"secretsmanager_pam_user":             dataSourcePamUser(),
 			"secretsmanager_passport":             dataSourcePassport(),
 			"secretsmanager_photo":                dataSourcePhoto(),
 			"secretsmanager_record":               dataSourceRecord(),
@@ -71,6 +74,9 @@ func Provider() *schema.Provider {
 			"secretsmanager_health_insurance":     resourceHealthInsurance(),
 			"secretsmanager_login":                resourceLogin(),
 			"secretsmanager_membership":           resourceMembership(),
+			"secretsmanager_pam_database":         resourcePamDatabase(),
+			"secretsmanager_pam_machine":          resourcePamMachine(),
+			"secretsmanager_pam_user":             resourcePamUser(),
 			"secretsmanager_passport":             resourcePassport(),
 			"secretsmanager_photo":                resourcePhoto(),
 			"secretsmanager_server_credentials":   resourceServerCredentials(),
@@ -120,34 +126,54 @@ type providerMeta struct {
 
 // map attribute names from schema to field types in record v3
 var mapSchemaToRecordFieldName map[string]string = map[string]string{
-	"account_number":    "accountNumber", // Text
-	"address":           "address",
-	"address_ref":       "addressRef",
-	"bank_account":      "bankAccount",
-	"birth_date":        "birthDate",
-	"card_ref":          "cardRef",
-	"company":           "text", // Text
-	"date":              "date",
-	"email":             "email",
-	"expiration_date":   "expirationDate",
-	"file_ref":          "fileRef",
-	"group_number":      "groupNumber", // Text
-	"host":              "host",
-	"key_pair":          "keyPair",
-	"license_number":    "licenseNumber",
-	"login":             "login",
-	"multiline":         "multiline",
-	"name":              "name",
-	"note":              "note", // SecureNote
-	"one_time_code":     "oneTimeCode",
-	"password":          "password",
-	"payment_card":      "paymentCard",
-	"phone":             "phone",
-	"pin_code":          "pinCode",
-	"secret":            "secret",
-	"security_question": "securityQuestion",
-	"text":              "text",
-	"title":             "title", // Text
+	"account_number":      "accountNumber", // Text
+	"address":             "address",
+	"address_ref":         "addressRef",
+	"bank_account":        "bankAccount",
+	"birth_date":          "birthDate",
+	"card_ref":            "cardRef",
+	"checkbox":            "checkbox",
+	"company":             "text", // Text
+	"connect_database":    "text", // Text with label
+	"database_id":         "text", // Text with label
+	"database_type":       "databaseType",
+	"date":                "date",
+	"directory_type":      "directoryType",
+	"distinguished_name":  "text", // Text with label
+	"email":               "email",
+	"expiration_date":     "expirationDate",
+	"file_ref":            "fileRef",
+	"group_number":        "groupNumber", // Text
+	"host":                "host",
+	"instance_id":         "text", // Text with label
+	"instance_name":       "text", // Text with label
+	"key_pair":            "keyPair",
+	"license_number":      "licenseNumber",
+	"login":               "login",
+	"managed":             "checkbox", // Checkbox with label
+	"multiline":           "multiline",
+	"name":                "name",
+	"note":                "note", // SecureNote
+	"one_time_code":       "oneTimeCode",
+	"operating_system":    "text", // Text with label
+	"pam_hostname":        "pamHostname",
+	"pam_resources":       "pamResources",
+	"password":            "password",
+	"payment_card":        "paymentCard",
+	"phone":               "phone",
+	"pin_code":            "pinCode",
+	"private_pem_key":     "secret", // Secret with label
+	"provider_group":      "text", // Text with label
+	"provider_region":     "text", // Text with label
+	"rotation_scripts":    "script", // Script with label
+	"schedule":            "schedule",
+	"script":              "script",
+	"secret":              "secret",
+	"security_question":   "securityQuestion",
+	"ssl_verification":    "checkbox", // Checkbox with label
+	"text":                "text",
+	"title":               "title", // Text
+	"use_ssl":             "checkbox", // Checkbox with label
 	"url":               "url",
 	// schema attributes that use field label instead of field type
 	// "company":            "text",          // contact
@@ -732,6 +758,132 @@ func getFieldResourceData(fieldType, section string, secret *core.Record) interf
 								}
 								if str, ok := fmap["answer"]; ok {
 									fv["answer"] = str
+								}
+							case "script":
+								if str, ok := fmap["fileRef"]; ok {
+									fv["file_ref"] = str
+								}
+								if str, ok := fmap["command"]; ok {
+									fv["command"] = str
+								}
+								if refs, ok := fmap["recordRef"]; ok {
+									if refList, ok := refs.([]interface{}); ok {
+										fv["record_ref"] = refList
+									}
+								}
+							case "pamHostname":
+								if str, ok := fmap["hostName"]; ok {
+									fv["hostname"] = str
+								}
+								if str, ok := fmap["port"]; ok {
+									fv["port"] = str
+								}
+							case "pamResources":
+								if str, ok := fmap["controllerUid"]; ok {
+									fv["controller_uid"] = str
+								}
+								if str, ok := fmap["folderUid"]; ok {
+									fv["folder_uid"] = str
+								}
+								if refs, ok := fmap["resourceRef"]; ok {
+									if refList, ok := refs.([]interface{}); ok {
+										fv["resource_ref"] = refList
+									}
+								}
+								if settings, ok := fmap["allowedSettings"]; ok {
+									if settingsMap, ok := settings.(map[string]interface{}); ok {
+										if val, ok := settingsMap["connections"]; ok {
+											fv["allowed_connections"] = val
+										}
+										if val, ok := settingsMap["portForwards"]; ok {
+											fv["allowed_port_forwards"] = val
+										}
+										if val, ok := settingsMap["rotation"]; ok {
+											fv["allowed_rotation"] = val
+										}
+										if val, ok := settingsMap["sessionRecording"]; ok {
+											fv["allowed_session_recording"] = val
+										}
+										if val, ok := settingsMap["typescriptRecording"]; ok {
+											fv["allowed_typescript_recording"] = val
+										}
+									}
+								}
+							default:
+								fv = nil
+							}
+							if len(fv) > 0 {
+								fis = append(fis, fv)
+							}
+						}
+					}
+				}
+				if len(fis) > 0 {
+					ftSchema["value"] = []interface{}{fis[0]}
+				}
+			}
+			return []interface{}{ftSchema}
+		}
+	}
+	return []interface{}{}
+}
+
+func getFieldResourceDataWithLabel(fieldType, section string, secret *core.Record, label string) interface{} {
+	if flds := getFieldDicts(fieldType, section, secret.RecordDict); len(flds) > 0 {
+		// Find the field with matching label
+		var matchingField interface{}
+		for _, fld := range flds {
+			if fldMap, ok := fld.(map[string]interface{}); ok {
+				if lblValue, found := fldMap["label"]; found && lblValue == label {
+					matchingField = fld
+					break
+				}
+			}
+		}
+		if matchingField == nil {
+			return []interface{}{}
+		}
+		if fieldSchema := parseFieldFromDataJson(matchingField); fieldSchema != nil {
+			ftSchema := map[string]interface{}{
+				"type": fieldType,
+			}
+			if _, found := fieldSchema.fields["label"]; found {
+				ftSchema["label"] = fieldSchema.Label
+			}
+			if _, found := fieldSchema.fields["required"]; found {
+				ftSchema["required"] = fieldSchema.Required
+			}
+			if _, found := fieldSchema.fields["privacyScreen"]; found {
+				ftSchema["privacy_screen"] = fieldSchema.PrivacyScreen
+			}
+			if _, found := fieldSchema.fields["value"]; found {
+				fis := []interface{}{}
+				if fi, ok := fieldSchema.Value.([]interface{}); ok {
+					for _, fiv := range fi {
+						if str, ok := fiv.(string); ok && str != "" {
+							// simple value - string
+							ftSchema["value"] = str
+						} else if num, ok := fiv.(float64); ok {
+							// simple value - Int64
+							ftSchema["value"] = int64(num)
+						} else if boolVal, ok := fiv.(bool); ok {
+							// simple value - bool
+							ftSchema["value"] = []interface{}{boolVal}
+						} else if fmap, ok := fiv.(map[string]interface{}); ok && len(fmap) > 0 {
+							// complex value - map struct fields to schema
+							fv := map[string]interface{}{}
+							switch fieldType {
+							case "script":
+								if str, ok := fmap["fileRef"]; ok {
+									fv["file_ref"] = str
+								}
+								if str, ok := fmap["command"]; ok {
+									fv["command"] = str
+								}
+								if refs, ok := fmap["recordRef"]; ok {
+									if refList, ok := refs.([]interface{}); ok {
+										fv["record_ref"] = refList
+									}
 								}
 							default:
 								fv = nil
@@ -1463,6 +1615,76 @@ func GetGenericFieldSchemaValue(fieldType string, field *genericFieldSchema) []i
 						securityQuestion.Answer = v.(string)
 					}
 					result = append(result, securityQuestion)
+				case "script":
+					script := core.Script{}
+					if v, found := msi["file_ref"]; found {
+						script.FileRef = v.(string)
+					}
+					if v, found := msi["command"]; found {
+						script.Command = v.(string)
+					}
+					if v, found := msi["record_ref"]; found {
+						if recordRefs, ok := v.([]interface{}); ok {
+							for _, ref := range recordRefs {
+								if refStr, ok := ref.(string); ok {
+									script.RecordRef = append(script.RecordRef, refStr)
+								}
+							}
+						}
+					}
+					result = append(result, script)
+				case "pamHostname":
+					host := core.Host{}
+					if v, found := msi["hostname"]; found {
+						host.Hostname = v.(string)
+					}
+					if v, found := msi["port"]; found {
+						host.Port = v.(string)
+					}
+					result = append(result, host)
+				case "pamResources":
+					pamResource := core.PamResource{}
+					if v, found := msi["controller_uid"]; found {
+						pamResource.ControllerUid = v.(string)
+					}
+					if v, found := msi["folder_uid"]; found {
+						pamResource.FolderUid = v.(string)
+					}
+					if v, found := msi["resource_ref"]; found {
+						if resourceRefs, ok := v.([]interface{}); ok {
+							for _, ref := range resourceRefs {
+								if refStr, ok := ref.(string); ok {
+									pamResource.ResourceRef = append(pamResource.ResourceRef, refStr)
+								}
+							}
+						}
+					}
+					if v, found := msi["allowed_connections"]; found {
+						if val, ok := v.(bool); ok {
+							pamResource.AllowedSettings.Connections = val
+						}
+					}
+					if v, found := msi["allowed_port_forwards"]; found {
+						if val, ok := v.(bool); ok {
+							pamResource.AllowedSettings.PortForwards = val
+						}
+					}
+					if v, found := msi["allowed_rotation"]; found {
+						if val, ok := v.(bool); ok {
+							pamResource.AllowedSettings.Rotation = val
+						}
+					}
+					if v, found := msi["allowed_session_recording"]; found {
+						if val, ok := v.(bool); ok {
+							pamResource.AllowedSettings.SessionRecording = val
+						}
+					}
+					if v, found := msi["allowed_typescript_recording"]; found {
+						if val, ok := v.(bool); ok {
+							pamResource.AllowedSettings.TypescriptRecording = val
+						}
+					}
+					result = append(result, pamResource)
 				}
 			}
 		}
@@ -1983,6 +2205,96 @@ func NewFieldFromSchema(fieldType string, fieldData interface{}) (newField inter
 			if _, found := data[0].fields["value"]; found {
 				if v, ok := GetGenericFieldSchemaValueString(data[0]); ok && v != "" {
 					field.Value = append(field.Value, v)
+				}
+			}
+			return field, nil
+		case "checkbox":
+			field := &core.Checkbox{KeeperRecordField: core.KeeperRecordField{Type: "checkbox"}}
+			if _, found := data[0].fields["label"]; found {
+				field.Label = data[0].Label
+			}
+			if _, found := data[0].fields["required"]; found {
+				field.Required = data[0].Required
+			}
+			if _, found := data[0].fields["value"]; found {
+				if v, ok := GetGenericFieldSchemaValueBool(data[0]); ok {
+					field.Value = append(field.Value, v)
+				}
+			}
+			return field, nil
+		case "script":
+			field := &core.Scripts{KeeperRecordField: core.KeeperRecordField{Type: "script"}}
+			if _, found := data[0].fields["label"]; found {
+				field.Label = data[0].Label
+			}
+			if _, found := data[0].fields["required"]; found {
+				field.Required = data[0].Required
+			}
+			if _, found := data[0].fields["privacy_screen"]; found {
+				field.PrivacyScreen = data[0].PrivacyScreen
+			}
+			if _, found := data[0].fields["value"]; found {
+				if v := GetGenericFieldSchemaValue(field.Type, data[0]); len(v) > 0 {
+					field.Value = append(field.Value, v[0].(core.Script))
+				}
+			}
+			return field, nil
+		case "pamHostname":
+			field := &core.PamHostname{KeeperRecordField: core.KeeperRecordField{Type: "pamHostname"}}
+			if _, found := data[0].fields["label"]; found {
+				field.Label = data[0].Label
+			}
+			if _, found := data[0].fields["required"]; found {
+				field.Required = data[0].Required
+			}
+			if _, found := data[0].fields["privacy_screen"]; found {
+				field.PrivacyScreen = data[0].PrivacyScreen
+			}
+			if _, found := data[0].fields["value"]; found {
+				if v := GetGenericFieldSchemaValue(field.Type, data[0]); len(v) > 0 {
+					field.Value = append(field.Value, v[0].(core.Host))
+				}
+			}
+			return field, nil
+		case "databaseType":
+			field := &core.DatabaseType{KeeperRecordField: core.KeeperRecordField{Type: "databaseType"}}
+			if _, found := data[0].fields["label"]; found {
+				field.Label = data[0].Label
+			}
+			if _, found := data[0].fields["required"]; found {
+				field.Required = data[0].Required
+			}
+			if _, found := data[0].fields["value"]; found {
+				if v, ok := GetGenericFieldSchemaValueString(data[0]); ok && v != "" {
+					field.Value = append(field.Value, v)
+				}
+			}
+			return field, nil
+		case "directoryType":
+			field := &core.DirectoryType{KeeperRecordField: core.KeeperRecordField{Type: "directoryType"}}
+			if _, found := data[0].fields["label"]; found {
+				field.Label = data[0].Label
+			}
+			if _, found := data[0].fields["required"]; found {
+				field.Required = data[0].Required
+			}
+			if _, found := data[0].fields["value"]; found {
+				if v, ok := GetGenericFieldSchemaValueString(data[0]); ok && v != "" {
+					field.Value = append(field.Value, v)
+				}
+			}
+			return field, nil
+		case "pamResources":
+			field := &core.PamResources{KeeperRecordField: core.KeeperRecordField{Type: "pamResources"}}
+			if _, found := data[0].fields["label"]; found {
+				field.Label = data[0].Label
+			}
+			if _, found := data[0].fields["required"]; found {
+				field.Required = data[0].Required
+			}
+			if _, found := data[0].fields["value"]; found {
+				if v := GetGenericFieldSchemaValue(field.Type, data[0]); len(v) > 0 {
+					field.Value = append(field.Value, v[0].(core.PamResource))
 				}
 			}
 			return field, nil
