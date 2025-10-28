@@ -19,6 +19,15 @@ jobs:
         with:
           fetch-depth: 1
       
+      - name: Validate Provider Version Format
+        run: |
+          PROVIDER_VERSION="${{ github.event.inputs.provider_version }}"
+          if [[ ! "$PROVIDER_VERSION" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+            echo "Error: Invalid provider version format. Version must contain only alphanumeric characters, dots, hyphens, and underscores."
+            exit 1
+          fi
+          echo "Provider version format validation passed: $PROVIDER_VERSION"
+      
       - name: Check if tag exists
         run: |
           TAG_NAME="v${{ github.event.inputs.provider_version }}"
