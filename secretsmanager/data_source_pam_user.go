@@ -85,6 +85,24 @@ func dataSourcePamUserRead(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
+	// PAM User specific fields
+	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
+	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
+		return diag.FromErr(err)
+	}
+	distinguishedName := getFieldResourceDataWithLabel("text", "fields", secret, "Distinguished Name")
+	if err = d.Set("distinguished_name", distinguishedName); err != nil {
+		return diag.FromErr(err)
+	}
+	connectDatabase := getFieldResourceDataWithLabel("text", "fields", secret, "Connect Database")
+	if err = d.Set("connect_database", connectDatabase); err != nil {
+		return diag.FromErr(err)
+	}
+	managed := getFieldResourceDataWithLabel("checkbox", "fields", secret, "Managed")
+	if err = d.Set("managed", managed); err != nil {
+		return diag.FromErr(err)
+	}
+
 	fileItems := getFileItemsData(secret.Files)
 	if err := d.Set("file_ref", fileItems); err != nil {
 		return diag.FromErr(err)

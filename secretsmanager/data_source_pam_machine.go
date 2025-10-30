@@ -41,6 +41,7 @@ func dataSourcePamMachine() *schema.Resource {
 			},
 			// PAM Machine specific fields
 			"pam_hostname":     schemaPamHostnameField(),
+			"pam_settings":     schemaPamSettingsField(),
 			"login":            schemaLoginField(),
 			"password":         schemaPasswordField(""),
 			"rotation_scripts": schemaScriptField(),
@@ -86,6 +87,48 @@ func dataSourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m int
 		return diag.FromErr(err)
 	}
 	if err = d.Set("password", secret.GetFieldValueByType("password")); err != nil {
+		return diag.FromErr(err)
+	}
+
+	// PAM Machine specific fields
+	pamHostname := getFieldResourceData("pamHostname", "fields", secret)
+	if err = d.Set("pam_hostname", pamHostname); err != nil {
+		return diag.FromErr(err)
+	}
+	// Read pam_settings as JSON string
+	if pamSettingsFields := secret.GetFieldsByType("pamSettings"); len(pamSettingsFields) > 0 {
+		if pamSettingsJSON, err := pamSettingsFieldToJSON(pamSettingsFields[0]); err != nil {
+			return diag.FromErr(err)
+		} else if err = d.Set("pam_settings", pamSettingsJSON); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
+	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
+		return diag.FromErr(err)
+	}
+	operatingSystem := getFieldResourceDataWithLabel("text", "fields", secret, "Operating System")
+	if err = d.Set("operating_system", operatingSystem); err != nil {
+		return diag.FromErr(err)
+	}
+	sslVerification := getFieldResourceDataWithLabel("checkbox", "fields", secret, "SSL Verification")
+	if err = d.Set("ssl_verification", sslVerification); err != nil {
+		return diag.FromErr(err)
+	}
+	instanceName := getFieldResourceDataWithLabel("text", "fields", secret, "Instance Name")
+	if err = d.Set("instance_name", instanceName); err != nil {
+		return diag.FromErr(err)
+	}
+	instanceId := getFieldResourceDataWithLabel("text", "fields", secret, "Instance Id")
+	if err = d.Set("instance_id", instanceId); err != nil {
+		return diag.FromErr(err)
+	}
+	providerGroup := getFieldResourceDataWithLabel("text", "fields", secret, "Provider Group")
+	if err = d.Set("provider_group", providerGroup); err != nil {
+		return diag.FromErr(err)
+	}
+	providerRegion := getFieldResourceDataWithLabel("text", "fields", secret, "Provider Region")
+	if err = d.Set("provider_region", providerRegion); err != nil {
 		return diag.FromErr(err)
 	}
 
