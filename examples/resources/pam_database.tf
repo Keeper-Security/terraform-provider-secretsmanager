@@ -40,11 +40,7 @@ resource "secretsmanager_pam_database" "postgres_prod" {
     }]
   }])
 
-  database_type {
-    label = "Database Type"
-    required = true
-    value = ["PostgreSQL"]
-  }
+  database_type = "postgresql"
 
   use_ssl {
     label = "useSSL"
@@ -101,9 +97,7 @@ resource "secretsmanager_pam_database" "mysql_staging" {
     }]
   }])
 
-  database_type {
-    value = ["MySQL"]
-  }
+  database_type = "mysql"
 
   use_ssl {
     value = [false]
@@ -139,9 +133,7 @@ resource "secretsmanager_pam_database" "aws_rds_postgres" {
     }]
   }])
 
-  database_type {
-    value = ["PostgreSQL"]
-  }
+  database_type = "postgresql"
 
   use_ssl {
     value = [true]
@@ -204,9 +196,7 @@ resource "secretsmanager_pam_database" "mongodb_dev" {
     }]
   }])
 
-  database_type {
-    value = ["MongoDB"]
-  }
+  database_type = "mongodb"
 
   login {
     value = "mongo_dev"
