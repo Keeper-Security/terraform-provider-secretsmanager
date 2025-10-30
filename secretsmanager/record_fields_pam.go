@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	core "github.com/keeper-security/secrets-manager-go/core"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	core "github.com/keeper-security/secrets-manager-go/core"
 )
 
 // PAM-specific field schema functions
@@ -280,78 +280,50 @@ func schemaPamResourcesField() *schema.Schema {
 
 // schemaDatabaseTypeField returns the schema for Database Type field.
 // Currently used in resource_pam_database.go.
+//
+// Supported values are based on Keeper's PAM connection protocols:
+// - postgresql: PostgreSQL (port 5432)
+// - mysql: MySQL (port 3306)
+// - mariadb: MariaDB (port 3306)
+// - mariadb-flexible: Azure MariaDB Flexible Server (port 3306)
+// - mssql: Microsoft SQL Server (port 1433)
+// - oracle: Oracle Database (port 1521)
+// - mongodb: MongoDB (port 27017)
 func schemaDatabaseTypeField() *schema.Schema {
 	return &schema.Schema{
-		Type:        schema.TypeList,
-		Optional:    true,
-		MaxItems:    1,
-		Description: "Database type field data.",
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"type": {
-					Type:        schema.TypeString,
-					Computed:    true,
-					Description: "Field type.",
-				},
-				"label": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					Computed:    true,
-					Description: "Field label.",
-				},
-				"required": {
-					Type:        schema.TypeBool,
-					Optional:    true,
-					Description: "Required flag.",
-				},
-				"value": {
-					Type:        schema.TypeList,
-					Optional:    true,
-					MaxItems:    1,
-					Description: "Database type value.",
-					Elem:        &schema.Schema{Type: schema.TypeString},
-				},
-			},
-		},
+		Type:     schema.TypeString,
+		Optional: true,
+		ValidateFunc: validation.StringInSlice([]string{
+			"postgresql",
+			"mysql",
+			"mariadb",
+			"mariadb-flexible",
+			"mssql",
+			"oracle",
+			"mongodb",
+		}, false),
+		Description: "Database type. Must be one of: postgresql, mysql, mariadb, mariadb-flexible, " +
+			"mssql, oracle, mongodb. Invalid values will render the connection unusable.",
 	}
 }
 
 // schemaDirectoryTypeField returns the schema for Directory Type field.
 // NOTE: Currently not used in any PAM resource but mapped in provider.go.
 // May be needed for pamUser or pamDirectory record types in the future.
+//
+// Supported values are based on Keeper's PAM directory protocols:
+// - Active Directory: Microsoft Active Directory (port 636 LDAPS required)
+// - OpenLDAP: OpenLDAP directory service (port 389 or 636)
 func schemaDirectoryTypeField() *schema.Schema {
 	return &schema.Schema{
-		Type:        schema.TypeList,
-		Optional:    true,
-		MaxItems:    1,
-		Description: "Directory type field data.",
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"type": {
-					Type:        schema.TypeString,
-					Computed:    true,
-					Description: "Field type.",
-				},
-				"label": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					Computed:    true,
-					Description: "Field label.",
-				},
-				"required": {
-					Type:        schema.TypeBool,
-					Optional:    true,
-					Description: "Required flag.",
-				},
-				"value": {
-					Type:        schema.TypeList,
-					Optional:    true,
-					MaxItems:    1,
-					Description: "Directory type value.",
-					Elem:        &schema.Schema{Type: schema.TypeString},
-				},
-			},
-		},
+		Type:     schema.TypeString,
+		Optional: true,
+		ValidateFunc: validation.StringInSlice([]string{
+			"Active Directory",
+			"OpenLDAP",
+		}, false),
+		Description: "Directory type. Must be one of: 'Active Directory', 'OpenLDAP'. " +
+			"Invalid values will render the connection unusable.",
 	}
 }
 

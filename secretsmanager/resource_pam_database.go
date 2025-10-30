@@ -184,13 +184,9 @@ func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m in
 			}
 		}
 	}
-	if fieldData := d.Get("database_type"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
-		if field, err := NewFieldFromSchema("databaseType", fieldData); err != nil {
-			return diag.FromErr(err)
-		} else if field != nil {
-			nrc.Fields = append(nrc.Fields, field)
-			// Don't call SetFieldTypeInSchema during Create - let Read populate full state
-		}
+	if databaseType := d.Get("database_type").(string); databaseType != "" {
+		field := core.NewDatabaseType(databaseType)
+		nrc.Fields = append(nrc.Fields, field)
 	}
 	if fieldData := d.Get("provider_group"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
 		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
@@ -358,9 +354,18 @@ func resourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m inte
 	if err = d.Set("database_id", databaseId); err != nil {
 		return diag.FromErr(err)
 	}
-	databaseType := getFieldResourceData("databaseType", "fields", secret)
-	if err = d.Set("database_type", databaseType); err != nil {
-		return diag.FromErr(err)
+	// Read database_type as a simple string value
+	if databaseTypeFields := secret.GetFieldsByType("databaseType"); len(databaseTypeFields) > 0 {
+		fieldMap := databaseTypeFields[0]
+		if valueInterface, exists := fieldMap["value"]; exists {
+			if valueList, ok := valueInterface.([]interface{}); ok && len(valueList) > 0 {
+				if dbType, ok := valueList[0].(string); ok && dbType != "" {
+					if err = d.Set("database_type", dbType); err != nil {
+						return diag.FromErr(err)
+					}
+				}
+			}
+		}
 	}
 	providerGroup := getFieldResourceDataWithLabel("text", "fields", secret, "Provider Group")
 	if err = d.Set("provider_group", providerGroup); err != nil {
@@ -484,8 +489,12 @@ func resourcePamDatabaseUpdate(ctx context.Context, d *schema.ResourceData, m in
 		}
 	}
 	if d.HasChange("database_type") {
-		if _, err := ApplyFieldChange("fields", "database_type", d, secret); err != nil {
-			return diag.FromErr(err)
+		databaseType := d.Get("database_type").(string)
+		if databaseType != "" {
+			// Use SetStandardFieldValue which calls update() to sync RecordDict to RawJson
+			if err := secret.SetStandardFieldValue("databaseType", []string{databaseType}); err != nil {
+				return diag.FromErr(fmt.Errorf("failed to update database_type: %w", err))
+			}
 		}
 	}
 	if d.HasChange("provider_group") {

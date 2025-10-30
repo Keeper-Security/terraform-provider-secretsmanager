@@ -119,9 +119,18 @@ func dataSourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m in
 	if err = d.Set("database_id", databaseId); err != nil {
 		return diag.FromErr(err)
 	}
-	databaseType := getFieldResourceData("databaseType", "fields", secret)
-	if err = d.Set("database_type", databaseType); err != nil {
-		return diag.FromErr(err)
+	// Read database_type as a simple string value
+	if databaseTypeFields := secret.GetFieldsByType("databaseType"); len(databaseTypeFields) > 0 {
+		fieldMap := databaseTypeFields[0]
+		if valueInterface, exists := fieldMap["value"]; exists {
+			if valueList, ok := valueInterface.([]interface{}); ok && len(valueList) > 0 {
+				if dbType, ok := valueList[0].(string); ok && dbType != "" {
+					if err = d.Set("database_type", dbType); err != nil {
+						return diag.FromErr(err)
+					}
+				}
+			}
+		}
 	}
 	providerGroup := getFieldResourceDataWithLabel("text", "fields", secret, "Provider Group")
 	if err = d.Set("provider_group", providerGroup); err != nil {

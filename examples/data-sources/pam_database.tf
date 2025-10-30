@@ -32,7 +32,7 @@ output "db_port" {
 }
 
 output "db_type" {
-  value = data.secretsmanager_pam_database.postgres_by_path.database_type[0].value[0]
+  value = data.secretsmanager_pam_database.postgres_by_path.database_type
 }
 
 output "db_login" {
