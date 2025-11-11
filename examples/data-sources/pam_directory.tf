@@ -1,0 +1,105 @@
+terraform {
+  required_providers {
+    secretsmanager = {
+      source  = "keeper-security/secretsmanager"
+      version = ">= 1.1.8"
+    }
+  }
+}
+
+provider "secretsmanager" {
+  credential = "<CREDENTIAL>"
+  # credential = file("~/.keeper/credential")
+}
+
+# Example 1: Read PAM Directory by path
+data "secretsmanager_pam_directory" "ad_by_path" {
+  path = "/Infrastructure/Directories/Corporate AD"
+}
+
+# Example 2: Read PAM Directory by title
+data "secretsmanager_pam_directory" "ad_by_title" {
+  title = "Corporate Active Directory"
+}
+
+# Output the PAM Directory data
+output "ad_hostname" {
+  value = data.secretsmanager_pam_directory.ad_by_path.pam_hostname[0].hostname
+}
+
+output "ad_port" {
+  value = data.secretsmanager_pam_directory.ad_by_path.pam_hostname[0].port
+}
+
+output "ad_directory_type" {
+  value = data.secretsmanager_pam_directory.ad_by_path.directory_type
+}
+
+output "ad_login" {
+  value = data.secretsmanager_pam_directory.ad_by_path.login[0].value
+}
+
+output "ad_password" {
+  value     = data.secretsmanager_pam_directory.ad_by_path.password[0].value
+  sensitive = true
+}
+
+output "ad_distinguished_name" {
+  value = try(data.secretsmanager_pam_directory.ad_by_path.distinguished_name[0].value, [])
+}
+
+# Access pamSettings as JSON
+output "ad_pam_settings" {
+  value = jsondecode(data.secretsmanager_pam_directory.ad_by_path.pam_settings)
+  sensitive = true
+}
+
+# Example: Extract specific settings from pamSettings
+locals {
+  ad_settings = jsondecode(data.secretsmanager_pam_directory.ad_by_path.pam_settings)
+  protocol = try(local.ad_settings[0].connection[0].protocol, "unknown")
+  port = try(local.ad_settings[0].connection[0].port, "389")
+  ssl_enabled = try(data.secretsmanager_pam_directory.ad_by_path.use_ssl[0].value[0], false)
+}
+
+output "ad_protocol" {
+  value = local.protocol
+}
+
+output "ad_connection_port" {
+  value = local.port
+}
+
+output "ad_ssl_enabled" {
+  value = local.ssl_enabled
+}
+
+# Example: Build connection string
+output "ad_connection_info" {
+  value = {
+    type = data.secretsmanager_pam_directory.ad_by_path.directory_type
+    host = data.secretsmanager_pam_directory.ad_by_path.pam_hostname[0].hostname
+    port = data.secretsmanager_pam_directory.ad_by_path.pam_hostname[0].port
+    protocol = local.protocol
+    ssl = local.ssl_enabled
+    base_dn = try(data.secretsmanager_pam_directory.ad_by_path.distinguished_name[0].value[0], "")
+  }
+}
+
+# Example: Use in another resource (e.g., LDAP client configuration)
+resource "null_resource" "ldap_connection_test" {
+  triggers = {
+    host = data.secretsmanager_pam_directory.ad_by_path.pam_hostname[0].hostname
+    port = data.secretsmanager_pam_directory.ad_by_path.pam_hostname[0].port
+    type = data.secretsmanager_pam_directory.ad_by_path.directory_type
+  }
+
+  provisioner "local-exec" {
+    command = "echo Testing connection to ${self.triggers.type} at ${self.triggers.host}:${self.triggers.port}"
+  }
+}
+
+# Example: Conditional output based on directory type
+output "directory_specific_notes" {
+  value = data.secretsmanager_pam_directory.ad_by_path.directory_type == "Active Directory" ? "Using Active Directory - ensure LDAPS is configured" : "Using OpenLDAP - verify SSL configuration"
+}

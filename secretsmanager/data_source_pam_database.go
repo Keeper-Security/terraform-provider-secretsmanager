@@ -83,14 +83,16 @@ func dataSourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m in
 	if err = d.Set("notes", secret.Notes()); err != nil {
 		return diag.FromErr(err)
 	}
-	if err = d.Set("login", secret.GetFieldValueByType("login")); err != nil {
-		return diag.FromErr(err)
-	}
-	if err = d.Set("password", secret.GetFieldValueByType("password")); err != nil {
-		return diag.FromErr(err)
-	}
 
 	// PAM Database specific fields
+	login := getFieldResourceData("login", "fields", secret)
+	if err = d.Set("login", login); err != nil {
+		return diag.FromErr(err)
+	}
+	password := getFieldResourceData("password", "fields", secret)
+	if err = d.Set("password", password); err != nil {
+		return diag.FromErr(err)
+	}
 	pamHostname := getFieldResourceData("pamHostname", "fields", secret)
 	if err = d.Set("pam_hostname", pamHostname); err != nil {
 		return diag.FromErr(err)

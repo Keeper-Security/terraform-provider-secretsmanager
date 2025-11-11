@@ -212,10 +212,9 @@ func schemaPamSettingsField() *schema.Schema {
 }
 
 // schemaPamResourcesField returns the schema for PAM Resources field.
-// NOTE: This field is for PAM Configuration records, NOT for pamUser/pamMachine/pamDatabase.
-// The allowed_* fields (connections, port_forwards, rotation, session_recording, typescript_recording)
-// are stored in Keeper's DAG (access control system) and are NOT accessible via KSM.
-// This function is reserved for future PAM Configuration record implementation.
+// NOTE: This field is for PAM Configuration records, NOT for pamUser/pamMachine/pamDatabase/pamDirectory.
+//
+// This function is reserved for future PAM Configuration record implementation (RT_PAM_CONFIGURATION).
 func schemaPamResourcesField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
@@ -330,12 +329,20 @@ func schemaDirectoryTypeField() *schema.Schema {
 // schemaScheduleField returns the schema for Schedule field (rotation schedules).
 // NOTE: Currently not used in any PAM resource but mapped in provider.go.
 // May be needed for rotation schedule configuration in PAM records.
+//
+// Go SDK Schedule structure (secrets-manager-go/core/record_data.go):
+// - Type: Schedule type (e.g., "WEEKLY", "MONTHLY", "DAILY")
+// - Cron: Cron expression for complex schedules
+// - Time: Time of day (e.g., "02:00")
+// - Tz: Timezone (e.g., "America/New_York")
+// - Weekday: Day of week for weekly schedules (e.g., "Sunday")
+// - IntervalCount: Interval count for recurring schedules
 func schemaScheduleField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
 		Optional:    true,
 		MaxItems:    1,
-		Description: "Schedule field data.",
+		Description: "Schedule field data for rotation schedules.",
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"type": {
@@ -357,9 +364,41 @@ func schemaScheduleField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeList,
 					Optional:    true,
-					MaxItems:    1,
-					Description: "Schedule value.",
-					Elem:        &schema.Schema{Type: schema.TypeString},
+					Description: "Schedule configuration.",
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"type": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								Description: "Schedule type (e.g., WEEKLY, MONTHLY, DAILY).",
+							},
+							"cron": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								Description: "Cron expression for complex schedules.",
+							},
+							"time": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								Description: "Time of day (e.g., 02:00).",
+							},
+							"tz": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								Description: "Timezone (e.g., America/New_York).",
+							},
+							"weekday": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								Description: "Day of week for weekly schedules (e.g., Sunday).",
+							},
+							"interval_count": {
+								Type:        schema.TypeInt,
+								Optional:    true,
+								Description: "Interval count for recurring schedules.",
+							},
+						},
+					},
 				},
 			},
 		},
