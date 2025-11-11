@@ -24,8 +24,10 @@ resource "secretsmanager_pam_machine" "ssh_server" {
   notes = "Main production SSH gateway"
 
   pam_hostname {
-    hostname = "ssh.prod.example.com"
-    port = "22"
+    value {
+      hostname = "ssh.prod.example.com"
+      port = "22"
+    }
   }
 
   # SSH-specific connection settings
@@ -74,8 +76,10 @@ resource "secretsmanager_pam_machine" "windows_server" {
   notes = "Windows Server 2022 for development"
 
   pam_hostname {
-    hostname = "win-dev.example.com"
-    port = "3389"
+    value {
+      hostname = "win-dev.example.com"
+      port = "3389"
+    }
   }
 
   # RDP-specific connection settings
@@ -120,8 +124,10 @@ resource "secretsmanager_pam_machine" "aws_instance" {
   notes = "Production EC2 web server"
 
   pam_hostname {
-    hostname = "ec2-10-0-1-100.compute-1.amazonaws.com"
-    port = "22"
+    value {
+      hostname = "ec2-10-0-1-100.compute-1.amazonaws.com"
+      port = "22"
+    }
   }
 
   pam_settings = jsonencode([{

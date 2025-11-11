@@ -24,8 +24,10 @@ resource "secretsmanager_pam_database" "postgres_prod" {
   notes = "Main production database cluster"
 
   pam_hostname {
-    hostname = "postgres.prod.example.com"
-    port = "5432"
+    value {
+      hostname = "postgres.prod.example.com"
+      port = "5432"
+    }
   }
 
   # PostgreSQL-specific connection settings
@@ -82,8 +84,10 @@ resource "secretsmanager_pam_database" "mysql_staging" {
   notes = "Staging database for testing"
 
   pam_hostname {
-    hostname = "mysql.staging.example.com"
-    port = "3306"
+    value {
+      hostname = "mysql.staging.example.com"
+      port = "3306"
+    }
   }
 
   # MySQL-specific connection settings
@@ -120,8 +124,10 @@ resource "secretsmanager_pam_database" "aws_rds_postgres" {
   notes = "Production RDS instance"
 
   pam_hostname {
-    hostname = "mydb.cluster-abc123.us-east-1.rds.amazonaws.com"
-    port = "5432"
+    value {
+      hostname = "mydb.cluster-abc123.us-east-1.rds.amazonaws.com"
+      port = "5432"
+    }
   }
 
   pam_settings = jsonencode([{
@@ -180,8 +186,10 @@ resource "secretsmanager_pam_database" "mongodb_dev" {
   notes = "Local MongoDB instance for development"
 
   pam_hostname {
-    hostname = "mongodb.dev.local"
-    port = "27017"
+    value {
+      hostname = "mongodb.dev.local"
+      port = "27017"
+    }
   }
 
   pam_settings = jsonencode([{
