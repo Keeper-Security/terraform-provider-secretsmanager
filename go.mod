@@ -1,6 +1,6 @@
 module github.com/keeper-security/terraform-provider-secretsmanager
 
-go 1.24.0
+go 1.24.8
 
 require (
 	github.com/hashicorp/go-cty v1.5.0
