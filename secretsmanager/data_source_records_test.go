@@ -10,8 +10,8 @@ import (
 
 func TestAccDataSourceRecords_Basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories,
+		PreCheck:  testAccPreCheck(t),
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceRecordsConfig_basic(),
@@ -30,8 +30,8 @@ func TestAccDataSourceRecords_Basic(t *testing.T) {
 
 func TestAccDataSourceRecords_WithTitles(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories,
+		PreCheck:  testAccPreCheck(t),
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceRecordsConfig_withTitles(),
@@ -47,8 +47,8 @@ func TestAccDataSourceRecords_WithTitles(t *testing.T) {
 
 func TestAccDataSourceRecords_MixedUidsAndTitles(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories,
+		PreCheck:  testAccPreCheck(t),
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceRecordsConfig_mixed(),
@@ -64,8 +64,8 @@ func TestAccDataSourceRecords_MixedUidsAndTitles(t *testing.T) {
 
 func TestAccDataSourceRecords_LargeBatch(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories,
+		PreCheck:  testAccPreCheck(t),
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceRecordsConfig_largeBatch(),
@@ -105,6 +105,7 @@ func testAccDataSourceRecordsCheck(n string) resource.TestCheckFunc {
 }
 
 func testAccDataSourceRecordsConfig_basic() string {
+	uid, _ := testAcc.getRecordInfo("login")
 	return fmt.Sprintf(`
 provider "secretsmanager" {
 	credential = "%s"
@@ -115,10 +116,11 @@ data "secretsmanager_records" "test" {
 		"%s"
 	]
 }
-`, testAccProviderCredential, testAccRecordUID)
+`, testAcc.credential, uid)
 }
 
 func testAccDataSourceRecordsConfig_withTitles() string {
+	_, title := testAcc.getRecordInfo("login")
 	return fmt.Sprintf(`
 provider "secretsmanager" {
 	credential = "%s"
@@ -129,10 +131,12 @@ data "secretsmanager_records" "test" {
 		"%s"
 	]
 }
-`, testAccProviderCredential, testAccRecordTitle)
+`, testAcc.credential, title)
 }
 
 func testAccDataSourceRecordsConfig_mixed() string {
+	_, title1 := testAcc.getRecordInfo("login")
+	uid2, _ := testAcc.getRecordInfo("encryptedNotes")
 	return fmt.Sprintf(`
 provider "secretsmanager" {
 	credential = "%s"
@@ -146,12 +150,13 @@ data "secretsmanager_records" "test" {
 		"%s"
 	]
 }
-`, testAccProviderCredential, testAccRecordUID, testAccRecordTitle2)
+`, testAcc.credential, uid2, title1)
 }
 
 func testAccDataSourceRecordsConfig_largeBatch() string {
 	// This would be used for testing with many UIDs
 	// In real testing, these would be actual UIDs from test data
+	uid, _ := testAcc.getRecordInfo("login")
 	return fmt.Sprintf(`
 provider "secretsmanager" {
 	credential = "%s"
@@ -162,5 +167,5 @@ data "secretsmanager_records" "test" {
 		"%s"
 	]
 }
-`, testAccProviderCredential, testAccRecordUID)
+`, testAcc.credential, uid)
 }
