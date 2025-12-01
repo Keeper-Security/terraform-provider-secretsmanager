@@ -41,6 +41,7 @@ func dataSourcePamDatabase() *schema.Resource {
 			},
 			// PAM Database specific fields
 			"pam_hostname":     schemaPamHostnameField(),
+			"pam_settings":     schemaPamSettingsField(),
 			"use_ssl":          schemaCheckboxField(),
 			"login":            schemaLoginField(),
 			"password":         schemaPasswordField(""),
@@ -82,10 +83,63 @@ func dataSourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m in
 	if err = d.Set("notes", secret.Notes()); err != nil {
 		return diag.FromErr(err)
 	}
-	if err = d.Set("login", secret.GetFieldValueByType("login")); err != nil {
+
+	// PAM Database specific fields
+	login := getFieldResourceData("login", "fields", secret)
+	if err = d.Set("login", login); err != nil {
 		return diag.FromErr(err)
 	}
-	if err = d.Set("password", secret.GetFieldValueByType("password")); err != nil {
+	password := getFieldResourceData("password", "fields", secret)
+	if err = d.Set("password", password); err != nil {
+		return diag.FromErr(err)
+	}
+	pamHostname := getFieldResourceData("pamHostname", "fields", secret)
+	if err = d.Set("pam_hostname", pamHostname); err != nil {
+		return diag.FromErr(err)
+	}
+	// Read pam_settings as JSON string
+	if pamSettingsFields := secret.GetFieldsByType("pamSettings"); len(pamSettingsFields) > 0 {
+		if pamSettingsJSON, err := pamSettingsFieldToJSON(pamSettingsFields[0]); err != nil {
+			return diag.FromErr(err)
+		} else if err = d.Set("pam_settings", pamSettingsJSON); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	useSSL := getFieldResourceDataWithLabel("checkbox", "fields", secret, "useSSL")
+	if err = d.Set("use_ssl", useSSL); err != nil {
+		return diag.FromErr(err)
+	}
+	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
+	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
+		return diag.FromErr(err)
+	}
+	connectDatabase := getFieldResourceDataWithLabel("text", "fields", secret, "Connect Database")
+	if err = d.Set("connect_database", connectDatabase); err != nil {
+		return diag.FromErr(err)
+	}
+	databaseId := getFieldResourceDataWithLabel("text", "fields", secret, "Database Id")
+	if err = d.Set("database_id", databaseId); err != nil {
+		return diag.FromErr(err)
+	}
+	// Read database_type as a simple string value
+	if databaseTypeFields := secret.GetFieldsByType("databaseType"); len(databaseTypeFields) > 0 {
+		fieldMap := databaseTypeFields[0]
+		if valueInterface, exists := fieldMap["value"]; exists {
+			if valueList, ok := valueInterface.([]interface{}); ok && len(valueList) > 0 {
+				if dbType, ok := valueList[0].(string); ok && dbType != "" {
+					if err = d.Set("database_type", dbType); err != nil {
+						return diag.FromErr(err)
+					}
+				}
+			}
+		}
+	}
+	providerGroup := getFieldResourceDataWithLabel("text", "fields", secret, "Provider Group")
+	if err = d.Set("provider_group", providerGroup); err != nil {
+		return diag.FromErr(err)
+	}
+	providerRegion := getFieldResourceDataWithLabel("text", "fields", secret, "Provider Region")
+	if err = d.Set("provider_region", providerRegion); err != nil {
 		return diag.FromErr(err)
 	}
 

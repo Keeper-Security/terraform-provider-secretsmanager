@@ -12,14 +12,14 @@ import (
 	"github.com/keeper-security/secrets-manager-go/core"
 )
 
-func resourcePamDatabase() *schema.Resource {
+func resourcePamDirectory() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourcePamDatabaseCreate,
-		ReadContext:   resourcePamDatabaseRead,
-		UpdateContext: resourcePamDatabaseUpdate,
-		DeleteContext: resourcePamDatabaseDelete,
+		CreateContext: resourcePamDirectoryCreate,
+		ReadContext:   resourcePamDirectoryRead,
+		UpdateContext: resourcePamDirectoryUpdate,
+		DeleteContext: resourcePamDirectoryDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: resourcePamDatabaseImport,
+			StateContext: resourcePamDirectoryImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"folder_uid": {
@@ -52,25 +52,22 @@ func resourcePamDatabase() *schema.Resource {
 				Optional:    true,
 				Description: "The secret notes.",
 			},
-			// PAM Database specific fields
-			"pam_hostname":     schemaPamHostnameField(),
-			"pam_settings":     schemaPamSettingsField(),
-			"use_ssl":          schemaCheckboxField(),
-			"login":            schemaLoginField(),
-			"password":         schemaPasswordField(""),
-			"rotation_scripts": schemaScriptField(),
-			"connect_database": schemaTextField(),
-			"database_id":      schemaTextField(),
-			"database_type":    schemaDatabaseTypeField(),
-			"provider_group":   schemaTextField(),
-			"provider_region":  schemaTextField(),
-			"file_ref":         schemaFileRefField(),
-			"totp":             schemaOneTimeCodeField(),
+			// PAM Directory specific fields
+			"pam_hostname":        schemaPamHostnameField(),
+			"pam_settings":        schemaPamSettingsField(),
+			"directory_type":      schemaDirectoryTypeField(),
+			"login":               schemaLoginField(),
+			"password":            schemaPasswordField(""),
+			"rotation_scripts":    schemaScriptField(),
+			"use_ssl":             schemaCheckboxField(),
+			"distinguished_name":  schemaTextField(),
+			"file_ref":            schemaFileRefField(),
+			"totp":                schemaOneTimeCodeField(),
 		},
 	}
 }
 
-func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourcePamDirectoryCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	provider := m.(providerMeta)
 	client := *provider.client
 	var diags diag.Diagnostics
@@ -88,7 +85,7 @@ func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m in
 		return diag.Errorf("'folder_uid' is required to create new resource")
 	}
 
-	nrc := core.NewRecordCreate("pamDatabase", "")
+	nrc := core.NewRecordCreate("pamDirectory", "")
 	if title := d.Get("title"); title != nil && title.(string) != "" {
 		nrc.Title = title.(string)
 	}
@@ -115,11 +112,15 @@ func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m in
 			nrc.Fields = append(nrc.Fields, field)
 		}
 	}
-	if fieldData := d.Get("use_ssl"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
-		if field, err := NewFieldFromSchema("checkbox", fieldData); err != nil {
+	// Handle directory_type as simple validated string field
+	if directoryType := d.Get("directory_type").(string); directoryType != "" {
+		if field, err := NewFieldFromSchema("directoryType", []interface{}{
+			map[string]interface{}{
+				"value": []interface{}{directoryType},
+			},
+		}); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
-			field.(*core.Checkbox).Label = "useSSL"
 			nrc.Fields = append(nrc.Fields, field)
 		}
 	}
@@ -162,50 +163,24 @@ func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m in
 			}
 		}
 	}
-	if fieldData := d.Get("connect_database"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
-		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
+	if fieldData := d.Get("use_ssl"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("checkbox", fieldData); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
-			field.(*core.Text).Label = "Connect Database"
+			field.(*core.Checkbox).Label = "Use SSL"
 			nrc.Fields = append(nrc.Fields, field)
-			if err := SetFieldTypeInSchema(d, "connect_database", "text"); err != nil {
+			if err := SetFieldTypeInSchema(d, "use_ssl", "checkbox"); err != nil {
 				return diag.FromErr(err)
 			}
 		}
 	}
-	if fieldData := d.Get("database_id"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+	if fieldData := d.Get("distinguished_name"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
 		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
-			field.(*core.Text).Label = "Database Id"
+			field.(*core.Text).Label = "Distinguished Name"
 			nrc.Fields = append(nrc.Fields, field)
-			if err := SetFieldTypeInSchema(d, "database_id", "text"); err != nil {
-				return diag.FromErr(err)
-			}
-		}
-	}
-	if databaseType := d.Get("database_type").(string); databaseType != "" {
-		field := core.NewDatabaseType(databaseType)
-		nrc.Fields = append(nrc.Fields, field)
-	}
-	if fieldData := d.Get("provider_group"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
-		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
-			return diag.FromErr(err)
-		} else if field != nil {
-			field.(*core.Text).Label = "Provider Group"
-			nrc.Fields = append(nrc.Fields, field)
-			if err := SetFieldTypeInSchema(d, "provider_group", "text"); err != nil {
-				return diag.FromErr(err)
-			}
-		}
-	}
-	if fieldData := d.Get("provider_region"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
-		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
-			return diag.FromErr(err)
-		} else if field != nil {
-			field.(*core.Text).Label = "Provider Region"
-			nrc.Fields = append(nrc.Fields, field)
-			if err := SetFieldTypeInSchema(d, "provider_region", "text"); err != nil {
+			if err := SetFieldTypeInSchema(d, "distinguished_name", "text"); err != nil {
 				return diag.FromErr(err)
 			}
 		}
@@ -254,7 +229,7 @@ func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m in
 	if err = d.Set("uid", uid); err != nil {
 		return diag.FromErr(err)
 	}
-	if err = d.Set("type", "pamDatabase"); err != nil {
+	if err = d.Set("type", "pamDirectory"); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -262,7 +237,7 @@ func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m in
 	return diags
 }
 
-func resourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	provider := m.(providerMeta)
 	client := *provider.client
 	var diags diag.Diagnostics
@@ -282,7 +257,7 @@ func resourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
-	resourceType := "pamDatabase"
+	resourceType := "pamDirectory"
 	recordType := secret.Type()
 	if recordType != resourceType {
 		return diag.Errorf("record type '%s' is not the expected type '%s' for this resource", recordType, resourceType)
@@ -325,7 +300,7 @@ func resourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
-	// PAM Database specific fields
+	// PAM Directory specific fields
 	pamHostname := getFieldResourceData("pamHostname", "fields", secret)
 	if err = d.Set("pam_hostname", pamHostname); err != nil {
 		return diag.FromErr(err)
@@ -338,41 +313,31 @@ func resourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m inte
 			return diag.FromErr(err)
 		}
 	}
-	useSSL := getFieldResourceDataWithLabel("checkbox", "fields", secret, "useSSL")
-	if err = d.Set("use_ssl", useSSL); err != nil {
-		return diag.FromErr(err)
-	}
-	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
-	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
-		return diag.FromErr(err)
-	}
-	connectDatabase := getFieldResourceDataWithLabel("text", "fields", secret, "Connect Database")
-	if err = d.Set("connect_database", connectDatabase); err != nil {
-		return diag.FromErr(err)
-	}
-	databaseId := getFieldResourceDataWithLabel("text", "fields", secret, "Database Id")
-	if err = d.Set("database_id", databaseId); err != nil {
-		return diag.FromErr(err)
-	}
-	// Read database_type as a simple string value
-	if databaseTypeFields := secret.GetFieldsByType("databaseType"); len(databaseTypeFields) > 0 {
-		fieldMap := databaseTypeFields[0]
-		if valueInterface, exists := fieldMap["value"]; exists {
-			if valueList, ok := valueInterface.([]interface{}); ok && len(valueList) > 0 {
-				if dbType, ok := valueList[0].(string); ok && dbType != "" {
-					if err = d.Set("database_type", dbType); err != nil {
-						return diag.FromErr(err)
+	// Read directory_type as simple string from directoryType field
+	if directoryTypeFields := secret.GetFieldsByType("directoryType"); len(directoryTypeFields) > 0 {
+		directoryTypeData := getFieldResourceData("directoryType", "fields", secret)
+		if directoryTypeList, ok := directoryTypeData.([]interface{}); ok && len(directoryTypeList) > 0 {
+			if directoryTypeMap, ok := directoryTypeList[0].(map[string]interface{}); ok {
+				if valueList, ok := directoryTypeMap["value"].([]interface{}); ok && len(valueList) > 0 {
+					if directoryTypeStr, ok := valueList[0].(string); ok {
+						if err = d.Set("directory_type", directoryTypeStr); err != nil {
+							return diag.FromErr(err)
+						}
 					}
 				}
 			}
 		}
 	}
-	providerGroup := getFieldResourceDataWithLabel("text", "fields", secret, "Provider Group")
-	if err = d.Set("provider_group", providerGroup); err != nil {
+	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
+	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
 		return diag.FromErr(err)
 	}
-	providerRegion := getFieldResourceDataWithLabel("text", "fields", secret, "Provider Region")
-	if err = d.Set("provider_region", providerRegion); err != nil {
+	useSSL := getFieldResourceDataWithLabel("checkbox", "fields", secret, "Use SSL")
+	if err = d.Set("use_ssl", useSSL); err != nil {
+		return diag.FromErr(err)
+	}
+	distinguishedName := getFieldResourceDataWithLabel("text", "fields", secret, "Distinguished Name")
+	if err = d.Set("distinguished_name", distinguishedName); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -385,7 +350,7 @@ func resourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m inte
 	return diags
 }
 
-func resourcePamDatabaseUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourcePamDirectoryUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	provider := m.(providerMeta)
 	client := *provider.client
 
@@ -468,9 +433,11 @@ func resourcePamDatabaseUpdate(ctx context.Context, d *schema.ResourceData, m in
 			return diag.FromErr(fmt.Errorf("failed to update pam_settings: %w", err))
 		}
 	}
-	if d.HasChange("use_ssl") {
-		if _, err := ApplyFieldChange("fields", "use_ssl", d, secret); err != nil {
-			return diag.FromErr(err)
+	if d.HasChange("directory_type") {
+		// Handle directory_type as simple string field - use SetStandardFieldValue
+		directoryType := d.Get("directory_type").(string)
+		if err := secret.SetStandardFieldValue("directoryType", []interface{}{directoryType}); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to update directory_type: %w", err))
 		}
 	}
 	if d.HasChange("rotation_scripts") {
@@ -478,32 +445,13 @@ func resourcePamDatabaseUpdate(ctx context.Context, d *schema.ResourceData, m in
 			return diag.FromErr(err)
 		}
 	}
-	if d.HasChange("connect_database") {
-		if _, err := ApplyFieldChange("fields", "connect_database", d, secret); err != nil {
+	if d.HasChange("use_ssl") {
+		if _, err := ApplyFieldChange("fields", "use_ssl", d, secret); err != nil {
 			return diag.FromErr(err)
 		}
 	}
-	if d.HasChange("database_id") {
-		if _, err := ApplyFieldChange("fields", "database_id", d, secret); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-	if d.HasChange("database_type") {
-		databaseType := d.Get("database_type").(string)
-		if databaseType != "" {
-			// Use SetStandardFieldValue which calls update() to sync RecordDict to RawJson
-			if err := secret.SetStandardFieldValue("databaseType", []string{databaseType}); err != nil {
-				return diag.FromErr(fmt.Errorf("failed to update database_type: %w", err))
-			}
-		}
-	}
-	if d.HasChange("provider_group") {
-		if _, err := ApplyFieldChange("fields", "provider_group", d, secret); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-	if d.HasChange("provider_region") {
-		if _, err := ApplyFieldChange("fields", "provider_region", d, secret); err != nil {
+	if d.HasChange("distinguished_name") {
+		if _, err := ApplyFieldChange("fields", "distinguished_name", d, secret); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -523,10 +471,10 @@ func resourcePamDatabaseUpdate(ctx context.Context, d *schema.ResourceData, m in
 		return diag.FromErr(err)
 	}
 
-	return resourcePamDatabaseRead(ctx, d, m)
+	return resourcePamDirectoryRead(ctx, d, m)
 }
 
-func resourcePamDatabaseDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourcePamDirectoryDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	provider := m.(providerMeta)
 	client := *provider.client
 	var diags diag.Diagnostics
@@ -554,7 +502,7 @@ func resourcePamDatabaseDelete(ctx context.Context, d *schema.ResourceData, m in
 	d.SetId("")
 	return diags
 }
-func resourcePamDatabaseImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func resourcePamDirectoryImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 	uid := d.Id()
 	if strings.TrimSpace(uid) == "" {
 		return nil, errors.New("'uid' is required to import resource")
@@ -564,11 +512,11 @@ func resourcePamDatabaseImport(ctx context.Context, d *schema.ResourceData, m in
 		return nil, err
 	}
 
-	diags := resourcePamDatabaseRead(ctx, d, m)
+	diags := resourcePamDirectoryRead(ctx, d, m)
 	if diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
-				return nil, fmt.Errorf("error reading PAM Database: %s", d.Summary)
+				return nil, fmt.Errorf("error reading PAM Directory: %s", d.Summary)
 			}
 		}
 	}

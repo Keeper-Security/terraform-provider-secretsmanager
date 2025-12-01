@@ -8,20 +8,20 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourcePamMachine() *schema.Resource {
+func dataSourcePamDirectory() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourcePamMachineRead,
+		ReadContext: dataSourcePamDirectoryRead,
 		Schema: map[string]*schema.Schema{
 			"path": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "The path to PAM Machine secret.",
+				Description:  "The path to PAM Directory secret.",
 				ExactlyOneOf: []string{"path", "title"},
 			},
 			"title": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "The title of PAM Machine secret to search.",
+				Description:  "The title of PAM Directory secret to search.",
 				ExactlyOneOf: []string{"path", "title"},
 			},
 			"folder_uid": {
@@ -39,25 +39,22 @@ func dataSourcePamMachine() *schema.Resource {
 				Computed:    true,
 				Description: "The secret notes.",
 			},
-			// PAM Machine specific fields
-			"pam_hostname":     schemaPamHostnameField(),
-			"pam_settings":     schemaPamSettingsField(),
-			"login":            schemaLoginField(),
-			"password":         schemaPasswordField(""),
-			"rotation_scripts": schemaScriptField(),
-			"operating_system": schemaTextField(),
-			"ssl_verification": schemaCheckboxField(),
-			"instance_name":    schemaTextField(),
-			"instance_id":      schemaTextField(),
-			"provider_group":   schemaTextField(),
-			"provider_region":  schemaTextField(),
-			"file_ref":         schemaFileRefField(),
-			"totp":             schemaOneTimeCodeField(),
+			// PAM Directory specific fields
+			"pam_hostname":       schemaPamHostnameField(),
+			"pam_settings":       schemaPamSettingsField(),
+			"directory_type":     schemaDirectoryTypeField(),
+			"login":              schemaLoginField(),
+			"password":           schemaPasswordField(""),
+			"rotation_scripts":   schemaScriptField(),
+			"use_ssl":            schemaCheckboxField(),
+			"distinguished_name": schemaTextField(),
+			"file_ref":           schemaFileRefField(),
+			"totp":               schemaOneTimeCodeField(),
 		},
 	}
 }
 
-func dataSourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	provider := m.(providerMeta)
 	client := *provider.client
 	var diags diag.Diagnostics
@@ -69,7 +66,7 @@ func dataSourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m int
 		return diag.FromErr(err)
 	}
 
-	dataSourceType := "pamMachine"
+	dataSourceType := "pamDirectory"
 	recordType := secret.Type()
 	if recordType != dataSourceType {
 		return diag.Errorf("record type '%s' is not the expected type '%s' for this data source", recordType, dataSourceType)
@@ -84,7 +81,7 @@ func dataSourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m int
 		return diag.FromErr(err)
 	}
 
-	// PAM Machine specific fields
+	// PAM Directory specific fields
 	login := getFieldResourceData("login", "fields", secret)
 	if err = d.Set("login", login); err != nil {
 		return diag.FromErr(err)
@@ -105,32 +102,31 @@ func dataSourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m int
 			return diag.FromErr(err)
 		}
 	}
+	// Read directory_type as simple string from directoryType field
+	if directoryTypeFields := secret.GetFieldsByType("directoryType"); len(directoryTypeFields) > 0 {
+		directoryTypeData := getFieldResourceData("directoryType", "fields", secret)
+		if directoryTypeList, ok := directoryTypeData.([]interface{}); ok && len(directoryTypeList) > 0 {
+			if directoryTypeMap, ok := directoryTypeList[0].(map[string]interface{}); ok {
+				if valueList, ok := directoryTypeMap["value"].([]interface{}); ok && len(valueList) > 0 {
+					if directoryTypeStr, ok := valueList[0].(string); ok {
+						if err = d.Set("directory_type", directoryTypeStr); err != nil {
+							return diag.FromErr(err)
+						}
+					}
+				}
+			}
+		}
+	}
 	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
 		return diag.FromErr(err)
 	}
-	operatingSystem := getFieldResourceDataWithLabel("text", "fields", secret, "Operating System")
-	if err = d.Set("operating_system", operatingSystem); err != nil {
+	useSSL := getFieldResourceDataWithLabel("checkbox", "fields", secret, "Use SSL")
+	if err = d.Set("use_ssl", useSSL); err != nil {
 		return diag.FromErr(err)
 	}
-	sslVerification := getFieldResourceDataWithLabel("checkbox", "fields", secret, "SSL Verification")
-	if err = d.Set("ssl_verification", sslVerification); err != nil {
-		return diag.FromErr(err)
-	}
-	instanceName := getFieldResourceDataWithLabel("text", "fields", secret, "Instance Name")
-	if err = d.Set("instance_name", instanceName); err != nil {
-		return diag.FromErr(err)
-	}
-	instanceId := getFieldResourceDataWithLabel("text", "fields", secret, "Instance Id")
-	if err = d.Set("instance_id", instanceId); err != nil {
-		return diag.FromErr(err)
-	}
-	providerGroup := getFieldResourceDataWithLabel("text", "fields", secret, "Provider Group")
-	if err = d.Set("provider_group", providerGroup); err != nil {
-		return diag.FromErr(err)
-	}
-	providerRegion := getFieldResourceDataWithLabel("text", "fields", secret, "Provider Region")
-	if err = d.Set("provider_region", providerRegion); err != nil {
+	distinguishedName := getFieldResourceDataWithLabel("text", "fields", secret, "Distinguished Name")
+	if err = d.Set("distinguished_name", distinguishedName); err != nil {
 		return diag.FromErr(err)
 	}
 
