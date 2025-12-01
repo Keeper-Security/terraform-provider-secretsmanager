@@ -229,10 +229,10 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 	// Convert records to Terraform schema format
 	recordsList := make([]interface{}, len(secrets))
 	recordsMap := make(map[string]interface{})
-	
+
 	for i, secret := range secrets {
 		record := make(map[string]interface{})
-		
+
 		record["uid"] = secret.Uid
 		record["type"] = secret.Type()
 		record["title"] = secret.Title()
@@ -251,7 +251,7 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 		record["file_ref"] = fileItems
 
 		recordsList[i] = record
-		
+
 		// Store JSON-encoded record in map for UID-based access
 		// This allows users to decode and access the full record structure
 		if jsonData, err := json.Marshal(record); err == nil {
@@ -276,7 +276,7 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 		allIds = append(allIds, record.Uid)
 	}
 	sort.Strings(allIds)
-	
+
 	h := sha256.New()
 	h.Write([]byte(strings.Join(allIds, ",")))
 	d.SetId(fmt.Sprintf("%x", h.Sum(nil)))
