@@ -13,7 +13,7 @@ func TestAccResourcePamDatabase_create(t *testing.T) {
 	secretUid := core.GenerateUid()
 	secretTitle := "tf_acc_test_pam_database_create"
 	if secretFolderUid == "" {
-		t.Fatal("Failed to access test folder UID")
+		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 	}
 
 	config := fmt.Sprintf(`
@@ -99,7 +99,7 @@ func TestAccResourcePamDatabase_create(t *testing.T) {
 // 	secretTitle := "tf_acc_test_pam_database_update"
 // 	secretTitle2 := "tf_acc_test_pam_database_update_2"
 // 	if secretFolderUid == "" {
-// 		t.Fatal("Failed to access test folder UID")
+// 		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 // 	}
 //
 // 	configInit := fmt.Sprintf(`
@@ -204,7 +204,7 @@ func TestAccResourcePamDatabase_deleteDetection(t *testing.T) {
 	secretUid := core.GenerateUid()
 	secretTitle := "tf_acc_test_pam_database_delete"
 	if secretFolderUid == "" {
-		t.Fatal("Failed to access test folder UID")
+		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 	}
 
 	config := fmt.Sprintf(`
@@ -243,7 +243,7 @@ func TestAccResourcePamDatabase_import(t *testing.T) {
 	secretUid := core.GenerateUid()
 	secretTitle := "tf_acc_test_pam_database_import"
 	if secretFolderUid == "" {
-		t.Fatal("Failed to access test folder UID")
+		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 	}
 
 	config := fmt.Sprintf(`
