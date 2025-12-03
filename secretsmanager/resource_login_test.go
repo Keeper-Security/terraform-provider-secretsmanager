@@ -230,3 +230,102 @@ func TestAccResourceLogin_import(t *testing.T) {
 		},
 	})
 }
+func TestAccResourceLogin_customFields(t *testing.T) {
+	secretType := "login"
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	_, secretTitle := testAcc.getRecordInfo(secretType)
+	if secretUid == "" || secretTitle == "" {
+		t.Fatal("Failed to access test data - missing secret UID and/or Title")
+	}
+	secretTitle += "_resource_custom_fields"
+
+	configCreate := fmt.Sprintf(`
+		resource "secretsmanager_login" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			notes = "Test custom fields"
+			login {
+				value = "testuser"
+			}
+			password {
+				value = "testpass123"
+			}
+			custom {
+				type = "text"
+				label = "Department"
+				value = "Engineering"
+			}
+			custom {
+				type = "text"
+				label = "Employee ID"
+				value = "EMP001"
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	configUpdate := fmt.Sprintf(`
+		resource "secretsmanager_login" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			notes = "Test custom fields updated"
+			login {
+				value = "testuser"
+			}
+			password {
+				value = "testpass123"
+			}
+			custom {
+				type = "text"
+				label = "Department"
+				value = "DevOps"
+			}
+			custom {
+				type = "text"
+				label = "Employee ID"
+				value = "EMP002"
+			}
+			custom {
+				type = "text"
+				label = "Cost Center"
+				value = "CC123"
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	resourceName := fmt.Sprintf("secretsmanager_login.%v", secretTitle)
+	resource.Test(t, resource.TestCase{
+		Providers: testAccProviders,
+		PreCheck:  testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: configCreate,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr(resourceName, "type", secretType),
+					resource.TestCheckResourceAttr(resourceName, "title", secretTitle),
+					resource.TestCheckResourceAttr(resourceName, "custom.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.label", "Department"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.value", "Engineering"),
+					resource.TestCheckResourceAttr(resourceName, "custom.1.label", "Employee ID"),
+					resource.TestCheckResourceAttr(resourceName, "custom.1.value", "EMP001"),
+				),
+			},
+			{
+				Config: configUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr(resourceName, "custom.#", "3"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.label", "Department"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.value", "DevOps"),
+					resource.TestCheckResourceAttr(resourceName, "custom.1.label", "Employee ID"),
+					resource.TestCheckResourceAttr(resourceName, "custom.1.value", "EMP002"),
+					resource.TestCheckResourceAttr(resourceName, "custom.2.label", "Cost Center"),
+					resource.TestCheckResourceAttr(resourceName, "custom.2.value", "CC123"),
+				),
+			},
+		},
+	})
+}

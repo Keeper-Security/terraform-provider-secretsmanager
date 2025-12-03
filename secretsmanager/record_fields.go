@@ -1422,3 +1422,41 @@ func schemaUrlField() *schema.Schema {
 		},
 	}
 }
+
+func schemaCustomField() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeList,
+		Optional:    true,
+		Description: "Custom field data.",
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"type": {
+					Type:        schema.TypeString,
+					Required:    true,
+					Description: "Field type (e.g., text, multiline, secret, etc.).",
+				},
+				"label": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Description: "Field label.",
+				},
+				"required": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: "Required flag.",
+				},
+				"privacy_screen": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: "Privacy screen flag.",
+				},
+				"value": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+					Description: "Field value.",
+				},
+			},
+		},
+	}
+}

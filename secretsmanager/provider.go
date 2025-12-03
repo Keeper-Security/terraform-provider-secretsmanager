@@ -2803,3 +2803,7 @@ func getNotation(client core.SecretsManager, notation string) (fieldValue []inte
 	}
 	return fieldValue, e
 }
+
+func getFieldItemsResourceData(section string, secret *core.Record) []interface{} {
+	return getFieldItemsData(secret.RecordDict, section)
+}
