@@ -9,57 +9,59 @@ import (
 	"github.com/keeper-security/secrets-manager-go/core"
 )
 
-func TestAccResourcePamDatabase_create(t *testing.T) {
+func TestAccResourcePamDirectory_create(t *testing.T) {
 	secretFolderUid := testAcc.getTestFolder()
 	secretUid := core.GenerateUid()
-	secretTitle := "tf_acc_test_pam_database_create"
+	secretTitle := "tf_acc_test_pam_directory_create"
 	if secretFolderUid == "" {
 		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 	}
 
 	config := fmt.Sprintf(`
-		resource "secretsmanager_pam_database" "%v" {
+		resource "secretsmanager_pam_directory" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
 			pam_hostname {
 				value {
-					hostname = "db.example.com"
-					port = "5432"
+					hostname = "ad.corp.example.com"
+					port = "636"
 				}
 			}
 			pam_settings = jsonencode([{
 				connection = [{
-					protocol = "postgresql"
-					port = "5432"
-					recordingIncludeKeys = true
-					allowSupplyUser = false
-					database = "production"
+					protocol = "ldaps"
+					port = "636"
+					recordingIncludeKeys = false
 				}]
 			}])
-			database_type = "postgresql"
-			use_ssl {
-				value = [true]
-			}
+			directory_type = "Active Directory"
 			login {
-				value = "dbadmin"
+				value = "CN=Admin,CN=Users,DC=corp,DC=example,DC=com"
 			}
 			password {
 				enforce_generation = true
 				generate = "yes"
 				complexity {
-					length = 32
-					caps = 8
-					lowercase = 8
-					digits = 8
-					special = 8
+					length = 24
+					caps = 6
+					lowercase = 6
+					digits = 6
+					special = 6
 				}
+			}
+			distinguished_name {
+				label = "Distinguished Name"
+				value = "DC=corp,DC=example,DC=com"
+			}
+			use_ssl {
+				value = [true]
 			}
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
-	resourceName := fmt.Sprintf("secretsmanager_pam_database.%v", secretTitle)
+	resourceName := fmt.Sprintf("secretsmanager_pam_directory.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		Providers: testAccProviders,
 		PreCheck:  testAccPreCheck(t),
@@ -68,78 +70,78 @@ func TestAccResourcePamDatabase_create(t *testing.T) {
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					checkSecretExistsRemotely(secretUid),
-					resource.TestCheckResourceAttr(resourceName, "type", "pamDatabase"),
+					resource.TestCheckResourceAttr(resourceName, "type", "pamDirectory"),
 					resource.TestCheckResourceAttr(resourceName, "title", secretTitle),
 					resource.TestCheckResourceAttr(resourceName, "notes", secretTitle),
-					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.hostname", "db.example.com"),
-					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.port", "5432"),
+					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.hostname", "ad.corp.example.com"),
+					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.port", "636"),
+					resource.TestCheckResourceAttr(resourceName, "directory_type", "Active Directory"),
+					resource.TestCheckResourceAttr(resourceName, "login.0.value", "CN=Admin,CN=Users,DC=corp,DC=example,DC=com"),
+					resource.TestCheckResourceAttr(resourceName, "distinguished_name.0.value", "DC=corp,DC=example,DC=com"),
+					resource.TestCheckResourceAttr(resourceName, "use_ssl.0.value.0", "true"),
 				),
 			},
 		},
 	})
 }
 
-// TestAccResourcePamDatabase_update tests updating PAM Database fields.
-// NOTE: This test only updates fields that work reliably (pam_hostname, pam_settings, notes).
-// The use_ssl field is NOT tested because it uses ApplyFieldChange() which doesn't sync
-// RecordDict to RawJson due to an SDK limitation. See resourcePamDatabaseUpdate:471-475.
-func TestAccResourcePamDatabase_update(t *testing.T) {
+// TestAccResourcePamDirectory_update tests updating PAM Directory fields.
+// NOTE: This test only updates pam_hostname and pam_settings which use SetStandardFieldValue().
+// Fields like distinguished_name and use_ssl use ApplyFieldChange() which doesn't sync
+// RecordDict to RawJson due to an SDK limitation. See resourcePamDirectoryUpdate for details.
+func TestAccResourcePamDirectory_update(t *testing.T) {
 	secretFolderUid := testAcc.getTestFolder()
 	secretUid := core.GenerateUid()
-	secretTitle := "tf_acc_test_pam_database_update"
-	secretTitle2 := "tf_acc_test_pam_database_update_2"
+	secretTitle := "tf_acc_test_pam_directory_update"
+	secretTitle2 := "tf_acc_test_pam_directory_update_2"
 	if secretFolderUid == "" {
 		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 	}
 
 	configInit := fmt.Sprintf(`
-		resource "secretsmanager_pam_database" "%v" {
+		resource "secretsmanager_pam_directory" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
 			pam_hostname {
 				value {
-					hostname = "db.example.com"
-					port = "5432"
+					hostname = "ad.corp.example.com"
+					port = "636"
 				}
 			}
 			pam_settings = jsonencode([{
 				connection = [{
-					protocol = "postgresql"
-					port = "5432"
-					database = "production"
+					protocol = "ldaps"
+					port = "636"
 				}]
 			}])
-			database_type = "postgresql"
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
 	configUpdate := fmt.Sprintf(`
-		resource "secretsmanager_pam_database" "%v" {
+		resource "secretsmanager_pam_directory" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
 			pam_hostname {
 				value {
-					hostname = "db-new.example.com"
-					port = "3306"
+					hostname = "ldap.dev.example.com"
+					port = "389"
 				}
 			}
 			pam_settings = jsonencode([{
 				connection = [{
-					protocol = "mysql"
-					port = "3306"
-					database = "staging"
-					allowSupplyHost = true
+					protocol = "ldap"
+					port = "389"
+					recordingIncludeKeys = false
 				}]
 			}])
-			database_type = "mysql"
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle2)
 
-	resourceName := fmt.Sprintf("secretsmanager_pam_database.%v", secretTitle)
+	resourceName := fmt.Sprintf("secretsmanager_pam_directory.%v", secretTitle)
 
 	resource.Test(t, resource.TestCase{
 		Providers: testAccProviders,
@@ -152,11 +154,8 @@ func TestAccResourcePamDatabase_update(t *testing.T) {
 						if s.Attributes["notes"] != secretTitle {
 							return fmt.Errorf("expected 'notes' = '%s'", secretTitle)
 						}
-						if s.Attributes["pam_hostname.0.value.0.hostname"] != "db.example.com" {
-							return fmt.Errorf("expected hostname = 'db.example.com'")
-						}
-						if s.Attributes["database_type"] != "postgresql" {
-							return fmt.Errorf("expected database_type = 'postgresql'")
+						if s.Attributes["pam_hostname.0.value.0.hostname"] != "ad.corp.example.com" {
+							return fmt.Errorf("expected hostname = 'ad.corp.example.com'")
 						}
 						return nil
 					}),
@@ -170,14 +169,13 @@ func TestAccResourcePamDatabase_update(t *testing.T) {
 						if s.Attributes["notes"] != secretTitle2 {
 							return fmt.Errorf("expected 'notes' = '%s'", secretTitle2)
 						}
-						if s.Attributes["pam_hostname.0.value.0.hostname"] != "db-new.example.com" {
-							return fmt.Errorf("expected hostname = 'db-new.example.com'")
+						actualHostname := s.Attributes["pam_hostname.0.value.0.hostname"]
+						if actualHostname != "ldap.dev.example.com" {
+							return fmt.Errorf("expected hostname = 'ldap.dev.example.com', got '%s'", actualHostname)
 						}
-						if s.Attributes["pam_hostname.0.value.0.port"] != "3306" {
-							return fmt.Errorf("expected port = '3306'")
-						}
-						if s.Attributes["database_type"] != "mysql" {
-							return fmt.Errorf("expected database_type = 'mysql'")
+						actualPort := s.Attributes["pam_hostname.0.value.0.port"]
+						if actualPort != "389" {
+							return fmt.Errorf("expected port = '389', got '%s'", actualPort)
 						}
 						return nil
 					}),
@@ -188,16 +186,16 @@ func TestAccResourcePamDatabase_update(t *testing.T) {
 	})
 }
 
-func TestAccResourcePamDatabase_deleteDetection(t *testing.T) {
+func TestAccResourcePamDirectory_deleteDetection(t *testing.T) {
 	secretFolderUid := testAcc.getTestFolder()
 	secretUid := core.GenerateUid()
-	secretTitle := "tf_acc_test_pam_database_delete"
+	secretTitle := "tf_acc_test_pam_directory_delete"
 	if secretFolderUid == "" {
 		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 	}
 
 	config := fmt.Sprintf(`
-		resource "secretsmanager_pam_database" "%v" {
+		resource "secretsmanager_pam_directory" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
@@ -227,24 +225,34 @@ func TestAccResourcePamDatabase_deleteDetection(t *testing.T) {
 	})
 }
 
-func TestAccResourcePamDatabase_import(t *testing.T) {
+func TestAccResourcePamDirectory_import(t *testing.T) {
 	secretFolderUid := testAcc.getTestFolder()
 	secretUid := core.GenerateUid()
-	secretTitle := "tf_acc_test_pam_database_import"
+	secretTitle := "tf_acc_test_pam_directory_import"
 	if secretFolderUid == "" {
 		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 	}
 
 	config := fmt.Sprintf(`
-		resource "secretsmanager_pam_database" "%v" {
+		resource "secretsmanager_pam_directory" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
+			pam_hostname {
+				value {
+					hostname = "ad.example.com"
+					port = "636"
+				}
+			}
+			directory_type = "Active Directory"
+			login {
+				value = "CN=Admin,DC=example,DC=com"
+			}
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
-	resourceName := fmt.Sprintf("secretsmanager_pam_database.%v", secretTitle)
+	resourceName := fmt.Sprintf("secretsmanager_pam_directory.%v", secretTitle)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),

@@ -9,39 +9,20 @@ import (
 	"github.com/keeper-security/secrets-manager-go/core"
 )
 
-func TestAccResourcePamDatabase_create(t *testing.T) {
+func TestAccResourcePamUser_create(t *testing.T) {
 	secretFolderUid := testAcc.getTestFolder()
 	secretUid := core.GenerateUid()
-	secretTitle := "tf_acc_test_pam_database_create"
+	secretTitle := "tf_acc_test_pam_user_create"
 	if secretFolderUid == "" {
 		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 	}
 
 	config := fmt.Sprintf(`
-		resource "secretsmanager_pam_database" "%v" {
+		resource "secretsmanager_pam_user" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
-			pam_hostname {
-				value {
-					hostname = "db.example.com"
-					port = "5432"
-				}
-			}
-			pam_settings = jsonencode([{
-				connection = [{
-					protocol = "postgresql"
-					port = "5432"
-					recordingIncludeKeys = true
-					allowSupplyUser = false
-					database = "production"
-				}]
-			}])
-			database_type = "postgresql"
-			use_ssl {
-				value = [true]
-			}
 			login {
 				value = "dbadmin"
 			}
@@ -49,17 +30,29 @@ func TestAccResourcePamDatabase_create(t *testing.T) {
 				enforce_generation = true
 				generate = "yes"
 				complexity {
-					length = 32
-					caps = 8
-					lowercase = 8
-					digits = 8
-					special = 8
+					length = 24
+					caps = 5
+					lowercase = 5
+					digits = 5
+					special = 5
 				}
+			}
+			distinguished_name {
+				label = "Distinguished Name"
+				value = "CN=dbadmin,OU=Users,DC=example,DC=com"
+			}
+			connect_database {
+				label = "Connect Database"
+				value = "production_db"
+			}
+			managed {
+				label = "Managed"
+				value = [true]
 			}
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
-	resourceName := fmt.Sprintf("secretsmanager_pam_database.%v", secretTitle)
+	resourceName := fmt.Sprintf("secretsmanager_pam_user.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		Providers: testAccProviders,
 		PreCheck:  testAccPreCheck(t),
@@ -68,78 +61,57 @@ func TestAccResourcePamDatabase_create(t *testing.T) {
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					checkSecretExistsRemotely(secretUid),
-					resource.TestCheckResourceAttr(resourceName, "type", "pamDatabase"),
+					resource.TestCheckResourceAttr(resourceName, "type", "pamUser"),
 					resource.TestCheckResourceAttr(resourceName, "title", secretTitle),
 					resource.TestCheckResourceAttr(resourceName, "notes", secretTitle),
-					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.hostname", "db.example.com"),
-					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.port", "5432"),
+					resource.TestCheckResourceAttr(resourceName, "login.0.value", "dbadmin"),
+					resource.TestCheckResourceAttr(resourceName, "distinguished_name.0.value", "CN=dbadmin,OU=Users,DC=example,DC=com"),
+					resource.TestCheckResourceAttr(resourceName, "connect_database.0.value", "production_db"),
+					resource.TestCheckResourceAttr(resourceName, "managed.0.value.0", "true"),
 				),
 			},
 		},
 	})
 }
 
-// TestAccResourcePamDatabase_update tests updating PAM Database fields.
-// NOTE: This test only updates fields that work reliably (pam_hostname, pam_settings, notes).
-// The use_ssl field is NOT tested because it uses ApplyFieldChange() which doesn't sync
-// RecordDict to RawJson due to an SDK limitation. See resourcePamDatabaseUpdate:471-475.
-func TestAccResourcePamDatabase_update(t *testing.T) {
+// TestAccResourcePamUser_update tests updating PAM User fields.
+// NOTE: This test only updates title and notes which don't use ApplyFieldChange().
+// Fields like login, distinguished_name, connect_database, and managed use ApplyFieldChange()
+// which doesn't sync RecordDict to RawJson due to an SDK limitation. See resourcePamUserUpdate:337-366.
+func TestAccResourcePamUser_update(t *testing.T) {
 	secretFolderUid := testAcc.getTestFolder()
 	secretUid := core.GenerateUid()
-	secretTitle := "tf_acc_test_pam_database_update"
-	secretTitle2 := "tf_acc_test_pam_database_update_2"
+	secretTitle := "tf_acc_test_pam_user_update"
+	secretTitle2 := "tf_acc_test_pam_user_update_2"
 	if secretFolderUid == "" {
 		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 	}
 
 	configInit := fmt.Sprintf(`
-		resource "secretsmanager_pam_database" "%v" {
+		resource "secretsmanager_pam_user" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
-			pam_hostname {
-				value {
-					hostname = "db.example.com"
-					port = "5432"
-				}
+			login {
+				value = "dbadmin"
 			}
-			pam_settings = jsonencode([{
-				connection = [{
-					protocol = "postgresql"
-					port = "5432"
-					database = "production"
-				}]
-			}])
-			database_type = "postgresql"
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
 	configUpdate := fmt.Sprintf(`
-		resource "secretsmanager_pam_database" "%v" {
+		resource "secretsmanager_pam_user" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
-			pam_hostname {
-				value {
-					hostname = "db-new.example.com"
-					port = "3306"
-				}
+			login {
+				value = "dbadmin"
 			}
-			pam_settings = jsonencode([{
-				connection = [{
-					protocol = "mysql"
-					port = "3306"
-					database = "staging"
-					allowSupplyHost = true
-				}]
-			}])
-			database_type = "mysql"
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle2)
 
-	resourceName := fmt.Sprintf("secretsmanager_pam_database.%v", secretTitle)
+	resourceName := fmt.Sprintf("secretsmanager_pam_user.%v", secretTitle)
 
 	resource.Test(t, resource.TestCase{
 		Providers: testAccProviders,
@@ -151,12 +123,6 @@ func TestAccResourcePamDatabase_update(t *testing.T) {
 					checkSecretResourceState(resourceName, func(s *terraform.InstanceState) error {
 						if s.Attributes["notes"] != secretTitle {
 							return fmt.Errorf("expected 'notes' = '%s'", secretTitle)
-						}
-						if s.Attributes["pam_hostname.0.value.0.hostname"] != "db.example.com" {
-							return fmt.Errorf("expected hostname = 'db.example.com'")
-						}
-						if s.Attributes["database_type"] != "postgresql" {
-							return fmt.Errorf("expected database_type = 'postgresql'")
 						}
 						return nil
 					}),
@@ -170,15 +136,6 @@ func TestAccResourcePamDatabase_update(t *testing.T) {
 						if s.Attributes["notes"] != secretTitle2 {
 							return fmt.Errorf("expected 'notes' = '%s'", secretTitle2)
 						}
-						if s.Attributes["pam_hostname.0.value.0.hostname"] != "db-new.example.com" {
-							return fmt.Errorf("expected hostname = 'db-new.example.com'")
-						}
-						if s.Attributes["pam_hostname.0.value.0.port"] != "3306" {
-							return fmt.Errorf("expected port = '3306'")
-						}
-						if s.Attributes["database_type"] != "mysql" {
-							return fmt.Errorf("expected database_type = 'mysql'")
-						}
 						return nil
 					}),
 					checkSecretExistsRemotely(secretUid),
@@ -188,16 +145,16 @@ func TestAccResourcePamDatabase_update(t *testing.T) {
 	})
 }
 
-func TestAccResourcePamDatabase_deleteDetection(t *testing.T) {
+func TestAccResourcePamUser_deleteDetection(t *testing.T) {
 	secretFolderUid := testAcc.getTestFolder()
 	secretUid := core.GenerateUid()
-	secretTitle := "tf_acc_test_pam_database_delete"
+	secretTitle := "tf_acc_test_pam_user_delete"
 	if secretFolderUid == "" {
 		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 	}
 
 	config := fmt.Sprintf(`
-		resource "secretsmanager_pam_database" "%v" {
+		resource "secretsmanager_pam_user" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
@@ -227,24 +184,27 @@ func TestAccResourcePamDatabase_deleteDetection(t *testing.T) {
 	})
 }
 
-func TestAccResourcePamDatabase_import(t *testing.T) {
+func TestAccResourcePamUser_import(t *testing.T) {
 	secretFolderUid := testAcc.getTestFolder()
 	secretUid := core.GenerateUid()
-	secretTitle := "tf_acc_test_pam_database_import"
+	secretTitle := "tf_acc_test_pam_user_import"
 	if secretFolderUid == "" {
 		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 	}
 
 	config := fmt.Sprintf(`
-		resource "secretsmanager_pam_database" "%v" {
+		resource "secretsmanager_pam_user" "%v" {
 			folder_uid = "%v"
 			uid = "%v"
 			title = "%v"
 			notes = "%v"
+			login {
+				value = "dbadmin"
+			}
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 
-	resourceName := fmt.Sprintf("secretsmanager_pam_database.%v", secretTitle)
+	resourceName := fmt.Sprintf("secretsmanager_pam_user.%v", secretTitle)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
