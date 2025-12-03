@@ -2,6 +2,7 @@ package secretsmanager
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -168,4 +169,156 @@ data "secretsmanager_records" "test" {
 	]
 }
 `, testAcc.credential, uid)
+}
+
+func TestAccDataSourceRecords_WithTitlePatterns(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  testAccPreCheck(t),
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataSourceRecordsConfig_withTitlePatterns(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDataSourceRecordsCheck("data.secretsmanager_records.test"),
+					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records.#"),
+					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid"),
+					// Verify at least one record matches the pattern
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["data.secretsmanager_records.test"]
+						if !ok {
+							return fmt.Errorf("data source not found")
+						}
+						recordsCount := rs.Primary.Attributes["records.#"]
+						if recordsCount == "" || recordsCount == "0" {
+							return fmt.Errorf("no records matched the pattern")
+						}
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
+func TestAccDataSourceRecords_InvalidPattern(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  testAccPreCheck(t),
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccDataSourceRecordsConfig_invalidPattern(),
+				ExpectError: regexp.MustCompile("invalid regex pattern"),
+			},
+		},
+	})
+}
+
+func TestAccDataSourceRecords_CombinedWithPatterns(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  testAccPreCheck(t),
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataSourceRecordsConfig_combinedWithPatterns(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDataSourceRecordsCheck("data.secretsmanager_records.test"),
+					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records.#"),
+					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid"),
+					// Verify we have multiple records from different sources
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["data.secretsmanager_records.test"]
+						if !ok {
+							return fmt.Errorf("data source not found")
+						}
+						recordsCount := rs.Primary.Attributes["records.#"]
+						if recordsCount == "" || recordsCount == "0" {
+							return fmt.Errorf("no records found")
+						}
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
+func TestAccDataSourceRecords_MultiplePatterns(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  testAccPreCheck(t),
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataSourceRecordsConfig_multiplePatterns(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDataSourceRecordsCheck("data.secretsmanager_records.test"),
+					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records.#"),
+					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDataSourceRecordsConfig_withTitlePatterns() string {
+	return fmt.Sprintf(`
+provider "secretsmanager" {
+	credential = "%s"
+}
+
+data "secretsmanager_records" "test" {
+	title_patterns = [
+		"^TF_ACC_TEST.*"
+	]
+}
+`, testAcc.credential)
+}
+
+func testAccDataSourceRecordsConfig_invalidPattern() string {
+	return fmt.Sprintf(`
+provider "secretsmanager" {
+	credential = "%s"
+}
+
+data "secretsmanager_records" "test" {
+	title_patterns = [
+		"[invalid(regex"
+	]
+}
+`, testAcc.credential)
+}
+
+func testAccDataSourceRecordsConfig_combinedWithPatterns() string {
+	uid, title := testAcc.getRecordInfo("login")
+	return fmt.Sprintf(`
+provider "secretsmanager" {
+	credential = "%s"
+}
+
+data "secretsmanager_records" "test" {
+	uids = [
+		"%s"
+	]
+	titles = [
+		"%s"
+	]
+	title_patterns = [
+		"^TF_ACC_TEST.*"
+	]
+}
+`, testAcc.credential, uid, title)
+}
+
+func testAccDataSourceRecordsConfig_multiplePatterns() string {
+	return fmt.Sprintf(`
+provider "secretsmanager" {
+	credential = "%s"
+}
+
+data "secretsmanager_records" "test" {
+	title_patterns = [
+		"^TF_ACC_TEST.*login.*",
+		"^TF_ACC_TEST.*notes.*"
+	]
+}
+`, testAcc.credential)
 }

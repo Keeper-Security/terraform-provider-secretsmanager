@@ -44,6 +44,28 @@ data "secretsmanager_records" "mixed" {
   ]
 }
 
+# Example 3a: Fetch records using regex patterns
+data "secretsmanager_records" "by_patterns" {
+  title_patterns = [
+    "^Production.*",           # All records starting with "Production"
+    ".*Database$",             # All records ending with "Database"
+    "^(Staging|Dev)\\s+API.*"  # Staging or Dev API records
+  ]
+}
+
+# Example 3b: Combine UIDs, titles, and patterns
+data "secretsmanager_records" "combined" {
+  uids = [
+    "<record_uid_1>"
+  ]
+  titles = [
+    "Critical Service Account"
+  ]
+  title_patterns = [
+    "^AWS.*Prod.*"  # All AWS production records
+  ]
+}
+
 # Example 4: Large batch for infrastructure secrets
 locals {
   # In real usage, these would be actual UIDs for your infrastructure
