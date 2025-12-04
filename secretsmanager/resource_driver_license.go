@@ -26,7 +26,7 @@ func resourceDriverLicense() *schema.Resource {
 				Computed:     true,
 				Optional:     true,
 				AtLeastOneOf: []string{"folder_uid", "uid"},
-				Description:  "The folder UID where the secret is stored. The parent shared folder must be non empty.",
+				Description:  "The folder UID where the secret is stored. Ensure the folder is shared to your KSM application with 'Can Edit' permissions.",
 			},
 			"uid": {
 				Type:         schema.TypeString,
