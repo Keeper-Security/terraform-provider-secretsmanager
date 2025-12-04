@@ -189,25 +189,52 @@ func resourcePassportCreate(ctx context.Context, d *schema.ResourceData, m inter
 					fieldType = ft
 				}
 				
-				// For now, support text fields as most common custom field type
-				if fieldType == "text" {
-					field := &core.Text{
-						KeeperRecordField: core.KeeperRecordField{
-							Type: "text",
-						},
+				// Support text, multiline, secret, url, and email field types
+				switch fieldType {
+				case "text", "multiline", "secret", "url", "email":
+					var field interface{}
+					switch fieldType {
+					case "text":
+						field = &core.Text{KeeperRecordField: core.KeeperRecordField{Type: "text"}}
+					case "multiline":
+						field = &core.Multiline{KeeperRecordField: core.KeeperRecordField{Type: "multiline"}}
+					case "secret":
+						field = &core.Secret{KeeperRecordField: core.KeeperRecordField{Type: "secret"}}
+					case "url":
+						field = &core.Url{KeeperRecordField: core.KeeperRecordField{Type: "url"}}
+					case "email":
+						field = &core.Email{KeeperRecordField: core.KeeperRecordField{Type: "email"}}
 					}
-					if label, ok := customMap["label"].(string); ok {
-						field.Label = label
+
+					// Set common properties using type assertion
+					switch f := field.(type) {
+					case *core.Text:
+						if label, ok := customMap["label"].(string); ok { f.Label = label }
+						if required, ok := customMap["required"].(bool); ok { f.Required = required }
+						if privacyScreen, ok := customMap["privacy_screen"].(bool); ok { f.PrivacyScreen = privacyScreen }
+						if value, ok := customMap["value"].(string); ok && value != "" { f.Value = []string{value} }
+					case *core.Multiline:
+						if label, ok := customMap["label"].(string); ok { f.Label = label }
+						if required, ok := customMap["required"].(bool); ok { f.Required = required }
+						if privacyScreen, ok := customMap["privacy_screen"].(bool); ok { f.PrivacyScreen = privacyScreen }
+						if value, ok := customMap["value"].(string); ok && value != "" { f.Value = []string{value} }
+					case *core.Secret:
+						if label, ok := customMap["label"].(string); ok { f.Label = label }
+						if required, ok := customMap["required"].(bool); ok { f.Required = required }
+						if privacyScreen, ok := customMap["privacy_screen"].(bool); ok { f.PrivacyScreen = privacyScreen }
+						if value, ok := customMap["value"].(string); ok && value != "" { f.Value = []string{value} }
+					case *core.Url:
+						if label, ok := customMap["label"].(string); ok { f.Label = label }
+						if required, ok := customMap["required"].(bool); ok { f.Required = required }
+						if privacyScreen, ok := customMap["privacy_screen"].(bool); ok { f.PrivacyScreen = privacyScreen }
+						if value, ok := customMap["value"].(string); ok && value != "" { f.Value = []string{value} }
+					case *core.Email:
+						if label, ok := customMap["label"].(string); ok { f.Label = label }
+						if required, ok := customMap["required"].(bool); ok { f.Required = required }
+						if privacyScreen, ok := customMap["privacy_screen"].(bool); ok { f.PrivacyScreen = privacyScreen }
+						if value, ok := customMap["value"].(string); ok && value != "" { f.Value = []string{value} }
 					}
-					if required, ok := customMap["required"].(bool); ok {
-						field.Required = required
-					}
-					if privacyScreen, ok := customMap["privacy_screen"].(bool); ok {
-						field.PrivacyScreen = privacyScreen
-					}
-					if value, ok := customMap["value"].(string); ok && value != "" {
-						field.Value = []string{value}
-					}
+
 					nrc.Custom = append(nrc.Custom, field)
 				}
 			}
@@ -412,9 +439,73 @@ func resourcePassportUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	if d.HasChange("custom") {
-		if _, err := ApplyFieldChange("custom", "custom", d, secret); err != nil {
-			return diag.FromErr(err)
+		// Clear existing custom fields
+		customFields := []interface{}{}
+		// Add updated custom fields
+		if customData := d.Get("custom"); customData != nil && len(customData.([]interface{})) > 0 {
+			for _, customItem := range customData.([]interface{}) {
+				if customMap, ok := customItem.(map[string]interface{}); ok {
+					fieldType := "text"
+					if ft, ok := customMap["type"].(string); ok && ft != "" {
+						fieldType = ft
+					}
+					switch fieldType {
+					case "text", "multiline", "secret", "url", "email":
+						var field interface{}
+						switch fieldType {
+						case "text":
+							field = &core.Text{KeeperRecordField: core.KeeperRecordField{Type: "text"}}
+						case "multiline":
+							field = &core.Multiline{KeeperRecordField: core.KeeperRecordField{Type: "multiline"}}
+						case "secret":
+							field = &core.Secret{KeeperRecordField: core.KeeperRecordField{Type: "secret"}}
+						case "url":
+							field = &core.Url{KeeperRecordField: core.KeeperRecordField{Type: "url"}}
+						case "email":
+							field = &core.Email{KeeperRecordField: core.KeeperRecordField{Type: "email"}}
+						}
+
+						// Set common properties using type assertion
+						var fieldMap map[string]interface{}
+						switch f := field.(type) {
+						case *core.Text:
+							if label, ok := customMap["label"].(string); ok { f.Label = label }
+							if required, ok := customMap["required"].(bool); ok { f.Required = required }
+							if privacyScreen, ok := customMap["privacy_screen"].(bool); ok { f.PrivacyScreen = privacyScreen }
+							if value, ok := customMap["value"].(string); ok && value != "" { f.Value = []string{value} }
+							fieldMap = convertFieldToMap(f.Type, f.Label, f.Required, f.PrivacyScreen, f.Value)
+						case *core.Multiline:
+							if label, ok := customMap["label"].(string); ok { f.Label = label }
+							if required, ok := customMap["required"].(bool); ok { f.Required = required }
+							if privacyScreen, ok := customMap["privacy_screen"].(bool); ok { f.PrivacyScreen = privacyScreen }
+							if value, ok := customMap["value"].(string); ok && value != "" { f.Value = []string{value} }
+							fieldMap = convertFieldToMap(f.Type, f.Label, f.Required, f.PrivacyScreen, f.Value)
+						case *core.Secret:
+							if label, ok := customMap["label"].(string); ok { f.Label = label }
+							if required, ok := customMap["required"].(bool); ok { f.Required = required }
+							if privacyScreen, ok := customMap["privacy_screen"].(bool); ok { f.PrivacyScreen = privacyScreen }
+							if value, ok := customMap["value"].(string); ok && value != "" { f.Value = []string{value} }
+							fieldMap = convertFieldToMap(f.Type, f.Label, f.Required, f.PrivacyScreen, f.Value)
+						case *core.Url:
+							if label, ok := customMap["label"].(string); ok { f.Label = label }
+							if required, ok := customMap["required"].(bool); ok { f.Required = required }
+							if privacyScreen, ok := customMap["privacy_screen"].(bool); ok { f.PrivacyScreen = privacyScreen }
+							if value, ok := customMap["value"].(string); ok && value != "" { f.Value = []string{value} }
+							fieldMap = convertFieldToMap(f.Type, f.Label, f.Required, f.PrivacyScreen, f.Value)
+						case *core.Email:
+							if label, ok := customMap["label"].(string); ok { f.Label = label }
+							if required, ok := customMap["required"].(bool); ok { f.Required = required }
+							if privacyScreen, ok := customMap["privacy_screen"].(bool); ok { f.PrivacyScreen = privacyScreen }
+							if value, ok := customMap["value"].(string); ok && value != "" { f.Value = []string{value} }
+							fieldMap = convertFieldToMap(f.Type, f.Label, f.Required, f.PrivacyScreen, f.Value)
+						}
+
+						customFields = append(customFields, fieldMap)
+					}
+				}
+			}
 		}
+		secret.RecordDict["custom"] = customFields
 	}
 
 	secret.RawJson = core.DictToJson(secret.RecordDict)

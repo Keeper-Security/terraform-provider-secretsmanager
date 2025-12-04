@@ -221,3 +221,110 @@ func TestAccResourcePamUser_import(t *testing.T) {
 		},
 	})
 }
+
+// TestAccResourcePamUser_customFields tests custom field support for pam_user resources.
+// This test is representative of all PAM (Privileged Access Management) resources, including:
+//   - pam_user (this resource)
+//   - pam_machine
+//   - pam_database
+//   - pam_directory
+//
+// Custom field functionality is identical across all resource types - this test validates
+// the pattern works correctly with PAM-specific field structures.
+func TestAccResourcePamUser_customFields(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_test_pam_user_custom_fields"
+	if secretFolderUid == "" {
+		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
+	}
+
+	configCreate := fmt.Sprintf(`
+		resource "secretsmanager_pam_user" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			notes = "Test custom fields"
+			login {
+				value = "testuser"
+			}
+			password {
+				value = "testpass123"
+			}
+			custom {
+				type = "text"
+				label = "Environment"
+				value = "Production"
+			}
+			custom {
+				type = "text"
+				label = "Owner"
+				value = "Platform Team"
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	configUpdate := fmt.Sprintf(`
+		resource "secretsmanager_pam_user" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			notes = "Test custom fields updated"
+			login {
+				value = "testuser"
+			}
+			password {
+				value = "testpass123"
+			}
+			custom {
+				type = "text"
+				label = "Environment"
+				value = "Staging"
+			}
+			custom {
+				type = "text"
+				label = "Owner"
+				value = "DevOps Team"
+			}
+			custom {
+				type = "text"
+				label = "Compliance Level"
+				value = "High"
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	resourceName := fmt.Sprintf("secretsmanager_pam_user.%v", secretTitle)
+	resource.Test(t, resource.TestCase{
+		Providers: testAccProviders,
+		PreCheck:  testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: configCreate,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr(resourceName, "type", "pamUser"),
+					resource.TestCheckResourceAttr(resourceName, "title", secretTitle),
+					resource.TestCheckResourceAttr(resourceName, "custom.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.label", "Environment"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.value", "Production"),
+					resource.TestCheckResourceAttr(resourceName, "custom.1.label", "Owner"),
+					resource.TestCheckResourceAttr(resourceName, "custom.1.value", "Platform Team"),
+				),
+			},
+			{
+				Config: configUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr(resourceName, "custom.#", "3"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.label", "Environment"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.value", "Staging"),
+					resource.TestCheckResourceAttr(resourceName, "custom.1.label", "Owner"),
+					resource.TestCheckResourceAttr(resourceName, "custom.1.value", "DevOps Team"),
+					resource.TestCheckResourceAttr(resourceName, "custom.2.label", "Compliance Level"),
+					resource.TestCheckResourceAttr(resourceName, "custom.2.value", "High"),
+				),
+			},
+		},
+	})
+}

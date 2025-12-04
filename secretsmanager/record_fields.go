@@ -1460,3 +1460,26 @@ func schemaCustomField() *schema.Schema {
 		},
 	}
 }
+
+// convertFieldToMap converts a custom field to a map for RecordDict storage
+func convertFieldToMap(fieldType, label string, required, privacyScreen bool, value []string) map[string]interface{} {
+	fieldMap := map[string]interface{}{"type": fieldType}
+	if label != "" {
+		fieldMap["label"] = label
+	}
+	if required {
+		fieldMap["required"] = required
+	}
+	if privacyScreen {
+		fieldMap["privacyScreen"] = privacyScreen
+	}
+	if len(value) > 0 {
+		// Convert []string to []interface{}
+		values := make([]interface{}, len(value))
+		for i, v := range value {
+			values[i] = v
+		}
+		fieldMap["value"] = values
+	}
+	return fieldMap
+}

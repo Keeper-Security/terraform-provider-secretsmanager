@@ -200,3 +200,115 @@ func TestAccResourceAddress_import(t *testing.T) {
 		},
 	})
 }
+
+// TestAccResourceAddress_customFields tests custom field support for address resources.
+// This test is representative of all resources with complex address/name field structures, including:
+//   - address (this resource)
+//
+// Custom field functionality is identical across all resource types - this test validates
+// the pattern works correctly with address-specific nested field structures.
+func TestAccResourceAddress_customFields(t *testing.T) {
+	secretType := "address"
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	_, secretTitle := testAcc.getRecordInfo(secretType)
+	if secretUid == "" || secretTitle == "" {
+		t.Fatal("Failed to access test data - missing secret UID and/or Title")
+	}
+	secretTitle += "_resource_custom_fields"
+
+	configCreate := fmt.Sprintf(`
+		resource "secretsmanager_address" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			notes = "Test custom fields"
+			address {
+				value {
+					street1 = "123 Main St"
+					city = "San Francisco"
+					state = "CA"
+					zip = "94105"
+					country = "US"
+				}
+			}
+			custom {
+				type = "text"
+				label = "Building"
+				value = "North Tower"
+			}
+			custom {
+				type = "text"
+				label = "Floor"
+				value = "15"
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	configUpdate := fmt.Sprintf(`
+		resource "secretsmanager_address" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			notes = "Test custom fields updated"
+			address {
+				value {
+					street1 = "123 Main St"
+					city = "San Francisco"
+					state = "CA"
+					zip = "94105"
+					country = "US"
+				}
+			}
+			custom {
+				type = "text"
+				label = "Building"
+				value = "South Tower"
+			}
+			custom {
+				type = "text"
+				label = "Floor"
+				value = "20"
+			}
+			custom {
+				type = "text"
+				label = "Access Code"
+				value = "1234"
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	resourceName := fmt.Sprintf("secretsmanager_address.%v", secretTitle)
+	resource.Test(t, resource.TestCase{
+		Providers: testAccProviders,
+		PreCheck:  testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: configCreate,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr(resourceName, "type", secretType),
+					resource.TestCheckResourceAttr(resourceName, "title", secretTitle),
+					resource.TestCheckResourceAttr(resourceName, "custom.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.label", "Building"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.value", "North Tower"),
+					resource.TestCheckResourceAttr(resourceName, "custom.1.label", "Floor"),
+					resource.TestCheckResourceAttr(resourceName, "custom.1.value", "15"),
+				),
+			},
+			{
+				Config: configUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr(resourceName, "custom.#", "3"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.label", "Building"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.value", "South Tower"),
+					resource.TestCheckResourceAttr(resourceName, "custom.1.label", "Floor"),
+					resource.TestCheckResourceAttr(resourceName, "custom.1.value", "20"),
+					resource.TestCheckResourceAttr(resourceName, "custom.2.label", "Access Code"),
+					resource.TestCheckResourceAttr(resourceName, "custom.2.value", "1234"),
+				),
+			},
+		},
+	})
+}

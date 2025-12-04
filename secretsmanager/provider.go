@@ -189,6 +189,7 @@ var mapSchemaToRecordFieldName map[string]string = map[string]string{
 	"activation_date":       "date",          // softwareLicense
 	"passphrase":            "password",      // sshKeys
 	"identity_number":       "accountNumber", // ssnCard
+	"custom":                "custom",        // custom fields
 }
 
 /*
