@@ -65,6 +65,7 @@ func resourcePamMachine() *schema.Resource {
 			"provider_group":   schemaTextField(),
 			"provider_region":  schemaTextField(),
 			"file_ref":         schemaFileRefField(),
+			"custom": schemaCustomField(),
 			"totp":             schemaOneTimeCodeField(),
 		},
 	}
@@ -243,6 +244,41 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 		}
 	}
 
+	// Process custom fields
+	if customData := d.Get("custom"); customData != nil && len(customData.([]interface{})) > 0 {
+		for _, customItem := range customData.([]interface{}) {
+			if customMap, ok := customItem.(map[string]interface{}); ok {
+				fieldType := "text" // default to text
+				if ft, ok := customMap["type"].(string); ok && ft != "" {
+					fieldType = ft
+				}
+				
+				// For now, support text fields as most common custom field type
+				if fieldType == "text" {
+					field := &core.Text{
+						KeeperRecordField: core.KeeperRecordField{
+							Type: "text",
+						},
+					}
+					if label, ok := customMap["label"].(string); ok {
+						field.Label = label
+					}
+					if required, ok := customMap["required"].(bool); ok {
+						field.Required = required
+					}
+					if privacyScreen, ok := customMap["privacy_screen"].(bool); ok {
+						field.PrivacyScreen = privacyScreen
+					}
+					if value, ok := customMap["value"].(string); ok && value != "" {
+						field.Value = []string{value}
+					}
+					nrc.Custom = append(nrc.Custom, field)
+				}
+			}
+		}
+	}
+
+
 	if folderUid == "*" {
 		if fuid, err := getTemplateFolder(folderUid, client); err != nil {
 			return diag.FromErr(err)
@@ -267,6 +303,7 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 	if err = d.Set("type", "pamMachine"); err != nil {
 		return diag.FromErr(err)
 	}
+
 
 	d.SetId(uid)
 	return diags
@@ -379,6 +416,13 @@ func resourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m inter
 
 	fileItems := getFileItemsResourceData(secret)
 	if err := d.Set("file_ref", fileItems); err != nil {
+		return diag.FromErr(err)
+	}
+
+
+	// Read custom fields
+	customItems := getFieldItemsResourceData("custom", secret)
+	if err := d.Set("custom", customItems); err != nil {
 		return diag.FromErr(err)
 	}
 

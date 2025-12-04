@@ -56,6 +56,7 @@ func resourceSoftwareLicense() *schema.Resource {
 			"activation_date": schemaDateField(),
 			"expiration_date": schemaExpirationDateField(),
 			"file_ref":        schemaFileRefField(),
+			"custom": schemaCustomField(),
 		},
 	}
 }
@@ -128,6 +129,41 @@ func resourceSoftwareLicenseCreate(ctx context.Context, d *schema.ResourceData, 
 		}
 	}
 
+	// Process custom fields
+	if customData := d.Get("custom"); customData != nil && len(customData.([]interface{})) > 0 {
+		for _, customItem := range customData.([]interface{}) {
+			if customMap, ok := customItem.(map[string]interface{}); ok {
+				fieldType := "text" // default to text
+				if ft, ok := customMap["type"].(string); ok && ft != "" {
+					fieldType = ft
+				}
+				
+				// For now, support text fields as most common custom field type
+				if fieldType == "text" {
+					field := &core.Text{
+						KeeperRecordField: core.KeeperRecordField{
+							Type: "text",
+						},
+					}
+					if label, ok := customMap["label"].(string); ok {
+						field.Label = label
+					}
+					if required, ok := customMap["required"].(bool); ok {
+						field.Required = required
+					}
+					if privacyScreen, ok := customMap["privacy_screen"].(bool); ok {
+						field.PrivacyScreen = privacyScreen
+					}
+					if value, ok := customMap["value"].(string); ok && value != "" {
+						field.Value = []string{value}
+					}
+					nrc.Custom = append(nrc.Custom, field)
+				}
+			}
+		}
+	}
+
+
 	if folderUid == "*" {
 		if fuid, err := getTemplateFolder(folderUid, client); err != nil {
 			return diag.FromErr(err)
@@ -151,6 +187,7 @@ func resourceSoftwareLicenseCreate(ctx context.Context, d *schema.ResourceData, 
 	if err = d.Set("type", "softwareLicense"); err != nil {
 		return diag.FromErr(err)
 	}
+
 
 	d.SetId(uid)
 	return diags
@@ -224,6 +261,13 @@ func resourceSoftwareLicenseRead(ctx context.Context, d *schema.ResourceData, m 
 		return diag.FromErr(err)
 	}
 
+
+	// Read custom fields
+	customItems := getFieldItemsResourceData("custom", secret)
+	if err := d.Set("custom", customItems); err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.SetId(uid)
 	return diags
 }
@@ -275,6 +319,12 @@ func resourceSoftwareLicenseUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	if d.HasChange("file_ref") {
 		if _, err := ApplyFieldChange("fields", "file_ref", d, secret); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if d.HasChange("custom") {
+		if _, err := ApplyFieldChange("custom", "custom", d, secret); err != nil {
 			return diag.FromErr(err)
 		}
 	}
