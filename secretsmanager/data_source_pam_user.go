@@ -43,6 +43,7 @@ func dataSourcePamUser() *schema.Resource {
 			"login":              schemaLoginField(),
 			"password":           schemaPasswordField(""),
 			"rotation_scripts":   schemaScriptField(),
+			"private_pem_key":    schemaSecretField(),
 			"distinguished_name": schemaTextField(),
 			"connect_database":   schemaTextField(),
 			"managed":            schemaCheckboxField(),
@@ -90,6 +91,10 @@ func dataSourcePamUserRead(ctx context.Context, d *schema.ResourceData, m interf
 	}
 	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
+		return diag.FromErr(err)
+	}
+	privatePemKey := getFieldResourceDataWithLabel("secret", "fields", secret, "privatePEMKey")
+	if err = d.Set("private_pem_key", privatePemKey); err != nil {
 		return diag.FromErr(err)
 	}
 	distinguishedName := getFieldResourceDataWithLabel("text", "fields", secret, "Distinguished Name")
