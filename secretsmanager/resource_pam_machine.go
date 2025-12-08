@@ -59,7 +59,6 @@ func resourcePamMachine() *schema.Resource {
 			"password":         schemaPasswordField(""),
 			"rotation_scripts": schemaScriptField(),
 			"operating_system": schemaTextField(),
-			"ssl_verification": schemaCheckboxField(),
 			"instance_name":    schemaTextField(),
 			"instance_id":      schemaTextField(),
 			"provider_group":   schemaTextField(),
@@ -167,17 +166,6 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 			field.(*core.Text).Label = "Operating System"
 			nrc.Fields = append(nrc.Fields, field)
 			if err := SetFieldTypeInSchema(d, "operating_system", "text"); err != nil {
-				return diag.FromErr(err)
-			}
-		}
-	}
-	if fieldData := d.Get("ssl_verification"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
-		if field, err := NewFieldFromSchema("checkbox", fieldData); err != nil {
-			return diag.FromErr(err)
-		} else if field != nil {
-			field.(*core.Checkbox).Label = "SSL Verification"
-			nrc.Fields = append(nrc.Fields, field)
-			if err := SetFieldTypeInSchema(d, "ssl_verification", "checkbox"); err != nil {
 				return diag.FromErr(err)
 			}
 		}
@@ -425,10 +413,6 @@ func resourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m inter
 	if err = d.Set("operating_system", operatingSystem); err != nil {
 		return diag.FromErr(err)
 	}
-	sslVerification := getFieldResourceDataWithLabel("checkbox", "fields", secret, "SSL Verification")
-	if err = d.Set("ssl_verification", sslVerification); err != nil {
-		return diag.FromErr(err)
-	}
 	instanceName := getFieldResourceDataWithLabel("text", "fields", secret, "Instance Name")
 	if err = d.Set("instance_name", instanceName); err != nil {
 		return diag.FromErr(err)
@@ -562,11 +546,6 @@ func resourcePamMachineUpdate(ctx context.Context, d *schema.ResourceData, m int
 	}
 	if d.HasChange("operating_system") {
 		if _, err := ApplyFieldChange("fields", "operating_system", d, secret); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-	if d.HasChange("ssl_verification") {
-		if _, err := ApplyFieldChange("fields", "ssl_verification", d, secret); err != nil {
 			return diag.FromErr(err)
 		}
 	}
