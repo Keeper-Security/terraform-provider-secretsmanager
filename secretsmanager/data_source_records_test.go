@@ -22,7 +22,7 @@ func TestAccDataSourceRecords_Basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records.0.uid"),
 					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records.0.type"),
 					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records.0.title"),
-					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid"),
+					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid.%"),
 				),
 			},
 		},
@@ -39,14 +39,14 @@ func TestAccDataSourceRecords_WithTitles(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceRecordsCheck("data.secretsmanager_records.test"),
 					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records.#"),
-					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid"),
+					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid.%"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccDataSourceRecords_MixedUidsAndTitles(t *testing.T) {
+func TestAccDataSourceRecords_MultipleTitles(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
 		Providers: testAccProviders,
@@ -56,7 +56,7 @@ func TestAccDataSourceRecords_MixedUidsAndTitles(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceRecordsCheck("data.secretsmanager_records.test"),
 					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records.#"),
-					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid"),
+					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid.%"),
 				),
 			},
 		},
@@ -97,7 +97,9 @@ func testAccDataSourceRecordsCheck(n string) resource.TestCheckFunc {
 		}
 
 		// Check that records_by_uid is populated
-		if _, ok := rs.Primary.Attributes["records_by_uid"]; !ok {
+		// Terraform stores maps with a ".%" key for count
+		recordsByUidCount, ok := rs.Primary.Attributes["records_by_uid.%"]
+		if !ok || recordsByUidCount == "" || recordsByUidCount == "0" {
 			return fmt.Errorf("records_by_uid not populated")
 		}
 
@@ -106,69 +108,51 @@ func testAccDataSourceRecordsCheck(n string) resource.TestCheckFunc {
 }
 
 func testAccDataSourceRecordsConfig_basic() string {
-	uid, _ := testAcc.getRecordInfo("login")
+	_, title := testAcc.getRecordInfo("login")
 	return fmt.Sprintf(`
-provider "secretsmanager" {
-	credential = "%s"
-}
-
 data "secretsmanager_records" "test" {
-	uids = [
+	titles = [
 		"%s"
 	]
 }
-`, testAcc.credential, uid)
+`, title)
 }
 
 func testAccDataSourceRecordsConfig_withTitles() string {
 	_, title := testAcc.getRecordInfo("login")
 	return fmt.Sprintf(`
-provider "secretsmanager" {
-	credential = "%s"
-}
-
 data "secretsmanager_records" "test" {
 	titles = [
 		"%s"
 	]
 }
-`, testAcc.credential, title)
+`, title)
 }
 
 func testAccDataSourceRecordsConfig_mixed() string {
 	_, title1 := testAcc.getRecordInfo("login")
-	uid2, _ := testAcc.getRecordInfo("encryptedNotes")
+	_, title2 := testAcc.getRecordInfo("encryptedNotes")
 	return fmt.Sprintf(`
-provider "secretsmanager" {
-	credential = "%s"
-}
-
 data "secretsmanager_records" "test" {
-	uids = [
+	titles = [
+		"%s",
 		"%s"
 	]
+}
+`, title1, title2)
+}
+
+func testAccDataSourceRecordsConfig_largeBatch() string {
+	// This would be used for testing with many titles
+	// In real testing, these would be actual titles from test data
+	_, title := testAcc.getRecordInfo("login")
+	return fmt.Sprintf(`
+data "secretsmanager_records" "test" {
 	titles = [
 		"%s"
 	]
 }
-`, testAcc.credential, uid2, title1)
-}
-
-func testAccDataSourceRecordsConfig_largeBatch() string {
-	// This would be used for testing with many UIDs
-	// In real testing, these would be actual UIDs from test data
-	uid, _ := testAcc.getRecordInfo("login")
-	return fmt.Sprintf(`
-provider "secretsmanager" {
-	credential = "%s"
-}
-
-data "secretsmanager_records" "test" {
-	uids = [
-		"%s"
-	]
-}
-`, testAcc.credential, uid)
+`, title)
 }
 
 func TestAccDataSourceRecords_WithTitlePatterns(t *testing.T) {
@@ -181,7 +165,7 @@ func TestAccDataSourceRecords_WithTitlePatterns(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceRecordsCheck("data.secretsmanager_records.test"),
 					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records.#"),
-					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid"),
+					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid.%"),
 					// Verify at least one record matches the pattern
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources["data.secretsmanager_records.test"]
@@ -223,7 +207,7 @@ func TestAccDataSourceRecords_CombinedWithPatterns(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceRecordsCheck("data.secretsmanager_records.test"),
 					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records.#"),
-					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid"),
+					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid.%"),
 					// Verify we have multiple records from different sources
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources["data.secretsmanager_records.test"]
@@ -252,7 +236,7 @@ func TestAccDataSourceRecords_MultiplePatterns(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceRecordsCheck("data.secretsmanager_records.test"),
 					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records.#"),
-					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid"),
+					resource.TestCheckResourceAttrSet("data.secretsmanager_records.test", "records_by_uid.%"),
 				),
 			},
 		},
@@ -260,65 +244,48 @@ func TestAccDataSourceRecords_MultiplePatterns(t *testing.T) {
 }
 
 func testAccDataSourceRecordsConfig_withTitlePatterns() string {
-	return fmt.Sprintf(`
-provider "secretsmanager" {
-	credential = "%s"
-}
-
+	return `
 data "secretsmanager_records" "test" {
 	title_patterns = [
-		"^TF_ACC_TEST.*"
+		"^tf_acc_test.*"
 	]
 }
-`, testAcc.credential)
+`
 }
 
 func testAccDataSourceRecordsConfig_invalidPattern() string {
-	return fmt.Sprintf(`
-provider "secretsmanager" {
-	credential = "%s"
-}
-
+	return `
 data "secretsmanager_records" "test" {
 	title_patterns = [
 		"[invalid(regex"
 	]
 }
-`, testAcc.credential)
+`
 }
 
 func testAccDataSourceRecordsConfig_combinedWithPatterns() string {
-	uid, title := testAcc.getRecordInfo("login")
+	_, title1 := testAcc.getRecordInfo("login")
+	_, title2 := testAcc.getRecordInfo("encryptedNotes")
 	return fmt.Sprintf(`
-provider "secretsmanager" {
-	credential = "%s"
-}
-
 data "secretsmanager_records" "test" {
-	uids = [
-		"%s"
-	]
 	titles = [
+		"%s",
 		"%s"
 	]
 	title_patterns = [
-		"^TF_ACC_TEST.*"
+		"^tf_acc_test.*"
 	]
 }
-`, testAcc.credential, uid, title)
+`, title1, title2)
 }
 
 func testAccDataSourceRecordsConfig_multiplePatterns() string {
-	return fmt.Sprintf(`
-provider "secretsmanager" {
-	credential = "%s"
-}
-
+	return `
 data "secretsmanager_records" "test" {
 	title_patterns = [
-		"^TF_ACC_TEST.*login.*",
-		"^TF_ACC_TEST.*notes.*"
+		"^tf_acc_test.*login.*",
+		"^tf_acc_test.*notes.*"
 	]
 }
-`, testAcc.credential)
+`
 }
