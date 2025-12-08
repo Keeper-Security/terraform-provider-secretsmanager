@@ -48,12 +48,12 @@ func dataSourcePamDirectory() *schema.Resource {
 			"rotation_scripts":   schemaScriptField(),
 			"use_ssl":            schemaCheckboxField(),
 			"distinguished_name": schemaTextField(),
-		"domain_name":        schemaTextField(),
-		"directory_id":       schemaTextField(),
-		"user_match":         schemaTextField(),
-		"provider_group":     schemaTextField(),
-		"provider_region":    schemaTextField(),
-		"alternative_ips":    schemaMultilineField(),
+			"domain_name":        schemaTextField(),
+			"directory_id":       schemaTextField(),
+			"user_match":         schemaTextField(),
+			"provider_group":     schemaTextField(),
+			"provider_region":    schemaTextField(),
+			"alternative_ips":    schemaMultilineField(),
 			"file_ref":           schemaFileRefField(),
 			"totp":               schemaOneTimeCodeField(),
 		},
@@ -159,7 +159,6 @@ func dataSourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m i
 	if err = d.Set("alternative_ips", alternativeIPs); err != nil {
 		return diag.FromErr(err)
 	}
-
 
 	fileItems := getFileItemsData(secret.Files)
 	if err := d.Set("file_ref", fileItems); err != nil {
