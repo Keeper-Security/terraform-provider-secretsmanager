@@ -167,7 +167,7 @@ func resourcePamDirectoryCreate(ctx context.Context, d *schema.ResourceData, m i
 		if field, err := NewFieldFromSchema("checkbox", fieldData); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
-			field.(*core.Checkbox).Label = "Use SSL"
+			field.(*core.Checkbox).Label = "useSSL"
 			nrc.Fields = append(nrc.Fields, field)
 			if err := SetFieldTypeInSchema(d, "use_ssl", "checkbox"); err != nil {
 				return diag.FromErr(err)
@@ -332,7 +332,7 @@ func resourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m int
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
 		return diag.FromErr(err)
 	}
-	useSSL := getFieldResourceDataWithLabel("checkbox", "fields", secret, "Use SSL")
+	useSSL := getFieldResourceDataWithLabel("checkbox", "fields", secret, "useSSL")
 	if err = d.Set("use_ssl", useSSL); err != nil {
 		return diag.FromErr(err)
 	}
