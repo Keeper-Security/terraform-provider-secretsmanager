@@ -46,7 +46,6 @@ func dataSourcePamDatabase() *schema.Resource {
 			"login":            schemaLoginField(),
 			"password":         schemaPasswordField(""),
 			"rotation_scripts": schemaScriptField(),
-			"connect_database": schemaTextField(),
 			"database_id":      schemaTextField(),
 			"database_type":    schemaDatabaseTypeField(),
 			"provider_group":   schemaTextField(),
@@ -111,10 +110,6 @@ func dataSourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m in
 	}
 	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
-		return diag.FromErr(err)
-	}
-	connectDatabase := getFieldResourceDataWithLabel("text", "fields", secret, "Connect Database")
-	if err = d.Set("connect_database", connectDatabase); err != nil {
 		return diag.FromErr(err)
 	}
 	databaseId := getFieldResourceDataWithLabel("text", "fields", secret, "Database Id")

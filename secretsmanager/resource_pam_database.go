@@ -59,7 +59,6 @@ func resourcePamDatabase() *schema.Resource {
 			"login":            schemaLoginField(),
 			"password":         schemaPasswordField(""),
 			"rotation_scripts": schemaScriptField(),
-			"connect_database": schemaTextField(),
 			"database_id":      schemaTextField(),
 			"database_type":    schemaDatabaseTypeField(),
 			"provider_group":   schemaTextField(),
@@ -158,17 +157,6 @@ func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m in
 			field.(*core.Scripts).Label = "Rotation Scripts"
 			nrc.Fields = append(nrc.Fields, field)
 			if err := SetFieldTypeInSchema(d, "rotation_scripts", "script"); err != nil {
-				return diag.FromErr(err)
-			}
-		}
-	}
-	if fieldData := d.Get("connect_database"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
-		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
-			return diag.FromErr(err)
-		} else if field != nil {
-			field.(*core.Text).Label = "Connect Database"
-			nrc.Fields = append(nrc.Fields, field)
-			if err := SetFieldTypeInSchema(d, "connect_database", "text"); err != nil {
 				return diag.FromErr(err)
 			}
 		}
@@ -346,10 +334,6 @@ func resourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m inte
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
 		return diag.FromErr(err)
 	}
-	connectDatabase := getFieldResourceDataWithLabel("text", "fields", secret, "Connect Database")
-	if err = d.Set("connect_database", connectDatabase); err != nil {
-		return diag.FromErr(err)
-	}
 	databaseId := getFieldResourceDataWithLabel("text", "fields", secret, "Database Id")
 	if err = d.Set("database_id", databaseId); err != nil {
 		return diag.FromErr(err)
@@ -475,11 +459,6 @@ func resourcePamDatabaseUpdate(ctx context.Context, d *schema.ResourceData, m in
 	}
 	if d.HasChange("rotation_scripts") {
 		if _, err := ApplyFieldChange("fields", "rotation_scripts", d, secret); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-	if d.HasChange("connect_database") {
-		if _, err := ApplyFieldChange("fields", "connect_database", d, secret); err != nil {
 			return diag.FromErr(err)
 		}
 	}
