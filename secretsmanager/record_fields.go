@@ -1213,7 +1213,6 @@ func schemaPinCodeField() *schema.Schema {
 	}
 }
 
-/*
 func schemaSecretField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
@@ -1251,7 +1250,6 @@ func schemaSecretField() *schema.Schema {
 		},
 	}
 }
-*/
 
 func schemaSecureNoteField() *schema.Schema {
 	return &schema.Schema{
