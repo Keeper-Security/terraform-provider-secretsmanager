@@ -121,7 +121,7 @@ func dataSourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m i
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
 		return diag.FromErr(err)
 	}
-	useSSL := getFieldResourceDataWithLabel("checkbox", "fields", secret, "Use SSL")
+	useSSL := getFieldResourceDataWithLabel("checkbox", "fields", secret, "useSSL")
 	if err = d.Set("use_ssl", useSSL); err != nil {
 		return diag.FromErr(err)
 	}
