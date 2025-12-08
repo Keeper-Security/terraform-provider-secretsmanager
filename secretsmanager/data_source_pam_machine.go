@@ -46,7 +46,6 @@ func dataSourcePamMachine() *schema.Resource {
 			"password":         schemaPasswordField(""),
 			"rotation_scripts": schemaScriptField(),
 			"operating_system": schemaTextField(),
-			"ssl_verification": schemaCheckboxField(),
 			"instance_name":    schemaTextField(),
 			"instance_id":      schemaTextField(),
 			"provider_group":   schemaTextField(),
@@ -111,10 +110,6 @@ func dataSourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m int
 	}
 	operatingSystem := getFieldResourceDataWithLabel("text", "fields", secret, "Operating System")
 	if err = d.Set("operating_system", operatingSystem); err != nil {
-		return diag.FromErr(err)
-	}
-	sslVerification := getFieldResourceDataWithLabel("checkbox", "fields", secret, "SSL Verification")
-	if err = d.Set("ssl_verification", sslVerification); err != nil {
 		return diag.FromErr(err)
 	}
 	instanceName := getFieldResourceDataWithLabel("text", "fields", secret, "Instance Name")

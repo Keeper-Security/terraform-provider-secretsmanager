@@ -55,6 +55,7 @@ func resourcePamUser() *schema.Resource {
 			"login":              schemaLoginField(),
 			"password":           schemaPasswordField(""),
 			"rotation_scripts":   schemaScriptField(),
+			"private_pem_key":    schemaSecretField(),
 			"distinguished_name": schemaTextField(),
 			"connect_database":   schemaTextField(),
 			"managed":            schemaCheckboxField(),
@@ -130,6 +131,18 @@ func resourcePamUserCreate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
+	if fieldData := d.Get("private_pem_key"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("secret", fieldData); err != nil {
+			return diag.FromErr(err)
+		} else if field != nil {
+			field.(*core.Secret).Label = "privatePEMKey"
+			nrc.Fields = append(nrc.Fields, field)
+			if err := SetFieldTypeInSchema(d, "private_pem_key", "secret"); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
 	if fieldData := d.Get("distinguished_name"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
 		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
 			return diag.FromErr(err)
@@ -146,7 +159,7 @@ func resourcePamUserCreate(ctx context.Context, d *schema.ResourceData, m interf
 		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
-			field.(*core.Text).Label = "Connect Database"
+			field.(*core.Text).Label = "connectDatabase"
 			nrc.Fields = append(nrc.Fields, field)
 			if err := SetFieldTypeInSchema(d, "connect_database", "text"); err != nil {
 				return diag.FromErr(err)
@@ -284,11 +297,15 @@ func resourcePamUserRead(ctx context.Context, d *schema.ResourceData, m interfac
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
 		return diag.FromErr(err)
 	}
+	privatePemKey := getFieldResourceDataWithLabel("secret", "fields", secret, "privatePEMKey")
+	if err = d.Set("private_pem_key", privatePemKey); err != nil {
+		return diag.FromErr(err)
+	}
 	distinguishedName := getFieldResourceDataWithLabel("text", "fields", secret, "Distinguished Name")
 	if err = d.Set("distinguished_name", distinguishedName); err != nil {
 		return diag.FromErr(err)
 	}
-	connectDatabase := getFieldResourceDataWithLabel("text", "fields", secret, "Connect Database")
+	connectDatabase := getFieldResourceDataWithLabel("text", "fields", secret, "connectDatabase")
 	if err = d.Set("connect_database", connectDatabase); err != nil {
 		return diag.FromErr(err)
 	}
@@ -346,6 +363,11 @@ func resourcePamUserUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	}
 	if d.HasChange("rotation_scripts") {
 		if _, err := ApplyFieldChange("fields", "rotation_scripts", d, secret); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if d.HasChange("private_pem_key") {
+		if _, err := ApplyFieldChange("fields", "private_pem_key", d, secret); err != nil {
 			return diag.FromErr(err)
 		}
 	}

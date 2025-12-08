@@ -788,7 +788,6 @@ func schemaLoginField() *schema.Schema {
 	}
 }
 
-/*
 func schemaMultilineField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
@@ -826,7 +825,6 @@ func schemaMultilineField() *schema.Schema {
 		},
 	}
 }
-*/
 
 func schemaNameField() *schema.Schema {
 	return &schema.Schema{
@@ -1213,7 +1211,6 @@ func schemaPinCodeField() *schema.Schema {
 	}
 }
 
-/*
 func schemaSecretField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
@@ -1251,7 +1248,6 @@ func schemaSecretField() *schema.Schema {
 		},
 	}
 }
-*/
 
 func schemaSecureNoteField() *schema.Schema {
 	return &schema.Schema{

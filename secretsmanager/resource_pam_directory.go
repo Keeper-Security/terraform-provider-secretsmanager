@@ -61,6 +61,12 @@ func resourcePamDirectory() *schema.Resource {
 			"rotation_scripts":   schemaScriptField(),
 			"use_ssl":            schemaCheckboxField(),
 			"distinguished_name": schemaTextField(),
+			"domain_name":        schemaTextField(),
+			"directory_id":       schemaTextField(),
+			"user_match":         schemaTextField(),
+			"provider_group":     schemaTextField(),
+			"provider_region":    schemaTextField(),
+			"alternative_ips":    schemaMultilineField(),
 			"file_ref":           schemaFileRefField(),
 			"totp":               schemaOneTimeCodeField(),
 		},
@@ -167,7 +173,7 @@ func resourcePamDirectoryCreate(ctx context.Context, d *schema.ResourceData, m i
 		if field, err := NewFieldFromSchema("checkbox", fieldData); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
-			field.(*core.Checkbox).Label = "Use SSL"
+			field.(*core.Checkbox).Label = "useSSL"
 			nrc.Fields = append(nrc.Fields, field)
 			if err := SetFieldTypeInSchema(d, "use_ssl", "checkbox"); err != nil {
 				return diag.FromErr(err)
@@ -181,6 +187,73 @@ func resourcePamDirectoryCreate(ctx context.Context, d *schema.ResourceData, m i
 			field.(*core.Text).Label = "Distinguished Name"
 			nrc.Fields = append(nrc.Fields, field)
 			if err := SetFieldTypeInSchema(d, "distinguished_name", "text"); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
+	if fieldData := d.Get("domain_name"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
+			return diag.FromErr(err)
+		} else if field != nil {
+			field.(*core.Text).Label = "domainName"
+			nrc.Fields = append(nrc.Fields, field)
+			if err := SetFieldTypeInSchema(d, "domain_name", "text"); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+	if fieldData := d.Get("directory_id"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
+			return diag.FromErr(err)
+		} else if field != nil {
+			field.(*core.Text).Label = "directoryId"
+			nrc.Fields = append(nrc.Fields, field)
+			if err := SetFieldTypeInSchema(d, "directory_id", "text"); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+	if fieldData := d.Get("user_match"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
+			return diag.FromErr(err)
+		} else if field != nil {
+			field.(*core.Text).Label = "userMatch"
+			nrc.Fields = append(nrc.Fields, field)
+			if err := SetFieldTypeInSchema(d, "user_match", "text"); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+	if fieldData := d.Get("provider_group"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
+			return diag.FromErr(err)
+		} else if field != nil {
+			field.(*core.Text).Label = "providerGroup"
+			nrc.Fields = append(nrc.Fields, field)
+			if err := SetFieldTypeInSchema(d, "provider_group", "text"); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+	if fieldData := d.Get("provider_region"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
+			return diag.FromErr(err)
+		} else if field != nil {
+			field.(*core.Text).Label = "providerRegion"
+			nrc.Fields = append(nrc.Fields, field)
+			if err := SetFieldTypeInSchema(d, "provider_region", "text"); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+	if fieldData := d.Get("alternative_ips"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("multiline", fieldData); err != nil {
+			return diag.FromErr(err)
+		} else if field != nil {
+			field.(*core.Multiline).Label = "alternativeIPs"
+			nrc.Fields = append(nrc.Fields, field)
+			if err := SetFieldTypeInSchema(d, "alternative_ips", "multiline"); err != nil {
 				return diag.FromErr(err)
 			}
 		}
@@ -332,12 +405,36 @@ func resourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m int
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
 		return diag.FromErr(err)
 	}
-	useSSL := getFieldResourceDataWithLabel("checkbox", "fields", secret, "Use SSL")
+	useSSL := getFieldResourceDataWithLabel("checkbox", "fields", secret, "useSSL")
 	if err = d.Set("use_ssl", useSSL); err != nil {
 		return diag.FromErr(err)
 	}
 	distinguishedName := getFieldResourceDataWithLabel("text", "fields", secret, "Distinguished Name")
 	if err = d.Set("distinguished_name", distinguishedName); err != nil {
+		return diag.FromErr(err)
+	}
+	domainName := getFieldResourceDataWithLabel("text", "fields", secret, "domainName")
+	if err = d.Set("domain_name", domainName); err != nil {
+		return diag.FromErr(err)
+	}
+	directoryId := getFieldResourceDataWithLabel("text", "fields", secret, "directoryId")
+	if err = d.Set("directory_id", directoryId); err != nil {
+		return diag.FromErr(err)
+	}
+	userMatch := getFieldResourceDataWithLabel("text", "fields", secret, "userMatch")
+	if err = d.Set("user_match", userMatch); err != nil {
+		return diag.FromErr(err)
+	}
+	providerGroup := getFieldResourceDataWithLabel("text", "fields", secret, "providerGroup")
+	if err = d.Set("provider_group", providerGroup); err != nil {
+		return diag.FromErr(err)
+	}
+	providerRegion := getFieldResourceDataWithLabel("text", "fields", secret, "providerRegion")
+	if err = d.Set("provider_region", providerRegion); err != nil {
+		return diag.FromErr(err)
+	}
+	alternativeIPs := getFieldResourceDataWithLabel("multiline", "fields", secret, "alternativeIPs")
+	if err = d.Set("alternative_ips", alternativeIPs); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -452,6 +549,36 @@ func resourcePamDirectoryUpdate(ctx context.Context, d *schema.ResourceData, m i
 	}
 	if d.HasChange("distinguished_name") {
 		if _, err := ApplyFieldChange("fields", "distinguished_name", d, secret); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if d.HasChange("domain_name") {
+		if _, err := ApplyFieldChange("fields", "domain_name", d, secret); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if d.HasChange("directory_id") {
+		if _, err := ApplyFieldChange("fields", "directory_id", d, secret); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if d.HasChange("user_match") {
+		if _, err := ApplyFieldChange("fields", "user_match", d, secret); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if d.HasChange("provider_group") {
+		if _, err := ApplyFieldChange("fields", "provider_group", d, secret); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if d.HasChange("provider_region") {
+		if _, err := ApplyFieldChange("fields", "provider_region", d, secret); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if d.HasChange("alternative_ips") {
+		if _, err := ApplyFieldChange("fields", "alternative_ips", d, secret); err != nil {
 			return diag.FromErr(err)
 		}
 	}
