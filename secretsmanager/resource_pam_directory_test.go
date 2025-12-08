@@ -55,6 +55,30 @@ func TestAccResourcePamDirectory_create(t *testing.T) {
 				label = "Distinguished Name"
 				value = "DC=corp,DC=example,DC=com"
 			}
+		domain_name {
+			label = "domainName"
+			value = "corp.example.com"
+		}
+		directory_id {
+			label = "directoryId"
+			value = "dir-12345678"
+		}
+		user_match {
+			label = "userMatch"
+			value = "sAMAccountName"
+		}
+		provider_group {
+			label = "providerGroup"
+			value = "prod-ad-servers"
+		}
+		provider_region {
+			label = "providerRegion"
+			value = "us-west-2"
+		}
+		alternative_ips {
+			label = "alternativeIPs"
+			value = "10.0.1.5\n10.0.1.6\n10.0.1.7"
+		}
 			use_ssl {
 				value = [true]
 			}
@@ -78,6 +102,12 @@ func TestAccResourcePamDirectory_create(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "directory_type", "Active Directory"),
 					resource.TestCheckResourceAttr(resourceName, "login.0.value", "CN=Admin,CN=Users,DC=corp,DC=example,DC=com"),
 					resource.TestCheckResourceAttr(resourceName, "distinguished_name.0.value", "DC=corp,DC=example,DC=com"),
+					resource.TestCheckResourceAttr(resourceName, "domain_name.0.value", "corp.example.com"),
+					resource.TestCheckResourceAttr(resourceName, "directory_id.0.value", "dir-12345678"),
+					resource.TestCheckResourceAttr(resourceName, "user_match.0.value", "sAMAccountName"),
+					resource.TestCheckResourceAttr(resourceName, "provider_group.0.value", "prod-ad-servers"),
+					resource.TestCheckResourceAttr(resourceName, "provider_region.0.value", "us-west-2"),
+					resource.TestCheckResourceAttr(resourceName, "alternative_ips.0.value", "10.0.1.5\n10.0.1.6\n10.0.1.7"),
 					resource.TestCheckResourceAttr(resourceName, "use_ssl.0.value.0", "true"),
 				),
 			},

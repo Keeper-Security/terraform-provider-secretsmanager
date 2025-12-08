@@ -48,6 +48,12 @@ func dataSourcePamDirectory() *schema.Resource {
 			"rotation_scripts":   schemaScriptField(),
 			"use_ssl":            schemaCheckboxField(),
 			"distinguished_name": schemaTextField(),
+		"domain_name":        schemaTextField(),
+		"directory_id":       schemaTextField(),
+		"user_match":         schemaTextField(),
+		"provider_group":     schemaTextField(),
+		"provider_region":    schemaTextField(),
+		"alternative_ips":    schemaMultilineField(),
 			"file_ref":           schemaFileRefField(),
 			"totp":               schemaOneTimeCodeField(),
 		},
@@ -129,6 +135,31 @@ func dataSourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m i
 	if err = d.Set("distinguished_name", distinguishedName); err != nil {
 		return diag.FromErr(err)
 	}
+	domainName := getFieldResourceDataWithLabel("text", "fields", secret, "domainName")
+	if err = d.Set("domain_name", domainName); err != nil {
+		return diag.FromErr(err)
+	}
+	directoryId := getFieldResourceDataWithLabel("text", "fields", secret, "directoryId")
+	if err = d.Set("directory_id", directoryId); err != nil {
+		return diag.FromErr(err)
+	}
+	userMatch := getFieldResourceDataWithLabel("text", "fields", secret, "userMatch")
+	if err = d.Set("user_match", userMatch); err != nil {
+		return diag.FromErr(err)
+	}
+	providerGroup := getFieldResourceDataWithLabel("text", "fields", secret, "providerGroup")
+	if err = d.Set("provider_group", providerGroup); err != nil {
+		return diag.FromErr(err)
+	}
+	providerRegion := getFieldResourceDataWithLabel("text", "fields", secret, "providerRegion")
+	if err = d.Set("provider_region", providerRegion); err != nil {
+		return diag.FromErr(err)
+	}
+	alternativeIPs := getFieldResourceDataWithLabel("multiline", "fields", secret, "alternativeIPs")
+	if err = d.Set("alternative_ips", alternativeIPs); err != nil {
+		return diag.FromErr(err)
+	}
+
 
 	fileItems := getFileItemsData(secret.Files)
 	if err := d.Set("file_ref", fileItems); err != nil {
