@@ -146,7 +146,7 @@ func resourcePamUserCreate(ctx context.Context, d *schema.ResourceData, m interf
 		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
-			field.(*core.Text).Label = "Connect Database"
+			field.(*core.Text).Label = "connectDatabase"
 			nrc.Fields = append(nrc.Fields, field)
 			if err := SetFieldTypeInSchema(d, "connect_database", "text"); err != nil {
 				return diag.FromErr(err)
@@ -288,7 +288,7 @@ func resourcePamUserRead(ctx context.Context, d *schema.ResourceData, m interfac
 	if err = d.Set("distinguished_name", distinguishedName); err != nil {
 		return diag.FromErr(err)
 	}
-	connectDatabase := getFieldResourceDataWithLabel("text", "fields", secret, "Connect Database")
+	connectDatabase := getFieldResourceDataWithLabel("text", "fields", secret, "connectDatabase")
 	if err = d.Set("connect_database", connectDatabase); err != nil {
 		return diag.FromErr(err)
 	}
