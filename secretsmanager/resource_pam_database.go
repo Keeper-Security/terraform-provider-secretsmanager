@@ -75,6 +75,11 @@ func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m in
 	provider := m.(providerMeta)
 	client := *provider.client
 	var diags diag.Diagnostics
+	// Validate custom field labels are unique
+	if validateDiags := validateUniqueCustomFieldLabels(d); len(validateDiags) > 0 {
+		return validateDiags
+	}
+
 
 	uid := strings.TrimSpace(d.Get("uid").(string))
 	if uid == "" {
@@ -452,6 +457,11 @@ func resourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
+	// Warn if duplicate custom field labels detected
+	if warnDiags := warnDuplicateCustomFieldLabels(secret); len(warnDiags) > 0 {
+		diags = append(diags, warnDiags...)
+	}
+
 	d.SetId(uid)
 	return diags
 }
@@ -459,6 +469,11 @@ func resourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m inte
 func resourcePamDatabaseUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	provider := m.(providerMeta)
 	client := *provider.client
+
+	// Validate custom field labels are unique
+	if validateDiags := validateUniqueCustomFieldLabels(d); len(validateDiags) > 0 {
+		return validateDiags
+	}
 
 	uid := strings.TrimSpace(d.Get("uid").(string))
 	if uid == "" {

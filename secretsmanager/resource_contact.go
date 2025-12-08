@@ -67,6 +67,11 @@ func resourceContactCreate(ctx context.Context, d *schema.ResourceData, m interf
 	provider := m.(providerMeta)
 	client := *provider.client
 	var diags diag.Diagnostics
+	// Validate custom field labels are unique
+	if validateDiags := validateUniqueCustomFieldLabels(d); len(validateDiags) > 0 {
+		return validateDiags
+	}
+
 
 	uid := strings.TrimSpace(d.Get("uid").(string))
 	if uid == "" {
@@ -325,6 +330,11 @@ func resourceContactRead(ctx context.Context, d *schema.ResourceData, m interfac
 		return diag.FromErr(err)
 	}
 
+	// Warn if duplicate custom field labels detected
+	if warnDiags := warnDuplicateCustomFieldLabels(secret); len(warnDiags) > 0 {
+		diags = append(diags, warnDiags...)
+	}
+
 	d.SetId(uid)
 	return diags
 }
@@ -333,6 +343,11 @@ func resourceContactUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	provider := m.(providerMeta)
 	client := *provider.client
 	var diags diag.Diagnostics
+	// Validate custom field labels are unique
+	if validateDiags := validateUniqueCustomFieldLabels(d); len(validateDiags) > 0 {
+		return validateDiags
+	}
+
 
 	// folderUid := strings.TrimSpace(d.Get("folder_uid").(string))
 	uid := strings.TrimSpace(d.Get("uid").(string))

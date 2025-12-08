@@ -2,6 +2,7 @@ package secretsmanager
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -492,6 +493,127 @@ func TestAccResourceLogin_customFieldTypes(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "custom.5.label", "Extra Text"),
 					resource.TestCheckResourceAttr(resourceName, "custom.5.value", "Additional field"),
 				),
+			},
+		},
+	})
+}
+
+// TestAccResourceLogin_duplicateLabelsCreate tests that duplicate custom field labels
+// are rejected during resource creation with a clear error message.
+func TestAccResourceLogin_duplicateLabelsCreate(t *testing.T) {
+	secretType := "login"
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	_, secretTitle := testAcc.getRecordInfo(secretType)
+	if secretUid == "" || secretTitle == "" {
+		t.Fatal("Failed to access test data - missing secret UID and/or Title")
+	}
+	secretTitle += "_duplicate_labels_create"
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_login" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			notes = "Test duplicate labels rejection"
+			login {
+				value = "testuser"
+			}
+			password {
+				value = "testpass123"
+			}
+			custom {
+				type = "text"
+				label = "Department"
+				value = "Engineering"
+			}
+			custom {
+				type = "text"
+				label = "Department"
+				value = "Sales"
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		Providers: testAccProviders,
+		PreCheck:  testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config:      config,
+				ExpectError: regexp.MustCompile("Duplicate custom field label"),
+			},
+		},
+	})
+}
+
+// TestAccResourceLogin_duplicateLabelsUpdate tests that duplicate custom field labels
+// are rejected during resource updates with a clear error message.
+func TestAccResourceLogin_duplicateLabelsUpdate(t *testing.T) {
+	secretType := "login"
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	_, secretTitle := testAcc.getRecordInfo(secretType)
+	if secretUid == "" || secretTitle == "" {
+		t.Fatal("Failed to access test data - missing secret UID and/or Title")
+	}
+	secretTitle += "_duplicate_labels_update"
+
+	configCreate := fmt.Sprintf(`
+		resource "secretsmanager_login" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			notes = "Test duplicate labels update"
+			login {
+				value = "testuser"
+			}
+			password {
+				value = "testpass123"
+			}
+			custom {
+				type = "text"
+				label = "Department"
+				value = "Engineering"
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	configUpdate := fmt.Sprintf(`
+		resource "secretsmanager_login" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			notes = "Test duplicate labels update"
+			login {
+				value = "testuser"
+			}
+			password {
+				value = "testpass123"
+			}
+			custom {
+				type = "text"
+				label = "Department"
+				value = "Engineering"
+			}
+			custom {
+				type = "text"
+				label = "Department"
+				value = "Sales"
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		Providers: testAccProviders,
+		PreCheck:  testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: configCreate,
+			},
+			{
+				Config:      configUpdate,
+				ExpectError: regexp.MustCompile("Duplicate custom field label"),
 			},
 		},
 	})

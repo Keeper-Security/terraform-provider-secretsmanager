@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/keeper-security/secrets-manager-go/core"
 )
 
 func schemaGenericField() *schema.Schema {
@@ -1437,8 +1438,8 @@ func schemaCustomField() *schema.Schema {
 				},
 				"label": {
 					Type:        schema.TypeString,
-					Optional:    true,
-					Description: "Field label.",
+					Required:    true,
+					Description: "Field label (required for field identification).",
 				},
 				"required": {
 					Type:        schema.TypeBool,
@@ -1482,4 +1483,128 @@ func convertFieldToMap(fieldType, label string, required, privacyScreen bool, va
 		fieldMap["value"] = values
 	}
 	return fieldMap
+}
+
+// validateUniqueCustomFieldLabels validates that all custom field labels are unique from ResourceData
+// This prevents ambiguous field identification during updates and matches KSM CLI behavior
+// Call this function at the start of Create and Update operations before processing custom fields
+func validateUniqueCustomFieldLabels(d *schema.ResourceData) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// Get custom fields from ResourceData
+	customData := d.Get("custom")
+	if customData == nil {
+		return diags
+	}
+
+	customList, ok := customData.([]interface{})
+	if !ok || len(customList) == 0 {
+		return diags
+	}
+
+	// Track labels and their positions
+	labels := make(map[string]int)
+
+	// Check each custom field for duplicate labels
+	for i, item := range customList {
+		customMap, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// Get label from custom field
+		label, ok := customMap["label"].(string)
+		if !ok || label == "" {
+			// Skip empty labels (will be caught by Required validation)
+			continue
+		}
+
+		// Check for duplicate
+		if prevIndex, exists := labels[label]; exists {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Duplicate custom field label",
+				Detail: fmt.Sprintf(
+					"Label '%s' is used in both custom.%d and custom.%d. Each custom field must have a unique label for proper field identification.",
+					label, prevIndex, i,
+				),
+			})
+		}
+
+		// Record this label's position
+		labels[label] = i
+	}
+
+	return diags
+}
+
+// warnDuplicateCustomFieldLabels detects duplicate custom field labels from Keeper records
+// This warns users during Read/Import operations when their vault contains duplicate labels
+// Duplicate labels cannot be properly managed by Terraform and should be fixed in the vault
+// Call this function after reading a record from the vault in Read operations
+func warnDuplicateCustomFieldLabels(secret *core.Record) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// Get custom fields from RecordDict
+	if secret == nil || secret.RecordDict == nil {
+		return diags
+	}
+
+	customFieldsInterface, found := secret.RecordDict["custom"]
+	if !found {
+		return diags
+	}
+
+	customFields, ok := customFieldsInterface.([]interface{})
+	if !ok || len(customFields) == 0 {
+		return diags
+	}
+
+	// Track labels and their positions
+	labelPositions := make(map[string][]int)
+
+	// Collect all label positions
+	for i, fieldInterface := range customFields {
+		fieldMap, ok := fieldInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		labelInterface, found := fieldMap["label"]
+		if !found {
+			continue
+		}
+
+		label := fmt.Sprintf("%v", labelInterface)
+		if label == "" {
+			continue
+		}
+
+		labelPositions[label] = append(labelPositions[label], i)
+	}
+
+	// Check for duplicates and generate warnings
+	var duplicateLabels []string
+	for label, positions := range labelPositions {
+		if len(positions) > 1 {
+			duplicateLabels = append(duplicateLabels, label)
+		}
+	}
+
+	// If duplicates found, generate a single warning with all duplicate labels
+	if len(duplicateLabels) > 0 {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "Duplicate custom field labels detected",
+			Detail: fmt.Sprintf(
+				"Record '%s' contains duplicate custom field labels: %v. "+
+					"Terraform requires unique labels for proper field identification. "+
+					"Only the first occurrence of each label will be imported. "+
+					"Please fix duplicate labels in your vault before managing this record with Terraform.",
+				secret.Uid, duplicateLabels,
+			),
+		})
+	}
+
+	return diags
 }

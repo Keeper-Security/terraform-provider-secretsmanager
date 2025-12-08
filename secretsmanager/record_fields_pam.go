@@ -444,7 +444,7 @@ func pamSettingsFieldToJSON(field interface{}) (string, error) {
 
 	// Try as *core.PamSettings first
 	if pamSettings, ok := field.(*core.PamSettings); ok {
-		if pamSettings.Value == nil || len(pamSettings.Value) == 0 {
+		if len(pamSettings.Value) == 0 {
 			return "", nil
 		}
 		value = pamSettings.Value
