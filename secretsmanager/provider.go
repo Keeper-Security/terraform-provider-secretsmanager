@@ -173,7 +173,6 @@ var mapSchemaToRecordFieldName map[string]string = map[string]string{
 	"script":             "script",
 	"secret":             "secret",
 	"security_question":  "securityQuestion",
-	"ssl_verification":   "checkbox", // Checkbox with label
 	"text":               "text",
 	"title":              "title",    // Text
 	"use_ssl":            "checkbox", // Checkbox with label

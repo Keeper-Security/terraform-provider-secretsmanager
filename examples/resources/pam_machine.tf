@@ -111,10 +111,6 @@ resource "secretsmanager_pam_machine" "windows_server" {
   #   value = ["Windows Server 2022"]
   # }
 
-  # Optional: SSL verification
-  # ssl_verification {
-  #   value = [true]
-  # }
 }
 
 # Example 3: PAM Machine with cloud instance metadata
