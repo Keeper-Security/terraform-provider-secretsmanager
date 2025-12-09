@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func schemaGenericField() *schema.Schema {
@@ -272,9 +273,15 @@ func schemaBankAccountField() *schema.Schema {
 					Elem: &schema.Resource{
 						Schema: map[string]*schema.Schema{
 							"account_type": {
-								Type:        schema.TypeString,
-								Optional:    true,
-								Description: "Account type.",
+								Type:     schema.TypeString,
+								Optional: true,
+								ValidateFunc: validation.StringInSlice([]string{
+									"Checking",
+									"Savings",
+									"Other",
+								}, false),
+								Description: "Account type. Must be one of: Checking, Savings, Other. " +
+									"If 'Other' is selected, provide details in 'other_type' field.",
 							},
 							"routing_number": {
 								Type:        schema.TypeString,
