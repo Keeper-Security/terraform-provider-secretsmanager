@@ -678,7 +678,7 @@ func getFieldResourceData(fieldType, section string, secret *core.Record) interf
 							// simple value - Int64 (converted to float/float64 by JSON)
 							ftSchema["value"] = int64(num)
 						} else if boolVal, ok := fiv.(bool); ok {
-							// simple value - bool (for checkbox fields that expect a list)
+							// simple value - bool (Keeper stores checkbox values as single-element arrays)
 							if fieldType == "checkbox" {
 								fis = append(fis, boolVal)
 							} else {
