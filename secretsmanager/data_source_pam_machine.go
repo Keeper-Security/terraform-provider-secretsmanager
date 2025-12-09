@@ -15,7 +15,7 @@ func dataSourcePamMachine() *schema.Resource {
 			"path": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "The path to PAM Machine secret.",
+				Description:  "The UID or KSM notation path to the PAM Machine secret (e.g., record UID or UID/field/password).",
 				ExactlyOneOf: []string{"path", "title"},
 			},
 			"title": {

@@ -15,7 +15,7 @@ func dataSourcePamDirectory() *schema.Resource {
 			"path": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "The path to PAM Directory secret.",
+				Description:  "The UID or KSM notation path to the PAM Directory secret (e.g., record UID or UID/field/password).",
 				ExactlyOneOf: []string{"path", "title"},
 			},
 			"title": {
