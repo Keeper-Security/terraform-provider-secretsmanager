@@ -3,6 +3,7 @@ package secretsmanager
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -174,15 +175,7 @@ func suppressEquivalentJSON(k, oldValue, newValue string, d *schema.ResourceData
 		return false
 	}
 
-	// Re-marshal to normalized JSON (consistent ordering)
-	oldNormalized, err1 := json.Marshal(oldJSON)
-	newNormalized, err2 := json.Marshal(newJSON)
-	if err1 != nil || err2 != nil {
-		return false
-	}
-
-	// Compare normalized JSON
-	return string(oldNormalized) == string(newNormalized)
+	return reflect.DeepEqual(oldJSON, newJSON)
 }
 
 // schemaPamSettingsField returns the schema for PAM Settings field.
