@@ -26,7 +26,7 @@ func resourcePassport() *schema.Resource {
 				Computed:     true,
 				Optional:     true,
 				AtLeastOneOf: []string{"folder_uid", "uid"},
-				Description:  "The folder UID where the secret is stored. Ensure the folder is shared to your KSM application with 'Can Edit' permissions.",
+				Description:  "The UID of the folder where the secret is stored. The folder or its parent shared folder must be accessible to your KSM application with 'Can Edit' permissions.",
 			},
 			"uid": {
 				Type:         schema.TypeString,
