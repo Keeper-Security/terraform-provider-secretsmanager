@@ -24,11 +24,11 @@ data "secretsmanager_pam_machine" "ssh_server_by_title" {
 
 # Output the PAM Machine data
 output "ssh_hostname" {
-  value = data.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].hostname
+  value = data.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].value[0].hostname
 }
 
 output "ssh_port" {
-  value = data.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].port
+  value = data.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].value[0].port
 }
 
 output "ssh_login" {
@@ -64,18 +64,18 @@ output "ssh_recording_enabled" {
 # Example: Access cloud instance metadata
 output "instance_info" {
   value = {
-    name = try(data.secretsmanager_pam_machine.ssh_server_by_uid.instance_name[0].value[0], "")
-    id = try(data.secretsmanager_pam_machine.ssh_server_by_uid.instance_id[0].value[0], "")
-    provider = try(data.secretsmanager_pam_machine.ssh_server_by_uid.provider_group[0].value[0], "")
-    region = try(data.secretsmanager_pam_machine.ssh_server_by_uid.provider_region[0].value[0], "")
+    name = try(data.secretsmanager_pam_machine.ssh_server_by_uid.instance_name[0].value, "")
+    id = try(data.secretsmanager_pam_machine.ssh_server_by_uid.instance_id[0].value, "")
+    provider = try(data.secretsmanager_pam_machine.ssh_server_by_uid.provider_group[0].value, "")
+    region = try(data.secretsmanager_pam_machine.ssh_server_by_uid.provider_region[0].value, "")
   }
 }
 
 # Example: Use in another resource
 resource "null_resource" "ssh_connection" {
   triggers = {
-    host = data.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].hostname
-    port = data.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].port
+    host = data.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].value[0].hostname
+    port = data.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].value[0].port
   }
 
   provisioner "local-exec" {

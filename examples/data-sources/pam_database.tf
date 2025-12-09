@@ -24,11 +24,11 @@ data "secretsmanager_pam_database" "mysql_by_title" {
 
 # Output the PAM Database data
 output "db_hostname" {
-  value = data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].hostname
+  value = data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].value[0].hostname
 }
 
 output "db_port" {
-  value = data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].port
+  value = data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].value[0].port
 }
 
 output "db_type" {
@@ -76,8 +76,8 @@ output "db_allow_supply_user" {
 
 # Example: Build database connection string
 locals {
-  db_host = data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].hostname
-  db_port = data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].port
+  db_host = data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].value[0].hostname
+  db_port = data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].value[0].port
   db_user = data.secretsmanager_pam_database.mysql_by_uid.login[0].value
   db_pass = data.secretsmanager_pam_database.mysql_by_uid.password[0].value
   db_ssl  = try(data.secretsmanager_pam_database.mysql_by_uid.use_ssl[0].value[0], false) ? "require" : "disable"
@@ -94,9 +94,9 @@ output "connection_string" {
 # Example: Access cloud database metadata
 output "cloud_db_info" {
   value = {
-    database_id = try(data.secretsmanager_pam_database.mysql_by_uid.database_id[0].value[0], "")
-    provider    = try(data.secretsmanager_pam_database.mysql_by_uid.provider_group[0].value[0], "")
-    region      = try(data.secretsmanager_pam_database.mysql_by_uid.provider_region[0].value[0], "")
+    database_id = try(data.secretsmanager_pam_database.mysql_by_uid.database_id[0].value, "")
+    provider    = try(data.secretsmanager_pam_database.mysql_by_uid.provider_group[0].value, "")
+    region      = try(data.secretsmanager_pam_database.mysql_by_uid.provider_region[0].value, "")
   }
 }
 
@@ -104,7 +104,7 @@ output "cloud_db_info" {
 # This would connect to the database using credentials from Keeper
 /*
 provider "mysql" {
-  endpoint = "${data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].hostname}:${data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].port}"
+  endpoint = "${data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].value[0].hostname}:${data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].value[0].port}"
   username = data.secretsmanager_pam_database.mysql_by_uid.login[0].value
   password = data.secretsmanager_pam_database.mysql_by_uid.password[0].value
 }

@@ -24,11 +24,11 @@ data "secretsmanager_pam_directory" "ad_by_title" {
 
 # Output the PAM Directory data
 output "ad_hostname" {
-  value = data.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].hostname
+  value = data.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].value[0].hostname
 }
 
 output "ad_port" {
-  value = data.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].port
+  value = data.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].value[0].port
 }
 
 output "ad_directory_type" {
@@ -78,19 +78,19 @@ output "ad_ssl_enabled" {
 output "ad_connection_info" {
   value = {
     type = data.secretsmanager_pam_directory.ad_by_uid.directory_type
-    host = data.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].hostname
-    port = data.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].port
+    host = data.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].value[0].hostname
+    port = data.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].value[0].port
     protocol = local.protocol
     ssl = local.ssl_enabled
-    base_dn = try(data.secretsmanager_pam_directory.ad_by_uid.distinguished_name[0].value[0], "")
+    base_dn = try(data.secretsmanager_pam_directory.ad_by_uid.distinguished_name[0].value, "")
   }
 }
 
 # Example: Use in another resource (e.g., LDAP client configuration)
 resource "null_resource" "ldap_connection_test" {
   triggers = {
-    host = data.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].hostname
-    port = data.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].port
+    host = data.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].value[0].hostname
+    port = data.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].value[0].port
     type = data.secretsmanager_pam_directory.ad_by_uid.directory_type
   }
 
