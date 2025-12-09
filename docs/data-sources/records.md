@@ -61,9 +61,38 @@ data "secretsmanager_records" "mixed" {
     "RECORD_UID_1",
     "RECORD_UID_2"
   ]
-  
+
   titles = [
     "Production Database"
+  ]
+}
+```
+
+### Using regex patterns
+
+```terraform
+data "secretsmanager_records" "by_patterns" {
+  title_patterns = [
+    "^Production.*",           # All records starting with "Production"
+    ".*Database$",             # All records ending with "Database"
+    "^(Staging|Dev)\\s+API.*"  # Staging or Dev API records
+  ]
+}
+```
+
+### Combining UIDs, titles, and patterns
+
+```terraform
+data "secretsmanager_records" "combined" {
+  uids = ["CRITICAL_SERVICE_UID"]
+
+  titles = [
+    "Production Database",
+    "Production Cache"
+  ]
+
+  title_patterns = [
+    "^AWS.*Prod.*"  # All AWS production records
   ]
 }
 ```
@@ -109,8 +138,9 @@ The following arguments are supported:
 
 * `uids` - (Optional) List of record UIDs to fetch. Provides the most efficient batching when only UIDs are specified.
 * `titles` - (Optional) List of record titles to fetch. Note: When titles are specified, all records must be fetched first and then filtered, which is less efficient than using UIDs directly.
+* `title_patterns` - (Optional) List of regex patterns to match against record titles. Each pattern is compiled as a Go regular expression. Note: Like `titles`, this requires fetching all records first and then filtering.
 
-~> **Note:** At least one of `uids` or `titles` must be provided.
+~> **Note:** At least one of `uids`, `titles`, or `title_patterns` must be provided.
 
 ## Attributes Reference
 
@@ -144,7 +174,8 @@ In addition to all arguments above, the following attributes are exported:
 ## Performance Considerations
 
 * **Use UIDs when possible**: Fetching by UIDs makes a single API call with the exact records needed
-* **Titles require full fetch**: When using titles, the provider must fetch all records and then filter, which is less efficient
+* **Titles and patterns require full fetch**: When using `titles` or `title_patterns`, the provider must fetch all records and then filter, which is less efficient than using UIDs directly
+* **Regex performance**: Complex regex patterns may impact filtering performance on large record sets
 * **Batch size**: While there's no hard limit, very large batches (500+ records) may experience longer response times
 
 ## Migration from Individual Records
