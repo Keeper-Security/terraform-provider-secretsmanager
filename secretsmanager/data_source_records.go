@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -29,6 +30,14 @@ func dataSourceRecords() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Description: "List of record titles to fetch (requires fetching all records first)",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			"title_patterns": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "List of regex patterns to match against record titles (requires fetching all records first)",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -126,13 +135,14 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 	client := *provider.client
 	var diags diag.Diagnostics
 
-	// Get UIDs and titles from config
+	// Get UIDs, titles, and title patterns from config
 	uidsRaw := d.Get("uids").([]interface{})
 	titlesRaw := d.Get("titles").([]interface{})
+	titlePatternsRaw := d.Get("title_patterns").([]interface{})
 
 	// Validate that at least one is provided
-	if len(uidsRaw) == 0 && len(titlesRaw) == 0 {
-		return diag.Errorf("at least one of 'uids' or 'titles' must be provided")
+	if len(uidsRaw) == 0 && len(titlesRaw) == 0 && len(titlePatternsRaw) == 0 {
+		return diag.Errorf("at least one of 'uids', 'titles', or 'title_patterns' must be provided")
 	}
 
 	// Convert to string slices
@@ -146,6 +156,16 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 		titles[i] = strings.TrimSpace(title.(string))
 	}
 
+	// Compile regex patterns
+	titlePatterns := make([]*regexp.Regexp, len(titlePatternsRaw))
+	for i, pattern := range titlePatternsRaw {
+		re, err := regexp.Compile(strings.TrimSpace(pattern.(string)))
+		if err != nil {
+			return diag.Errorf("invalid regex pattern '%s': %v", pattern, err)
+		}
+		titlePatterns[i] = re
+	}
+
 	// Future enhancement: enforce batch size limit
 	// const maxBatchSize = 500
 	// totalRecords := len(uids) + len(titles)
@@ -156,9 +176,9 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 	var secrets []*core.Record
 	var err error
 
-	// Optimization: If we have titles, we need to fetch all records anyway
-	// So we can filter both UIDs and titles from the same result set
-	if len(titles) > 0 {
+	// Optimization: If we have titles or patterns, we need to fetch all records anyway
+	// So we can filter both UIDs, titles, and patterns from the same result set
+	if len(titles) > 0 || len(titlePatterns) > 0 {
 		// Fetch all records once
 		allSecrets, err := client.GetSecrets([]string{})
 		if err != nil {
@@ -176,9 +196,19 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 			titleMap[title] = true
 		}
 
-		// Filter records by UIDs and titles
+		// Helper function to check if title matches any pattern
+		matchesPattern := func(title string) bool {
+			for _, pattern := range titlePatterns {
+				if pattern.MatchString(title) {
+					return true
+				}
+			}
+			return false
+		}
+
+		// Filter records by UIDs, titles, and patterns
 		for _, record := range allSecrets {
-			if uidMap[record.Uid] || titleMap[record.Title()] {
+			if uidMap[record.Uid] || titleMap[record.Title()] || matchesPattern(record.Title()) {
 				secrets = append(secrets, record)
 			}
 		}
