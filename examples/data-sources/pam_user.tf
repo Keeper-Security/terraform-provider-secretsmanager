@@ -12,51 +12,51 @@ provider "secretsmanager" {
   # credential = file("~/.keeper/credential")
 }
 
-# Example 1: Read PAM User by path
-data "secretsmanager_pam_user" "db_admin_by_path" {
-  path = "/PAM/Database/Admin Users/dbadmin"
+# Example 1: Read PAM User by UID (recommended - always unique)
+data "secretsmanager_pam_user" "db_admin_by_uid" {
+  path = "EARSF1XFshSbkFmc84BBHA"  # Replace with your record UID
 }
 
-# Example 2: Read PAM User by title
+# Example 2: Read PAM User by title (errors if multiple records have same title)
 data "secretsmanager_pam_user" "db_admin_by_title" {
-  title = "Database Admin User"
+  title = "GatewayTest - RDP User"  # Replace with your record title
 }
 
 # Output the PAM User data
 output "db_login" {
-  value = data.secretsmanager_pam_user.db_admin_by_path.login[0].value
+  value = data.secretsmanager_pam_user.db_admin_by_uid.login[0].value
 }
 
 output "db_password" {
-  value     = data.secretsmanager_pam_user.db_admin_by_path.password[0].value
+  value     = data.secretsmanager_pam_user.db_admin_by_uid.password[0].value
   sensitive = true
 }
 
 output "db_distinguished_name" {
-  value = try(data.secretsmanager_pam_user.db_admin_by_path.distinguished_name[0].value, "")
+  value = try(data.secretsmanager_pam_user.db_admin_by_uid.distinguished_name[0].value, "")
 }
 
 output "db_connect_database" {
-  value = try(data.secretsmanager_pam_user.db_admin_by_path.connect_database[0].value, "")
+  value = try(data.secretsmanager_pam_user.db_admin_by_uid.connect_database[0].value, "")
 }
 
 output "db_managed" {
-  value = try(data.secretsmanager_pam_user.db_admin_by_path.managed[0].value, false)
+  value = try(data.secretsmanager_pam_user.db_admin_by_uid.managed[0].value, false)
 }
 
 # Example: Check if TOTP is configured
 output "has_2fa" {
-  value = length(data.secretsmanager_pam_user.db_admin_by_path.totp) > 0
+  value = length(data.secretsmanager_pam_user.db_admin_by_uid.totp) > 0
 }
 
 # Example: Access rotation scripts
 output "rotation_configured" {
-  value = length(data.secretsmanager_pam_user.db_admin_by_path.rotation_scripts) > 0
+  value = length(data.secretsmanager_pam_user.db_admin_by_uid.rotation_scripts) > 0
 }
 
 # Example: Build a connection string for database access
 locals {
-  db_user = data.secretsmanager_pam_user.db_admin_by_path
+  db_user = data.secretsmanager_pam_user.db_admin_by_uid
   connection_info = {
     username = try(local.db_user.login[0].value, "")
     password = try(local.db_user.password[0].value, "")
@@ -77,8 +77,8 @@ output "connection_info" {
 # Example: Use in another resource to configure database access
 resource "null_resource" "db_access_setup" {
   triggers = {
-    username = data.secretsmanager_pam_user.db_admin_by_path.login[0].value
-    database = try(data.secretsmanager_pam_user.db_admin_by_path.connect_database[0].value, "")
+    username = data.secretsmanager_pam_user.db_admin_by_uid.login[0].value
+    database = try(data.secretsmanager_pam_user.db_admin_by_uid.connect_database[0].value, "")
   }
 
   provisioner "local-exec" {
@@ -88,7 +88,7 @@ resource "null_resource" "db_access_setup" {
 
 # Example: Extract LDAP distinguished name components
 locals {
-  dn       = try(data.secretsmanager_pam_user.db_admin_by_path.distinguished_name[0].value, "")
+  dn       = try(data.secretsmanager_pam_user.db_admin_by_uid.distinguished_name[0].value, "")
   dn_parts = split(",", local.dn)
 }
 
