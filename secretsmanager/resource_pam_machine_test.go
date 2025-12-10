@@ -42,20 +42,6 @@ func TestAccResourcePamMachine_create(t *testing.T) {
 					reusePort = true
 				}]
 			}])
-			login {
-				value = "admin"
-			}
-			password {
-				enforce_generation = true
-				generate = "yes"
-				complexity {
-					length = 20
-					caps = 5
-					lowercase = 5
-					digits = 5
-					special = 5
-				}
-			}
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 

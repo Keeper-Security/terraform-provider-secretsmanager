@@ -15,7 +15,7 @@ func dataSourcePamDirectory() *schema.Resource {
 			"path": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "The path to PAM Directory secret.",
+				Description:  "The UID or KSM notation path to the PAM Directory secret (e.g., record UID or UID/field/password).",
 				ExactlyOneOf: []string{"path", "title"},
 			},
 			"title": {
@@ -43,8 +43,6 @@ func dataSourcePamDirectory() *schema.Resource {
 			"pam_hostname":       schemaPamHostnameField(),
 			"pam_settings":       schemaPamSettingsField(),
 			"directory_type":     schemaDirectoryTypeField(),
-			"login":              schemaLoginField(),
-			"password":           schemaPasswordField(""),
 			"rotation_scripts":   schemaScriptField(),
 			"use_ssl":            schemaCheckboxField(),
 			"distinguished_name": schemaTextField(),
@@ -88,14 +86,6 @@ func dataSourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m i
 	}
 
 	// PAM Directory specific fields
-	login := getFieldResourceData("login", "fields", secret)
-	if err = d.Set("login", login); err != nil {
-		return diag.FromErr(err)
-	}
-	password := getFieldResourceData("password", "fields", secret)
-	if err = d.Set("password", password); err != nil {
-		return diag.FromErr(err)
-	}
 	pamHostname := getFieldResourceData("pamHostname", "fields", secret)
 	if err = d.Set("pam_hostname", pamHostname); err != nil {
 		return diag.FromErr(err)

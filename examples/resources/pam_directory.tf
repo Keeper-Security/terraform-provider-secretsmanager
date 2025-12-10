@@ -41,19 +41,6 @@ resource "secretsmanager_pam_directory" "active_directory" {
 
   directory_type = "Active Directory"
 
-  login {
-    label = "Admin DN"
-    required = true
-    value = "CN=Admin,CN=Users,DC=corp,DC=example,DC=com"
-  }
-
-  password {
-    label = "Admin Password"
-    required = true
-    privacy_screen = true
-    value = "Str0ng!AD!P@ssw0rd"
-  }
-
   distinguished_name {
     label = "Base DN"
     value = ["DC=corp,DC=example,DC=com"]
@@ -88,21 +75,6 @@ resource "secretsmanager_pam_directory" "openldap" {
   }])
 
   directory_type = "OpenLDAP"
-
-  login {
-    value = "cn=admin,dc=dev,dc=example,dc=com"
-  }
-
-  password {
-    generate = "yes"
-    complexity {
-      length = 32
-      caps = 8
-      lowercase = 8
-      digits = 8
-      special = 8
-    }
-  }
 
   distinguished_name {
     label = "Base DN"
@@ -141,27 +113,6 @@ resource "secretsmanager_pam_directory" "secure_ad" {
   }])
 
   directory_type = "Active Directory"
-
-  login {
-    label = "Service Account DN"
-    required = true
-    value = "CN=KeeperService,OU=ServiceAccounts,DC=prod,DC=example,DC=com"
-  }
-
-  password {
-    label = "Service Account Password"
-    required = true
-    privacy_screen = true
-    enforce_generation = true
-    generate = "yes"
-    complexity {
-      length = 48
-      caps = 12
-      lowercase = 12
-      digits = 12
-      special = 12
-    }
-  }
 
   distinguished_name {
     label = "Search Base DN"
