@@ -43,8 +43,6 @@ func dataSourcePamDatabase() *schema.Resource {
 			"pam_hostname":     schemaPamHostnameField(),
 			"pam_settings":     schemaPamSettingsField(),
 			"use_ssl":          schemaCheckboxField(),
-			"login":            schemaLoginField(),
-			"password":         schemaPasswordField(""),
 			"rotation_scripts": schemaScriptField(),
 			"database_id":      schemaTextField(),
 			"database_type":    schemaDatabaseTypeField(),
@@ -84,14 +82,6 @@ func dataSourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	// PAM Database specific fields
-	login := getFieldResourceData("login", "fields", secret)
-	if err = d.Set("login", login); err != nil {
-		return diag.FromErr(err)
-	}
-	password := getFieldResourceData("password", "fields", secret)
-	if err = d.Set("password", password); err != nil {
-		return diag.FromErr(err)
-	}
 	pamHostname := getFieldResourceData("pamHostname", "fields", secret)
 	if err = d.Set("pam_hostname", pamHostname); err != nil {
 		return diag.FromErr(err)

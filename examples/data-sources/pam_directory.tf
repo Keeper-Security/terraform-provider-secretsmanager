@@ -35,15 +35,6 @@ output "ad_directory_type" {
   value = data.secretsmanager_pam_directory.ad_by_uid.directory_type
 }
 
-output "ad_login" {
-  value = data.secretsmanager_pam_directory.ad_by_uid.login[0].value
-}
-
-output "ad_password" {
-  value     = data.secretsmanager_pam_directory.ad_by_uid.password[0].value
-  sensitive = true
-}
-
 output "ad_distinguished_name" {
   value = try(data.secretsmanager_pam_directory.ad_by_uid.distinguished_name[0].value, [])
 }

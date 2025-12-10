@@ -31,15 +31,6 @@ output "ssh_port" {
   value = data.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].value[0].port
 }
 
-output "ssh_login" {
-  value = data.secretsmanager_pam_machine.ssh_server_by_uid.login[0].value
-}
-
-output "ssh_password" {
-  value     = data.secretsmanager_pam_machine.ssh_server_by_uid.password[0].value
-  sensitive = true
-}
-
 # Access pamSettings as JSON
 output "ssh_pam_settings" {
   value = jsondecode(data.secretsmanager_pam_machine.ssh_server_by_uid.pam_settings)
