@@ -118,6 +118,9 @@ func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m in
 		} else if field != nil {
 			field.(*core.Checkbox).Label = "useSSL"
 			nrc.Fields = append(nrc.Fields, field)
+			if err := SetFieldTypeInSchema(d, "use_ssl", "checkbox"); err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
