@@ -37,20 +37,6 @@ func TestAccResourcePamDirectory_create(t *testing.T) {
 				}]
 			}])
 			directory_type = "Active Directory"
-			login {
-				value = "CN=Admin,CN=Users,DC=corp,DC=example,DC=com"
-			}
-			password {
-				enforce_generation = true
-				generate = "yes"
-				complexity {
-					length = 24
-					caps = 6
-					lowercase = 6
-					digits = 6
-					special = 6
-				}
-			}
 			distinguished_name {
 				label = "Distinguished Name"
 				value = "DC=corp,DC=example,DC=com"
@@ -100,7 +86,6 @@ func TestAccResourcePamDirectory_create(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.hostname", "ad.corp.example.com"),
 					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.port", "636"),
 					resource.TestCheckResourceAttr(resourceName, "directory_type", "Active Directory"),
-					resource.TestCheckResourceAttr(resourceName, "login.0.value", "CN=Admin,CN=Users,DC=corp,DC=example,DC=com"),
 					resource.TestCheckResourceAttr(resourceName, "distinguished_name.0.value", "DC=corp,DC=example,DC=com"),
 					resource.TestCheckResourceAttr(resourceName, "domain_name.0.value", "corp.example.com"),
 					resource.TestCheckResourceAttr(resourceName, "directory_id.0.value", "dir-12345678"),
@@ -276,9 +261,6 @@ func TestAccResourcePamDirectory_import(t *testing.T) {
 				}
 			}
 			directory_type = "Active Directory"
-			login {
-				value = "CN=Admin,DC=example,DC=com"
-			}
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 

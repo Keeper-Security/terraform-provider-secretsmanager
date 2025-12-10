@@ -42,20 +42,6 @@ func TestAccResourcePamDatabase_create(t *testing.T) {
 			use_ssl {
 				value = [true]
 			}
-			login {
-				value = "dbadmin"
-			}
-			password {
-				enforce_generation = true
-				generate = "yes"
-				complexity {
-					length = 32
-					caps = 8
-					lowercase = 8
-					digits = 8
-					special = 8
-				}
-			}
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
 

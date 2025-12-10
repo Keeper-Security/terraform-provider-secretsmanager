@@ -46,27 +46,6 @@ resource "secretsmanager_pam_machine" "ssh_server" {
       reusePort = true
     }]
   }])
-
-  login {
-    label = "Admin Username"
-    required = true
-    value = "admin"
-  }
-
-  password {
-    label = "Admin Password"
-    required = true
-    privacy_screen = true
-    enforce_generation = true
-    generate = "yes"
-    complexity {
-      length = 32
-      caps = 8
-      lowercase = 8
-      digits = 8
-      special = 8
-    }
-  }
 }
 
 # Example 2: PAM Machine with RDP protocol
@@ -96,15 +75,6 @@ resource "secretsmanager_pam_machine" "windows_server" {
     }]
   }])
 
-  login {
-    value = "Administrator"
-  }
-
-  password {
-    value = "Str0ng!P@ssw0rd"
-    privacy_screen = true
-  }
-
   # Optional: Operating system
   # operating_system {
   #   label = "OS"
@@ -133,10 +103,6 @@ resource "secretsmanager_pam_machine" "aws_instance" {
       recordingIncludeKeys = true
     }]
   }])
-
-  login {
-    value = "ec2-user"
-  }
 
   # Instance metadata
   instance_name {
