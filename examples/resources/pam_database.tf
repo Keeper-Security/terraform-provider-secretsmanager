@@ -49,27 +49,6 @@ resource "secretsmanager_pam_database" "postgres_prod" {
     value = [true]
   }
 
-  login {
-    label = "DB Username"
-    required = true
-    value = "postgres_admin"
-  }
-
-  password {
-    label = "DB Password"
-    required = true
-    privacy_screen = true
-    enforce_generation = true
-    generate = "yes"
-    complexity {
-      length = 32
-      caps = 8
-      lowercase = 8
-      digits = 8
-      special = 8
-    }
-  }
-
   # Optional: Connect to specific database
   connect_database {
     label = "Default Database"
@@ -106,15 +85,6 @@ resource "secretsmanager_pam_database" "mysql_staging" {
   use_ssl {
     value = [false]
   }
-
-  login {
-    value = "mysql_user"
-  }
-
-  password {
-    value = "Staging!P@ss123"
-    privacy_screen = true
-  }
 }
 
 # Example 3: AWS RDS PostgreSQL with metadata
@@ -143,22 +113,6 @@ resource "secretsmanager_pam_database" "aws_rds_postgres" {
 
   use_ssl {
     value = [true]
-  }
-
-  login {
-    value = "dbadmin"
-  }
-
-  password {
-    enforce_generation = true
-    generate = "yes"
-    complexity {
-      length = 32
-      caps = 8
-      lowercase = 8
-      digits = 8
-      special = 8
-    }
   }
 
   # Database ID (RDS instance identifier)
@@ -205,14 +159,6 @@ resource "secretsmanager_pam_database" "mongodb_dev" {
   }])
 
   database_type = "mongodb"
-
-  login {
-    value = "mongo_dev"
-  }
-
-  password {
-    value = "DevP@ssw0rd123"
-  }
 }
 
 # Output the created database records
