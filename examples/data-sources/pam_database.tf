@@ -35,15 +35,6 @@ output "db_type" {
   value = data.secretsmanager_pam_database.mysql_by_uid.database_type
 }
 
-output "db_login" {
-  value = data.secretsmanager_pam_database.mysql_by_uid.login[0].value
-}
-
-output "db_password" {
-  value     = data.secretsmanager_pam_database.mysql_by_uid.password[0].value
-  sensitive = true
-}
-
 output "db_use_ssl" {
   value = try(data.secretsmanager_pam_database.mysql_by_uid.use_ssl[0].value[0], false)
 }
@@ -74,23 +65,6 @@ output "db_allow_supply_user" {
   value = local.allow_supply_user
 }
 
-# Example: Build database connection string
-locals {
-  db_host = data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].value[0].hostname
-  db_port = data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].value[0].port
-  db_user = data.secretsmanager_pam_database.mysql_by_uid.login[0].value
-  db_pass = data.secretsmanager_pam_database.mysql_by_uid.password[0].value
-  db_ssl  = try(data.secretsmanager_pam_database.mysql_by_uid.use_ssl[0].value[0], false) ? "require" : "disable"
-
-  # MySQL connection string
-  mysql_connection_string = "mysql://${local.db_user}:${local.db_pass}@${local.db_host}:${local.db_port}/${local.db_name}?ssl-mode=${local.db_ssl}"
-}
-
-output "connection_string" {
-  value     = local.mysql_connection_string
-  sensitive = true
-}
-
 # Example: Access cloud database metadata
 output "cloud_db_info" {
   value = {
@@ -99,17 +73,3 @@ output "cloud_db_info" {
     region      = try(data.secretsmanager_pam_database.mysql_by_uid.provider_region[0].value, "")
   }
 }
-
-# Example: Use in database provider configuration
-# This would connect to the database using credentials from Keeper
-/*
-provider "mysql" {
-  endpoint = "${data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].value[0].hostname}:${data.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].value[0].port}"
-  username = data.secretsmanager_pam_database.mysql_by_uid.login[0].value
-  password = data.secretsmanager_pam_database.mysql_by_uid.password[0].value
-}
-
-resource "mysql_database" "new_db" {
-  name = "my_new_database"
-}
-*/

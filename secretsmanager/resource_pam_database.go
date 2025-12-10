@@ -56,8 +56,6 @@ func resourcePamDatabase() *schema.Resource {
 			"pam_hostname":     schemaPamHostnameField(),
 			"pam_settings":     schemaPamSettingsField(),
 			"use_ssl":          schemaCheckboxField(),
-			"login":            schemaLoginField(),
-			"password":         schemaPasswordField(""),
 			"rotation_scripts": schemaScriptField(),
 			"database_id":      schemaTextField(),
 			"database_type":    schemaDatabaseTypeField(),
@@ -120,33 +118,6 @@ func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m in
 		} else if field != nil {
 			field.(*core.Checkbox).Label = "useSSL"
 			nrc.Fields = append(nrc.Fields, field)
-		}
-	}
-	if fieldData := d.Get("login"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
-		if field, err := NewFieldFromSchema("login", fieldData); err != nil {
-			return diag.FromErr(err)
-		} else if field != nil {
-			nrc.Fields = append(nrc.Fields, field)
-			if err := SetFieldTypeInSchema(d, "login", "login"); err != nil {
-				return diag.FromErr(err)
-			}
-		}
-	}
-	if fieldData := d.Get("password"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
-		if field, err := NewFieldFromSchema("password", fieldData); err != nil {
-			return diag.FromErr(err)
-		} else if field != nil {
-			if generated, err := applyGeneratePassword(fieldData, field); err != nil {
-				return diag.FromErr(err)
-			} else if generated {
-				if err := d.Set("password", fieldData); err != nil {
-					return diag.FromErr(err)
-				}
-			}
-			nrc.Fields = append(nrc.Fields, field)
-			if err := SetFieldTypeInSchema(d, "password", "password"); err != nil {
-				return diag.FromErr(err)
-			}
 		}
 	}
 
@@ -299,15 +270,6 @@ func resourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
-	login := getFieldResourceData("login", "fields", secret)
-	if err = d.Set("login", login); err != nil {
-		return diag.FromErr(err)
-	}
-	password := getFieldResourceData("password", "fields", secret)
-	mergePassword(d.Get("password"), password)
-	if err = d.Set("password", password); err != nil {
-		return diag.FromErr(err)
-	}
 	oneTimeCode := getFieldResourceData("oneTimeCode", "fields", secret)
 	if err = d.Set("totp", oneTimeCode); err != nil {
 		return diag.FromErr(err)
@@ -396,16 +358,6 @@ func resourcePamDatabaseUpdate(ctx context.Context, d *schema.ResourceData, m in
 		secret.SetNotes(d.Get("notes").(string))
 	}
 
-	if d.HasChange("login") {
-		if _, err := ApplyFieldChange("fields", "login", d, secret); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-	if d.HasChange("password") {
-		if _, err := ApplyFieldChange("fields", "password", d, secret); err != nil {
-			return diag.FromErr(err)
-		}
-	}
 	if d.HasChange("pam_hostname") {
 		// Handle pam_hostname using SetStandardFieldValue which calls update() to sync RecordDict to RawJson
 		pamHostnameData := d.Get("pam_hostname")

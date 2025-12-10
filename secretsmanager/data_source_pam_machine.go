@@ -42,8 +42,6 @@ func dataSourcePamMachine() *schema.Resource {
 			// PAM Machine specific fields
 			"pam_hostname":     schemaPamHostnameField(),
 			"pam_settings":     schemaPamSettingsField(),
-			"login":            schemaLoginField(),
-			"password":         schemaPasswordField(""),
 			"rotation_scripts": schemaScriptField(),
 			"operating_system": schemaTextField(),
 			"instance_name":    schemaTextField(),
@@ -84,14 +82,6 @@ func dataSourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m int
 	}
 
 	// PAM Machine specific fields
-	login := getFieldResourceData("login", "fields", secret)
-	if err = d.Set("login", login); err != nil {
-		return diag.FromErr(err)
-	}
-	password := getFieldResourceData("password", "fields", secret)
-	if err = d.Set("password", password); err != nil {
-		return diag.FromErr(err)
-	}
 	pamHostname := getFieldResourceData("pamHostname", "fields", secret)
 	if err = d.Set("pam_hostname", pamHostname); err != nil {
 		return diag.FromErr(err)
