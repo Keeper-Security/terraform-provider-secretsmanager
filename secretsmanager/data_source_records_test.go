@@ -3,6 +3,7 @@ package secretsmanager
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -197,6 +198,19 @@ func TestAccDataSourceRecords_InvalidPattern(t *testing.T) {
 	})
 }
 
+func TestAccDataSourceRecords_PatternTooLong(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  testAccPreCheck(t),
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccDataSourceRecordsConfig_patternTooLong(),
+				ExpectError: regexp.MustCompile("regex pattern exceeds maximum length"),
+			},
+		},
+	})
+}
+
 func TestAccDataSourceRecords_CombinedWithPatterns(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
@@ -261,6 +275,18 @@ data "secretsmanager_records" "test" {
 	]
 }
 `
+}
+
+func testAccDataSourceRecordsConfig_patternTooLong() string {
+	// Generate a pattern longer than 500 characters
+	longPattern := strings.Repeat("a", 501)
+	return fmt.Sprintf(`
+data "secretsmanager_records" "test" {
+	title_patterns = [
+		"%s"
+	]
+}
+`, longPattern)
 }
 
 func testAccDataSourceRecordsConfig_combinedWithPatterns() string {

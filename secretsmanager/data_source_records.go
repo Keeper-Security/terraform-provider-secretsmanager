@@ -14,6 +14,11 @@ import (
 	"github.com/keeper-security/secrets-manager-go/core"
 )
 
+const (
+	// maxRegexPatternLength limits regex pattern complexity to prevent ReDoS attacks
+	maxRegexPatternLength = 500
+)
+
 func dataSourceRecords() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceRecordsRead,
@@ -21,7 +26,7 @@ func dataSourceRecords() *schema.Resource {
 			"uids": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "List of record UIDs to fetch",
+				Description: "List of record UIDs to fetch. Most efficient option - fetches only requested records.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -29,7 +34,7 @@ func dataSourceRecords() *schema.Resource {
 			"titles": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "List of record titles to fetch (requires fetching all records first)",
+				Description: "List of exact record titles to match. WARNING: Fetches ALL vault records and filters client-side. Use 'uids' for better performance.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -37,7 +42,7 @@ func dataSourceRecords() *schema.Resource {
 			"title_patterns": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "List of regex patterns to match against record titles (requires fetching all records first)",
+				Description: "List of regex patterns (Go syntax) to match record titles. WARNING: Fetches ALL vault records and filters client-side. Use 'uids' for better performance. Max pattern length: 500 chars. See https://pkg.go.dev/regexp/syntax for syntax reference.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -156,12 +161,20 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 		titles[i] = strings.TrimSpace(title.(string))
 	}
 
-	// Compile regex patterns
+	// Compile regex patterns with complexity validation
 	titlePatterns := make([]*regexp.Regexp, len(titlePatternsRaw))
 	for i, pattern := range titlePatternsRaw {
-		re, err := regexp.Compile(strings.TrimSpace(pattern.(string)))
+		patternStr := strings.TrimSpace(pattern.(string))
+
+		// Validate pattern length to prevent ReDoS attacks
+		if len(patternStr) > maxRegexPatternLength {
+			return diag.Errorf("regex pattern exceeds maximum length of %d characters (got %d): '%s'",
+				maxRegexPatternLength, len(patternStr), patternStr)
+		}
+
+		re, err := regexp.Compile(patternStr)
 		if err != nil {
-			return diag.Errorf("invalid regex pattern '%s': %v", pattern, err)
+			return diag.Errorf("invalid regex pattern '%s': %v", patternStr, err)
 		}
 		titlePatterns[i] = re
 	}

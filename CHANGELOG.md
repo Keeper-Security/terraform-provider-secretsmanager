@@ -30,8 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Add `title_patterns` parameter to `secretsmanager_records` data source for filtering with Go regex
   - Support multiple patterns in a single query
   - Combine with existing UIDs and exact title filters
-  - Add 4 new acceptance tests for pattern matching functionality
-  - Update documentation with regex pattern examples and performance considerations
+  - Add ReDoS protection with 500-character pattern length limit
+  - Add 5 new acceptance tests for pattern matching functionality (including length validation)
+  - Update documentation with regex pattern examples, performance warnings, and security considerations
 
 - Add GitHub Actions workflow for automated testing on pull requests
 - Add explicit `contents: read` permissions to test workflow for security compliance

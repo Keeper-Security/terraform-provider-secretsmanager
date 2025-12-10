@@ -136,11 +136,13 @@ resource "aws_db_instance" "production" {
 
 The following arguments are supported:
 
-* `uids` - (Optional) List of record UIDs to fetch. Provides the most efficient batching when only UIDs are specified.
-* `titles` - (Optional) List of record titles to fetch. Note: When titles are specified, all records must be fetched first and then filtered, which is less efficient than using UIDs directly.
-* `title_patterns` - (Optional) List of regex patterns to match against record titles. Each pattern is compiled as a Go regular expression. Note: Like `titles`, this requires fetching all records first and then filtering.
+* `uids` - (Optional) List of record UIDs to fetch. **Most efficient option** - fetches only the requested records in a single API call.
+* `titles` - (Optional) List of exact record titles to match. **WARNING**: Fetches ALL vault records and filters client-side. Use `uids` for better performance.
+* `title_patterns` - (Optional) List of regex patterns (Go syntax) to match record titles. **WARNING**: Fetches ALL vault records and filters client-side. Use `uids` for better performance. Maximum pattern length: 500 characters per pattern. See [Go regex syntax reference](https://pkg.go.dev/regexp/syntax) for pattern format.
 
 ~> **Note:** At least one of `uids`, `titles`, or `title_patterns` must be provided.
+
+~> **Performance Warning:** Using `titles` or `title_patterns` requires fetching your entire vault and filtering client-side. For large vaults (1000+ records), this can cause significant delays. Always prefer `uids` when possible.
 
 ## Attributes Reference
 
@@ -174,9 +176,10 @@ In addition to all arguments above, the following attributes are exported:
 ## Performance Considerations
 
 * **Use UIDs when possible**: Fetching by UIDs makes a single API call with the exact records needed
-* **Titles and patterns require full fetch**: When using `titles` or `title_patterns`, the provider must fetch all records and then filter, which is less efficient than using UIDs directly
-* **Regex performance**: Complex regex patterns may impact filtering performance on large record sets
-* **Batch size**: While there's no hard limit, very large batches (500+ records) may experience longer response times
+* **Titles and patterns require full fetch**: When using `titles` or `title_patterns`, the provider must fetch **all records in your vault** and then filter client-side. For a vault with 1000 records, this means downloading all 1000 records even if you only need 5.
+* **Regex pattern limits**: Each pattern is limited to 500 characters to prevent ReDoS (Regular Expression Denial of Service) attacks. Patterns exceeding this limit will cause validation errors at plan time.
+* **Regex performance**: Complex regex patterns may impact filtering performance on large record sets, though this is typically negligible compared to the network fetch time
+* **Batch size**: While there's no hard limit on the number of UIDs, very large batches (500+ records) may experience longer response times due to network transfer and decryption overhead
 
 ## Migration from Individual Records
 
