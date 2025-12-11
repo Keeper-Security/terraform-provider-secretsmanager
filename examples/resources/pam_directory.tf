@@ -5,13 +5,13 @@ terraform {
       version = ">= 1.1.8"
     }
     local = {
-      source = "hashicorp/local"
+      source  = "hashicorp/local"
       version = "2.1.0"
     }
   }
 }
 
-provider "local" { }
+provider "local" {}
 provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
@@ -20,21 +20,21 @@ provider "secretsmanager" {
 # Example 1: Active Directory PAM Directory
 resource "secretsmanager_pam_directory" "active_directory" {
   folder_uid = "<folder UID>"
-  title = "Corporate Active Directory"
-  notes = "Main AD server for authentication"
+  title      = "Corporate Active Directory"
+  notes      = "Main AD server for authentication"
 
   pam_hostname {
     value {
       hostname = "ad.corp.example.com"
-      port = "636"  # LDAPS port
+      port     = "636" # LDAPS port
     }
   }
 
   # Active Directory connection settings
   pam_settings = jsonencode([{
     connection = [{
-      protocol = "ldaps"
-      port = "636"
+      protocol             = "ldaps"
+      port                 = "636"
       recordingIncludeKeys = false
     }]
   }])
@@ -55,21 +55,21 @@ resource "secretsmanager_pam_directory" "active_directory" {
 # Example 2: OpenLDAP PAM Directory
 resource "secretsmanager_pam_directory" "openldap" {
   folder_uid = "<folder UID>"
-  title = "Development OpenLDAP"
-  notes = "OpenLDAP directory for dev environment"
+  title      = "Development OpenLDAP"
+  notes      = "OpenLDAP directory for dev environment"
 
   pam_hostname {
     value {
       hostname = "ldap.dev.example.com"
-      port = "389"
+      port     = "389"
     }
   }
 
   # OpenLDAP connection settings
   pam_settings = jsonencode([{
     connection = [{
-      protocol = "ldap"
-      port = "389"
+      protocol             = "ldap"
+      port                 = "389"
       recordingIncludeKeys = false
     }]
   }])
@@ -82,32 +82,32 @@ resource "secretsmanager_pam_directory" "openldap" {
   }
 
   use_ssl {
-    value = [false]  # Plain LDAP for dev
+    value = [false] # Plain LDAP for dev
   }
 }
 
 # Example 3: Active Directory with LDAPS and custom settings
 resource "secretsmanager_pam_directory" "secure_ad" {
   folder_uid = "<folder UID>"
-  title = "Secure Active Directory"
-  notes = "Production AD with LDAPS and SSL verification"
+  title      = "Secure Active Directory"
+  notes      = "Production AD with LDAPS and SSL verification"
 
   pam_hostname {
     value {
       hostname = "secure-ad.prod.example.com"
-      port = "636"
+      port     = "636"
     }
   }
 
   pam_settings = jsonencode([{
     connection = [{
-      protocol = "ldaps"
-      port = "636"
+      protocol             = "ldaps"
+      port                 = "636"
       recordingIncludeKeys = true
-      allowSupplyUser = false
+      allowSupplyUser      = false
     }]
     portForward = [{
-      port = "1636"
+      port      = "1636"
       reusePort = true
     }]
   }])

@@ -47,9 +47,9 @@ data "secretsmanager_records" "mixed" {
 # Example 3a: Fetch records using regex patterns
 data "secretsmanager_records" "by_patterns" {
   title_patterns = [
-    "^Production.*",           # All records starting with "Production"
-    ".*Database$",             # All records ending with "Database"
-    "^(Staging|Dev)\\s+API.*"  # Staging or Dev API records
+    "^Production.*",          # All records starting with "Production"
+    ".*Database$",            # All records ending with "Database"
+    "^(Staging|Dev)\\s+API.*" # Staging or Dev API records
   ]
 }
 
@@ -62,7 +62,7 @@ data "secretsmanager_records" "combined" {
     "Critical Service Account"
   ]
   title_patterns = [
-    "^AWS.*Prod.*"  # All AWS production records
+    "^AWS.*Prod.*" # All AWS production records
   ]
 }
 
@@ -108,10 +108,10 @@ locals {
   db_record = jsondecode(
     data.secretsmanager_records.infrastructure.records_by_uid["<db_prod_uid>"]
   )
-  
+
   # Extract username (assuming it's the first field)
   db_username = local.db_record.fields[0].value
-  
+
   # Extract password (assuming it's the second field)
   db_password = sensitive(local.db_record.fields[1].value)
 }

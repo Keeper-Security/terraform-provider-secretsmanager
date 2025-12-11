@@ -14,12 +14,12 @@ provider "secretsmanager" {
 
 # Example 1: Read PAM Machine by UID (recommended - always unique)
 data "secretsmanager_pam_machine" "ssh_server_by_uid" {
-  path = "EYgeFFfgXRl_DQFIQD71uw"  # Replace with your record UID
+  path = "EYgeFFfgXRl_DQFIQD71uw" # Replace with your record UID
 }
 
 # Example 2: Read PAM Machine by title (errors if multiple records have same title)
 data "secretsmanager_pam_machine" "ssh_server_by_title" {
-  title = "tf_acc_test_pam_machine_create"  # Replace with your record title
+  title = "tf_acc_test_pam_machine_create" # Replace with your record title
 }
 
 # Output the PAM Machine data
@@ -33,14 +33,14 @@ output "ssh_port" {
 
 # Access pamSettings as JSON
 output "ssh_pam_settings" {
-  value = jsondecode(data.secretsmanager_pam_machine.ssh_server_by_uid.pam_settings)
+  value     = jsondecode(data.secretsmanager_pam_machine.ssh_server_by_uid.pam_settings)
   sensitive = true
 }
 
 # Example: Extract specific settings from pamSettings
 locals {
-  ssh_settings = jsondecode(data.secretsmanager_pam_machine.ssh_server_by_uid.pam_settings)
-  protocol = try(local.ssh_settings[0].connection[0].protocol, "unknown")
+  ssh_settings      = jsondecode(data.secretsmanager_pam_machine.ssh_server_by_uid.pam_settings)
+  protocol          = try(local.ssh_settings[0].connection[0].protocol, "unknown")
   recording_enabled = try(local.ssh_settings[0].connection[0].recordingIncludeKeys, false)
 }
 
@@ -55,10 +55,10 @@ output "ssh_recording_enabled" {
 # Example: Access cloud instance metadata
 output "instance_info" {
   value = {
-    name = try(data.secretsmanager_pam_machine.ssh_server_by_uid.instance_name[0].value, "")
-    id = try(data.secretsmanager_pam_machine.ssh_server_by_uid.instance_id[0].value, "")
+    name     = try(data.secretsmanager_pam_machine.ssh_server_by_uid.instance_name[0].value, "")
+    id       = try(data.secretsmanager_pam_machine.ssh_server_by_uid.instance_id[0].value, "")
     provider = try(data.secretsmanager_pam_machine.ssh_server_by_uid.provider_group[0].value, "")
-    region = try(data.secretsmanager_pam_machine.ssh_server_by_uid.provider_region[0].value, "")
+    region   = try(data.secretsmanager_pam_machine.ssh_server_by_uid.provider_region[0].value, "")
   }
 }
 

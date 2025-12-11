@@ -5,19 +5,19 @@ terraform {
       version = ">= 1.1.8"
     }
     local = {
-      source = "hashicorp/local"
+      source  = "hashicorp/local"
       version = "2.1.0"
     }
   }
 }
 
-provider "local" { }
+provider "local" {}
 provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
 }
 
-data "secretsmanager_folders" "my_folders" { }
+data "secretsmanager_folders" "my_folders" {}
 
 resource "local_file" "out" {
   filename        = "${path.module}/out.txt"
@@ -26,13 +26,13 @@ resource "local_file" "out" {
 
 Folders:
 --------
-%{ for f in data.secretsmanager_folders.my_folders.folders ~}
-UID:       ${ f.uid }
-Name:      ${ f.name }
-ParentUID: ${ f.parent_uid }
-Shared:    ${ f.shared }
+%{for f in data.secretsmanager_folders.my_folders.folders~}
+UID:       ${f.uid}
+Name:      ${f.name}
+ParentUID: ${f.parent_uid}
+Shared:    ${f.shared}
 
-%{ endfor ~}
+%{endfor~}
 EOT
 }
 

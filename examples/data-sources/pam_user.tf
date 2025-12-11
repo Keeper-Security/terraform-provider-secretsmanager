@@ -14,12 +14,12 @@ provider "secretsmanager" {
 
 # Example 1: Read PAM User by UID (recommended - always unique)
 data "secretsmanager_pam_user" "db_admin_by_uid" {
-  path = "EARSF1XFshSbkFmc84BBHA"  # Replace with your record UID
+  path = "EARSF1XFshSbkFmc84BBHA" # Replace with your record UID
 }
 
 # Example 2: Read PAM User by title (errors if multiple records have same title)
 data "secretsmanager_pam_user" "db_admin_by_title" {
-  title = "GatewayTest - RDP User"  # Replace with your record title
+  title = "GatewayTest - RDP User" # Replace with your record title
 }
 
 # Output the PAM User data

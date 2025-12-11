@@ -14,12 +14,12 @@ provider "secretsmanager" {
 
 # Example 1: Read PAM Database by UID (recommended - always unique)
 data "secretsmanager_pam_database" "mysql_by_uid" {
-  path = "cMS_-lYDeLs07A--rKMlNw"  # Replace with your record UID
+  path = "cMS_-lYDeLs07A--rKMlNw" # Replace with your record UID
 }
 
 # Example 2: Read PAM Database by title (errors if multiple records have same title)
 data "secretsmanager_pam_database" "mysql_by_title" {
-  title = "GatewayTest - MySQL Database"  # Replace with your record title
+  title = "GatewayTest - MySQL Database" # Replace with your record title
 }
 
 # Output the PAM Database data

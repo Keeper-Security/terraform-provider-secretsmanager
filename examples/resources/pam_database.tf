@@ -5,13 +5,13 @@ terraform {
       version = ">= 1.1.8"
     }
     local = {
-      source = "hashicorp/local"
+      source  = "hashicorp/local"
       version = "2.1.0"
     }
   }
 }
 
-provider "local" { }
+provider "local" {}
 provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
@@ -20,25 +20,25 @@ provider "secretsmanager" {
 # Example 1: PostgreSQL Database
 resource "secretsmanager_pam_database" "postgres_prod" {
   folder_uid = "<folder UID>"
-  title = "Production PostgreSQL"
-  notes = "Main production database cluster"
+  title      = "Production PostgreSQL"
+  notes      = "Main production database cluster"
 
   pam_hostname {
     value {
       hostname = "postgres.prod.example.com"
-      port = "5432"
+      port     = "5432"
     }
   }
 
   # PostgreSQL-specific connection settings
   pam_settings = jsonencode([{
     connection = [{
-      protocol = "postgresql"
-      port = "5432"
+      protocol             = "postgresql"
+      port                 = "5432"
       recordingIncludeKeys = true
-      allowSupplyUser = false
-      database = "production"
-      allowSupplyHost = false
+      allowSupplyUser      = false
+      database             = "production"
+      allowSupplyHost      = false
     }]
   }])
 
@@ -59,24 +59,24 @@ resource "secretsmanager_pam_database" "postgres_prod" {
 # Example 2: MySQL Database
 resource "secretsmanager_pam_database" "mysql_staging" {
   folder_uid = "<folder UID>"
-  title = "Staging MySQL"
-  notes = "Staging database for testing"
+  title      = "Staging MySQL"
+  notes      = "Staging database for testing"
 
   pam_hostname {
     value {
       hostname = "mysql.staging.example.com"
-      port = "3306"
+      port     = "3306"
     }
   }
 
   # MySQL-specific connection settings
   pam_settings = jsonencode([{
     connection = [{
-      protocol = "mysql"
-      port = "3306"
+      protocol             = "mysql"
+      port                 = "3306"
       recordingIncludeKeys = false
-      allowSupplyUser = true
-      database = "staging"
+      allowSupplyUser      = true
+      database             = "staging"
     }]
   }])
 
@@ -90,22 +90,22 @@ resource "secretsmanager_pam_database" "mysql_staging" {
 # Example 3: AWS RDS PostgreSQL with metadata
 resource "secretsmanager_pam_database" "aws_rds_postgres" {
   folder_uid = "<folder UID>"
-  title = "AWS RDS PostgreSQL"
-  notes = "Production RDS instance"
+  title      = "AWS RDS PostgreSQL"
+  notes      = "Production RDS instance"
 
   pam_hostname {
     value {
       hostname = "mydb.cluster-abc123.us-east-1.rds.amazonaws.com"
-      port = "5432"
+      port     = "5432"
     }
   }
 
   pam_settings = jsonencode([{
     connection = [{
-      protocol = "postgresql"
-      port = "5432"
+      protocol             = "postgresql"
+      port                 = "5432"
       recordingIncludeKeys = true
-      database = "appdb"
+      database             = "appdb"
     }]
   }])
 
@@ -136,24 +136,24 @@ resource "secretsmanager_pam_database" "aws_rds_postgres" {
 # Example 4: MongoDB with port forwarding
 resource "secretsmanager_pam_database" "mongodb_dev" {
   folder_uid = "<folder UID>"
-  title = "Development MongoDB"
-  notes = "Local MongoDB instance for development"
+  title      = "Development MongoDB"
+  notes      = "Local MongoDB instance for development"
 
   pam_hostname {
     value {
       hostname = "mongodb.dev.local"
-      port = "27017"
+      port     = "27017"
     }
   }
 
   pam_settings = jsonencode([{
     connection = [{
       protocol = "mongodb"
-      port = "27017"
+      port     = "27017"
       database = "devdb"
     }]
     portForward = [{
-      port = "27018"
+      port      = "27018"
       reusePort = true
     }]
   }])
