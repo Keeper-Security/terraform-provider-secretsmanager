@@ -188,8 +188,6 @@ func suppressEquivalentJSON(k, oldValue, newValue string, d *schema.ResourceData
 // 3. Backend stores as encrypted JSON blob without validation
 // 4. Prevents data loss on round-trip operations
 // 5. Forward-compatible with new protocols and fields
-//
-// See PAM_SCHEMA_ANALYSIS.md for complete field definitions by protocol.
 func schemaPamSettingsField() *schema.Schema {
 	return &schema.Schema{
 		Type:             schema.TypeString,
