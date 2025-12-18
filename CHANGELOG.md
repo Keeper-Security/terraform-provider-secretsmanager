@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.8] - 2025-12-08
+## [1.2.0] - 2025-12-08
 
 ### Security
 - Upgrade Go from 1.24.0 to 1.24.8 to address critical vulnerabilities
@@ -58,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix folder UID validation and empty folder restriction in resource schema descriptions
 
-[Unreleased]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.1.8...HEAD
-[1.1.8]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.1.7...v1.1.8
+[Unreleased]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.1.7...v1.2.0
 [1.1.7]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.1.6...v1.1.7
 [1.1.6]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/releases/tag/v1.1.6
