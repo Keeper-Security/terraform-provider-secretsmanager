@@ -97,6 +97,8 @@ func resourceSshKeysCreate(ctx context.Context, d *schema.ResourceData, m interf
 			}
 		}
 	}
+	// Process passphrase first — stored as standard password field in fields[]
+	var passphraseValue string
 	if fieldData := d.Get("passphrase"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
 		if field, err := NewFieldFromSchema("password", fieldData); err != nil {
 			return diag.FromErr(err)
@@ -107,6 +109,10 @@ func resourceSshKeysCreate(ctx context.Context, d *schema.ResourceData, m interf
 				if err := d.Set("passphrase", fieldData); err != nil {
 					return diag.FromErr(err)
 				}
+			}
+			// Extract the passphrase value for potential key encryption
+			if pwField, ok := field.(*core.Password); ok && len(pwField.Value) > 0 {
+				passphraseValue = pwField.Value[0]
 			}
 			nrc.Fields = append(nrc.Fields, field)
 			if err := SetFieldTypeInSchema(d, "passphrase", "password"); err != nil {
@@ -124,10 +130,18 @@ func resourceSshKeysCreate(ctx context.Context, d *schema.ResourceData, m interf
 			}
 		}
 	}
+	// Process key_pair — may generate keys using passphrase
 	if fieldData := d.Get("key_pair"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
 		if field, err := NewFieldFromSchema("keyPair", fieldData); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
+			if generated, err := applyGenerateKeyPair(fieldData, field, passphraseValue); err != nil {
+				return diag.FromErr(err)
+			} else if generated {
+				if err := d.Set("key_pair", fieldData); err != nil {
+					return diag.FromErr(err)
+				}
+			}
 			nrc.Fields = append(nrc.Fields, field)
 			if err := SetFieldTypeInSchema(d, "key_pair", "keyPair"); err != nil {
 				return diag.FromErr(err)
@@ -238,6 +252,7 @@ func resourceSshKeysRead(ctx context.Context, d *schema.ResourceData, m interfac
 		return diag.FromErr(err)
 	}
 	keyPair := getFieldResourceData("keyPair", "fields", secret)
+	mergeKeyPair(d.Get("key_pair"), keyPair)
 	if err = d.Set("key_pair", keyPair); err != nil {
 		return diag.FromErr(err)
 	}
@@ -285,9 +300,20 @@ func resourceSshKeysUpdate(ctx context.Context, d *schema.ResourceData, m interf
 			return diag.FromErr(err)
 		}
 	}
+	var passphraseValue string
 	if d.HasChange("passphrase") {
 		if _, err := ApplyFieldChange("fields", "passphrase", d, secret); err != nil {
 			return diag.FromErr(err)
+		}
+	}
+	// Extract current passphrase value for potential key encryption
+	if passphraseData := d.Get("passphrase"); passphraseData != nil {
+		if s, ok := passphraseData.([]interface{}); ok && len(s) > 0 {
+			if m, ok := s[0].(map[string]interface{}); ok {
+				if v, ok := m["value"].(string); ok {
+					passphraseValue = v
+				}
+			}
 		}
 	}
 	if d.HasChange("host") {
@@ -296,8 +322,45 @@ func resourceSshKeysUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 	if d.HasChange("key_pair") {
-		if _, err := ApplyFieldChange("fields", "key_pair", d, secret); err != nil {
+		fieldData := d.Get("key_pair")
+		if field, err := NewFieldFromSchema("keyPair", fieldData); err != nil {
 			return diag.FromErr(err)
+		} else if field != nil {
+			// Check if key generation is requested and params changed
+			newGenerate, _ := ParseGeneratePassword(fieldData)
+			if newGenerate {
+				shouldRegenerate := false
+				oldKP, _ := d.GetChange("key_pair")
+				oldGenerate, _ := ParseGeneratePassword(oldKP)
+				if !oldGenerate {
+					shouldRegenerate = true
+				} else {
+					oldKeyType, oldKeyBits := ParseKeyTypeAndBits(oldKP)
+					newKeyType, newKeyBits := ParseKeyTypeAndBits(fieldData)
+					if oldKeyType != newKeyType || oldKeyBits != newKeyBits {
+						shouldRegenerate = true
+					}
+				}
+				if shouldRegenerate {
+					if generated, err := applyGenerateKeyPair(fieldData, field, passphraseValue); err != nil {
+						return diag.FromErr(err)
+					} else if generated {
+						if err := d.Set("key_pair", fieldData); err != nil {
+							return diag.FromErr(err)
+						}
+					}
+				}
+			}
+			// Upsert field on record
+			if secret.FieldExists("fields", "keyPair") {
+				if err := secret.UpdateField("fields", field); err != nil {
+					return diag.FromErr(err)
+				}
+			} else {
+				if err := secret.InsertField("fields", field); err != nil {
+					return diag.FromErr(err)
+				}
+			}
 		}
 	}
 

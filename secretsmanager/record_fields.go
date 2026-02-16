@@ -676,6 +676,62 @@ func schemaKeyPairField() *schema.Schema {
 					Optional:    true,
 					Description: "Field label.",
 				},
+				"generate": {
+					Type:     schema.TypeString,
+					Optional: true,
+					Description: "Flag to force SSH key pair generation (when set to 'yes' or 'true').",
+					ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
+						v := i.(string)
+						if v == "" || v == "true" || v == "yes" {
+							return nil
+						}
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity:      diag.Error,
+							Summary:       fmt.Sprintf("invalid generate = %s", v),
+							Detail:        fmt.Sprintf("expected 'generate' to be one of ['true', 'yes', ''], got %s", v),
+							AttributePath: p,
+						}}
+					},
+				},
+				"key_type": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Default:     "ssh-ed25519",
+					Description: "SSH key type. One of: ssh-ed25519 (default), ssh-rsa, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521.",
+					ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
+						v := i.(string)
+						valid := []string{"ssh-ed25519", "ssh-rsa", "ecdsa-sha2-nistp256", "ecdsa-sha2-nistp384", "ecdsa-sha2-nistp521"}
+						for _, s := range valid {
+							if v == s {
+								return nil
+							}
+						}
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity:      diag.Error,
+							Summary:       fmt.Sprintf("invalid key_type = %s", v),
+							Detail:        fmt.Sprintf("expected 'key_type' to be one of %v, got %s", valid, v),
+							AttributePath: p,
+						}}
+					},
+				},
+				"key_bits": {
+					Type:        schema.TypeInt,
+					Optional:    true,
+					Default:     4096,
+					Description: "Key size in bits. Only used for ssh-rsa key type. Valid values: 2048, 3072, 4096.",
+					ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
+						v := i.(int)
+						if v == 2048 || v == 3072 || v == 4096 {
+							return nil
+						}
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity:      diag.Error,
+							Summary:       fmt.Sprintf("invalid key_bits = %d", v),
+							Detail:        fmt.Sprintf("expected 'key_bits' to be one of [2048, 3072, 4096], got %d", v),
+							AttributePath: p,
+						}}
+					},
+				},
 				"required": {
 					Type:        schema.TypeBool,
 					Optional:    true,
@@ -689,6 +745,7 @@ func schemaKeyPairField() *schema.Schema {
 				"value": {
 					Type:     schema.TypeList,
 					Optional: true,
+					Computed: true,
 					// MaxItems:    1,
 					Description: "Field value.",
 					Elem: &schema.Resource{
@@ -696,12 +753,15 @@ func schemaKeyPairField() *schema.Schema {
 							"public_key": {
 								Type:        schema.TypeString,
 								Optional:    true,
-								Description: "Public key.",
+								Computed:    true,
+								Description: "Public key (OpenSSH format).",
 							},
 							"private_key": {
 								Type:        schema.TypeString,
 								Optional:    true,
-								Description: "Private key.",
+								Computed:    true,
+								Sensitive:   true,
+								Description: "Private key (PEM format).",
 							},
 						},
 					},

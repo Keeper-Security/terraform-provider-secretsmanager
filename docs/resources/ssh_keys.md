@@ -1,6 +1,90 @@
 # secretsmanager_ssh_keys Resource
 
-Use this resource to access secrets of type `sshKeys` stored in Keeper Vault
+Use this resource to create and manage secrets of type `sshKeys` in Keeper Vault. Supports automatic SSH key pair generation with optional passphrase encryption.
+
+## Example Usage
+
+### Manual SSH Keys
+
+```terraform
+resource "secretsmanager_ssh_keys" "my_ssh_keys" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  login {
+    label          = "My Login"
+    required       = true
+    privacy_screen = true
+    value          = "MyLogin"
+  }
+
+  passphrase {
+    label          = "My Pass"
+    required       = true
+    privacy_screen = true
+    value          = "<SSH PASSPHRASE>"
+  }
+
+  host {
+    label          = "My Host"
+    required       = true
+    privacy_screen = true
+    value {
+      host_name = "127.0.0.1"
+      port      = "22"
+    }
+  }
+
+  key_pair {
+    label          = "My Keys"
+    required       = true
+    privacy_screen = true
+    value {
+      public_key  = "<PUBLIC KEY>"
+      private_key = "<PRIVATE KEY>"
+    }
+  }
+}
+```
+
+### Generated SSH Keys (ED25519)
+
+```terraform
+resource "secretsmanager_ssh_keys" "generated_ed25519" {
+  folder_uid = "<folder UID>"
+  title      = "Generated ED25519 Key"
+
+  key_pair {
+    generate = "yes"
+    key_type = "ssh-ed25519"
+  }
+}
+```
+
+### Generated SSH Keys with Passphrase
+
+When both `passphrase` and `key_pair` use `generate = "yes"`, the generated passphrase automatically encrypts the private key.
+
+```terraform
+resource "secretsmanager_ssh_keys" "generated_with_passphrase" {
+  folder_uid = "<folder UID>"
+  title      = "Generated RSA Key with Passphrase"
+
+  passphrase {
+    generate = "yes"
+    complexity {
+      length = 32
+    }
+  }
+
+  key_pair {
+    generate = "yes"
+    key_type = "ssh-rsa"
+    key_bits = 4096
+  }
+}
+```
 
 ## Schema
 
@@ -13,7 +97,7 @@ Use this resource to access secrets of type `sshKeys` stored in Keeper Vault
 - **key_pair** (Block List, Max: 1) Key pair field data. (see [below for nested schema](#nestedblock--key_pair))
 - **login** (Block List, Max: 1) Login field data. (see [below for nested schema](#nestedblock--login))
 - **notes** (String) The secret notes.
-- **passphrase** (Block List, Max: 1) Password field data. (see [below for nested schema](#nestedblock--passphrase))
+- **passphrase** (Block List, Max: 1) Password field data. Used as the SSH key passphrase. When both passphrase and key pair generation are enabled, the passphrase encrypts the generated private key. (see [below for nested schema](#nestedblock--passphrase))
 - **title** (String) The secret title.
 - **uid** (String) The UID of the new secret (using RFC4648 URL and Filename Safe Alphabet).
 
@@ -77,10 +161,13 @@ Optional:
 
 Optional:
 
+- **generate** (String) Flag to force SSH key pair generation (when set to 'yes' or 'true'). When set, `public_key` and `private_key` are computed automatically.
+- **key_type** (String) SSH key type. One of: `ssh-ed25519` (default), `ssh-rsa`, `ecdsa-sha2-nistp256`, `ecdsa-sha2-nistp384`, `ecdsa-sha2-nistp521`.
+- **key_bits** (Number) Key size in bits. Only used for `ssh-rsa` key type. Valid values: 2048, 3072, 4096. Default: `4096`.
 - **label** (String) Field label.
 - **privacy_screen** (Boolean) Privacy screen flag.
 - **required** (Boolean) Required flag.
-- **value** (Block List) Field value. (see [below for nested schema](#nestedblock--key_pair--value))
+- **value** (Block List) Field value. Computed when `generate` is set. (see [below for nested schema](#nestedblock--key_pair--value))
 
 Read-Only:
 
@@ -91,8 +178,8 @@ Read-Only:
 
 Optional:
 
-- **private_key** (String) Private key.
-- **public_key** (String) Public key.
+- **private_key** (String, Sensitive) Private key (PEM format). Computed when `generate` is set.
+- **public_key** (String) Public key (OpenSSH authorized_keys format). Computed when `generate` is set.
 
 <a id="nestedblock--login"></a>
 ### Nested Schema for `login`
@@ -110,6 +197,8 @@ Read-Only:
 
 <a id="nestedblock--passphrase"></a>
 ### Nested Schema for `passphrase`
+
+When both passphrase and key pair generation are enabled, the passphrase automatically encrypts the generated private key.
 
 Optional:
 

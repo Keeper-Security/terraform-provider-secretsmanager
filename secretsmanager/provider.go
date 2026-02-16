@@ -2619,6 +2619,132 @@ func applyGeneratePassword(fieldData interface{}, field interface{}) (generated 
 	return false, nil
 }
 
+// mergePassphrase preserves schema-only attributes for the SSH keys passphrase field.
+// The passphrase is stored as a custom "secret" field in the vault, which only has
+// type, label, and value. Schema attributes like generate, complexity, and enforce_generation
+// are not stored in the vault and must be merged back from the TF state.
+func mergePassphrase(schemaField interface{}, recordField interface{}) {
+	if schemaField == nil || recordField == nil {
+		return
+	}
+	sfi, ok := schemaField.([]interface{})
+	if !ok || len(sfi) == 0 {
+		return
+	}
+	sfmap, ok := sfi[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+	rfi, ok := recordField.([]interface{})
+	if !ok || len(rfi) == 0 {
+		return
+	}
+	rfmap, ok := rfi[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	// Merge schema-only attributes back from state
+	for _, key := range []string{"generate", "complexity", "enforce_generation", "required", "privacy_screen"} {
+		if v, found := sfmap[key]; found {
+			rfmap[key] = v
+		}
+	}
+	// Use the label from config (schema), not the vault custom field label
+	if schemaLabel, found := sfmap["label"]; found {
+		rfmap["label"] = schemaLabel
+	} else {
+		delete(rfmap, "label")
+	}
+}
+
+func applyGenerateKeyPair(fieldData interface{}, field interface{}, passphrase string) (generated bool, e error) {
+	if fv, ok := field.(*core.KeyPairs); ok {
+		if generate, _ := ParseGeneratePassword(fieldData); generate {
+			keyType, keyBits := ParseKeyTypeAndBits(fieldData)
+
+			result, err := GenerateSSHKeyPair(keyType, keyBits, passphrase)
+			if err != nil {
+				return false, err
+			}
+
+			// Update the core field value
+			keyPair := core.KeyPair{
+				PublicKey:  result.PublicKey,
+				PrivateKey: result.PrivateKey,
+			}
+			if len(fv.Value) > 0 {
+				fv.Value = fv.Value[0:0]
+			}
+			fv.Value = append(fv.Value, keyPair)
+
+			// Update schema data
+			if s, ok := fieldData.([]interface{}); ok && len(s) > 0 {
+				if fmap, ok := s[0].(map[string]interface{}); ok {
+					fmap["value"] = []interface{}{
+						map[string]interface{}{
+							"public_key":  result.PublicKey,
+							"private_key": result.PrivateKey,
+						},
+					}
+				}
+			}
+			return true, nil
+		}
+	} else {
+		return false, fmt.Errorf("applyGenerateKeyPair expects field to be of type *core.KeyPairs")
+	}
+	return false, nil
+}
+
+func mergeKeyPair(schemaField interface{}, recordField interface{}) {
+	if schemaField != nil && recordField != nil {
+		var generate, keyType, keyBits interface{}
+		if sfi, ok := schemaField.([]interface{}); ok && len(sfi) > 0 {
+			if sfmap, ok := sfi[0].(map[string]interface{}); ok {
+				if v, found := sfmap["generate"]; found {
+					generate = v
+				}
+				if v, found := sfmap["key_type"]; found {
+					keyType = v
+				}
+				if v, found := sfmap["key_bits"]; found {
+					keyBits = v
+				}
+			}
+		}
+		if sfi, ok := recordField.([]interface{}); ok && len(sfi) > 0 {
+			if sfmap, ok := sfi[0].(map[string]interface{}); ok {
+				if generate != nil {
+					sfmap["generate"] = generate
+				}
+				if keyType != nil {
+					sfmap["key_type"] = keyType
+				}
+				if keyBits != nil {
+					sfmap["key_bits"] = keyBits
+				}
+			}
+		}
+	}
+}
+
+func ParseKeyTypeAndBits(data interface{}) (SSHKeyType, int) {
+	keyType := SSHKeyTypeED25519
+	keyBits := 4096
+	if s, ok := data.([]interface{}); ok && len(s) > 0 {
+		if m, ok := s[0].(map[string]interface{}); ok {
+			if kt, ok := m["key_type"].(string); ok && kt != "" {
+				keyType = SSHKeyType(kt)
+			}
+			if kb, ok := m["key_bits"].(int); ok && kb > 0 {
+				keyBits = kb
+			}
+		}
+	}
+	return keyType, keyBits
+}
+
 func isThrottled(e error) bool {
 	if e != nil {
 		msg := strings.ToLower(e.Error())
