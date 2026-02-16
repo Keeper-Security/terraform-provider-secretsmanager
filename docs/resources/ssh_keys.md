@@ -1,6 +1,58 @@
 # secretsmanager_ssh_keys Resource
 
-Use this resource to access secrets of type `sshKeys` stored in Keeper Vault
+Use this resource to create and manage secrets of type `sshKeys` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_ssh_keys" "my_ssh_keys" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  login {
+    label          = "My Login"
+    required       = true
+    privacy_screen = true
+    value          = "MyLogin"
+  }
+
+  passphrase {
+    label              = "My Pass"
+    required           = true
+    privacy_screen     = true
+    enforce_generation = true
+    complexity {
+      length    = 20
+      caps      = 5
+      lowercase = 5
+      digits    = 5
+      special   = 5
+    }
+    value = "<SSH PASSPHRASE>"
+  }
+
+  host {
+    label          = "My Host"
+    required       = true
+    privacy_screen = true
+    value {
+      host_name = "127.0.0.1"
+      port      = "22"
+    }
+  }
+
+  key_pair {
+    label          = "My Keys"
+    required       = true
+    privacy_screen = true
+    value {
+      public_key  = "<PUBLIC KEY>"
+      private_key = "<PRIVATE KEY>"
+    }
+  }
+}
+```
 
 ## Schema
 

@@ -1,6 +1,49 @@
 # secretsmanager_membership Resource
 
-Use this resource to access secrets of type `membership` stored in Keeper Vault
+Use this resource to create and manage secrets of type `membership` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_membership" "my_membership" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  account_number {
+    label          = "My Account"
+    required       = true
+    privacy_screen = true
+    value          = "My Account# 1234"
+  }
+
+  name {
+    label          = "John"
+    required       = true
+    privacy_screen = true
+    value {
+      first  = "John"
+      middle = "D"
+      last   = "Doe"
+    }
+  }
+
+  password {
+    label              = "My Pass"
+    required           = true
+    privacy_screen     = true
+    enforce_generation = true
+    generate           = "yes"
+    complexity {
+      length    = 20
+      caps      = 5
+      lowercase = 5
+      digits    = 5
+      special   = 5
+    }
+  }
+}
+```
 
 ## Schema
 

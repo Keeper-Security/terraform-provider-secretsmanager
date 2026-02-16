@@ -1,6 +1,63 @@
 # secretsmanager_health_insurance Resource
 
-Use this resource to access secrets of type `healthInsurance` stored in Keeper Vault
+Use this resource to create and manage secrets of type `healthInsurance` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_health_insurance" "my_health_insurance" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  account_number {
+    label          = "My Account"
+    required       = true
+    privacy_screen = true
+    value          = "My Account# 1234"
+  }
+
+  name {
+    label          = "John"
+    required       = true
+    privacy_screen = true
+    value {
+      first  = "John"
+      middle = "D"
+      last   = "Doe"
+    }
+  }
+
+  login {
+    label          = "My Login"
+    required       = true
+    privacy_screen = true
+    value          = "MyLogin"
+  }
+
+  password {
+    label              = "My Pass"
+    required           = true
+    privacy_screen     = true
+    enforce_generation = true
+    generate           = "yes"
+    complexity {
+      length    = 20
+      caps      = 5
+      lowercase = 5
+      digits    = 5
+      special   = 5
+    }
+  }
+
+  url {
+    label          = "My Url"
+    required       = true
+    privacy_screen = true
+    value          = "https://192.168.1.1/"
+  }
+}
+```
 
 ## Schema
 

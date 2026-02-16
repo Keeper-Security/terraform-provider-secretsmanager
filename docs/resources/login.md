@@ -1,6 +1,52 @@
 # secretsmanager_login Resource
 
-Use this resource to access secrets of type `login` stored in Keeper Vault
+Use this resource to create and manage secrets of type `login` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_login" "my_login" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  login {
+    label          = "My Login"
+    required       = true
+    privacy_screen = true
+    value          = "MyLogin"
+  }
+
+  password {
+    label              = "My Pass"
+    required           = true
+    privacy_screen     = true
+    enforce_generation = true
+    generate           = "yes"
+    complexity {
+      length    = 20
+      caps      = 5
+      lowercase = 5
+      digits    = 5
+      special   = 5
+    }
+  }
+
+  url {
+    label          = "My Url"
+    required       = true
+    privacy_screen = true
+    value          = "https://192.168.1.1/"
+  }
+
+  totp {
+    label          = "My TOTP"
+    required       = true
+    privacy_screen = true
+    value          = "otpauth://totp/Acme:Buster?secret=JBSWY3DPEHPK3PXP&issuer=Acme&algorithm=SHA1&digits=6&period=30"
+  }
+}
+```
 
 ## Schema
 

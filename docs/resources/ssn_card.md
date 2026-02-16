@@ -1,6 +1,34 @@
 # secretsmanager_ssn_card Resource
 
-Use this resource to access secrets of type `ssnCard` stored in Keeper Vault
+Use this resource to create and manage secrets of type `ssnCard` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_ssn_card" "my_ssn_card" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  identity_number {
+    label          = "My ID Number"
+    required       = true
+    privacy_screen = true
+    value          = "My ID# 1234"
+  }
+
+  name {
+    label          = "John"
+    required       = true
+    privacy_screen = true
+    value {
+      first  = "John"
+      middle = "D"
+      last   = "Doe"
+    }
+  }
+}
+```
 
 ## Schema
 
