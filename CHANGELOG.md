@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.2.0] - 2025-12-08
+## [1.2.0]
 
 ### Security
 - Upgrade Go from 1.24.0 to 1.24.8 to address critical vulnerabilities
@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Go version compatibility flag (`-compat=1.24.8`) to goreleaser config
 
 
-## [1.1.7] - 2025-11-20
+## [1.1.7]
 
 ### Security
 - Bump golang.org/x/crypto from 0.42.0 to 0.45.0 in the go_modules group
