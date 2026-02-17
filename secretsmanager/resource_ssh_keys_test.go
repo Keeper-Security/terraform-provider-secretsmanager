@@ -85,6 +85,125 @@ func TestAccResourceSshKeys_create(t *testing.T) {
 	})
 }
 
+func TestAccResourceSshKeys_generateED25519(t *testing.T) {
+	secretType := "sshKeys"
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	_, secretTitle := testAcc.getRecordInfo(secretType)
+	if secretUid == "" || secretTitle == "" {
+		t.Fatal("Failed to access test data - missing secret UID and/or Title")
+	}
+	secretTitle += "_resource_generate_ed25519"
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_ssh_keys" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			notes = "%v"
+			key_pair {
+				generate = "yes"
+				key_type = "ssh-ed25519"
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
+
+	resourceName := fmt.Sprintf("secretsmanager_ssh_keys.%v", secretTitle)
+	resource.Test(t, resource.TestCase{
+		Providers: testAccProviders,
+		PreCheck:  testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr(resourceName, "type", secretType),
+					resource.TestCheckResourceAttr(resourceName, "title", secretTitle),
+					checkSecretResourceState(resourceName, func(s *terraform.InstanceState) error {
+						pubKey := s.Attributes["key_pair.0.value.0.public_key"]
+						if pubKey == "" {
+							return fmt.Errorf("expected non-empty public_key")
+						}
+						if len(pubKey) < 20 {
+							return fmt.Errorf("public_key too short: %s", pubKey)
+						}
+						privKey := s.Attributes["key_pair.0.value.0.private_key"]
+						if privKey == "" {
+							return fmt.Errorf("expected non-empty private_key")
+						}
+						return nil
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceSshKeys_generateWithPassphrase(t *testing.T) {
+	secretType := "sshKeys"
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	_, secretTitle := testAcc.getRecordInfo(secretType)
+	if secretUid == "" || secretTitle == "" {
+		t.Fatal("Failed to access test data - missing secret UID and/or Title")
+	}
+	secretTitle += "_resource_generate_passphrase"
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_ssh_keys" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			notes = "%v"
+			passphrase {
+				generate = "yes"
+				complexity {
+					length = 20
+					caps = 5
+					lowercase = 5
+					digits = 5
+					special = 5
+				}
+			}
+			key_pair {
+				generate = "yes"
+				key_type = "ssh-rsa"
+				key_bits = 4096
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
+
+	resourceName := fmt.Sprintf("secretsmanager_ssh_keys.%v", secretTitle)
+	resource.Test(t, resource.TestCase{
+		Providers: testAccProviders,
+		PreCheck:  testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr(resourceName, "type", secretType),
+					checkSecretResourceState(resourceName, func(s *terraform.InstanceState) error {
+						pubKey := s.Attributes["key_pair.0.value.0.public_key"]
+						if pubKey == "" {
+							return fmt.Errorf("expected non-empty public_key")
+						}
+						privKey := s.Attributes["key_pair.0.value.0.private_key"]
+						if privKey == "" {
+							return fmt.Errorf("expected non-empty private_key")
+						}
+						passphrase := s.Attributes["passphrase.0.value"]
+						if passphrase == "" {
+							return fmt.Errorf("expected non-empty passphrase")
+						}
+						return nil
+					}),
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceSshKeys_update(t *testing.T) {
 	secretType := "sshKeys"
 	secretFolderUid := testAcc.getTestFolder()
