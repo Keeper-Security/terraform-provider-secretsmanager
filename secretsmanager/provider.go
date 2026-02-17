@@ -128,57 +128,57 @@ type providerMeta struct {
 
 // map attribute names from schema to field types in record v3
 var mapSchemaToRecordFieldName map[string]string = map[string]string{
-	"account_number":      "accountNumber", // Text
-	"address":             "address",
-	"address_ref":         "addressRef",
-	"bank_account":        "bankAccount",
-	"birth_date":          "birthDate",
-	"card_ref":            "cardRef",
-	"checkbox":            "checkbox",
-	"company":             "text", // Text
-	"connect_database":    "text", // Text with label
-	"database_id":         "text", // Text with label
-	"database_type":       "databaseType",
-	"date":                "date",
-	"directory_type":      "directoryType",
-	"distinguished_name":  "text", // Text with label
-	"email":               "email",
-	"expiration_date":     "expirationDate",
-	"file_ref":            "fileRef",
-	"group_number":        "groupNumber", // Text
-	"host":                "host",
-	"instance_id":         "text", // Text with label
-	"instance_name":       "text", // Text with label
-	"key_pair":            "keyPair",
-	"license_number":      "licenseNumber",
-	"login":               "login",
-	"managed":             "checkbox", // Checkbox with label
-	"multiline":           "multiline",
-	"name":                "name",
-	"note":                "note", // SecureNote
-	"one_time_code":       "oneTimeCode",
-	"operating_system":    "text", // Text with label
-	"pam_hostname":        "pamHostname",
-	"pam_resources":       "pamResources",
-	"pam_settings":        "pamSettings",
-	"password":            "password",
-	"payment_card":        "paymentCard",
-	"phone":               "phone",
-	"pin_code":            "pinCode",
+	"account_number":         "accountNumber", // Text
+	"address":                "address",
+	"address_ref":            "addressRef",
+	"bank_account":           "bankAccount",
+	"birth_date":             "birthDate",
+	"card_ref":               "cardRef",
+	"checkbox":               "checkbox",
+	"company":                "text", // Text
+	"connect_database":       "text", // Text with label
+	"database_id":            "text", // Text with label
+	"database_type":          "databaseType",
+	"date":                   "date",
+	"directory_type":         "directoryType",
+	"distinguished_name":     "text", // Text with label
+	"email":                  "email",
+	"expiration_date":        "expirationDate",
+	"file_ref":               "fileRef",
+	"group_number":           "groupNumber", // Text
+	"host":                   "host",
+	"instance_id":            "text", // Text with label
+	"instance_name":          "text", // Text with label
+	"key_pair":               "keyPair",
+	"license_number":         "licenseNumber",
+	"login":                  "login",
+	"managed":                "checkbox", // Checkbox with label
+	"multiline":              "multiline",
+	"name":                   "name",
+	"note":                   "note", // SecureNote
+	"one_time_code":          "oneTimeCode",
+	"operating_system":       "text", // Text with label
+	"pam_hostname":           "pamHostname",
+	"pam_resources":          "pamResources",
+	"pam_settings":           "pamSettings",
+	"password":               "password",
+	"payment_card":           "paymentCard",
+	"phone":                  "phone",
+	"pin_code":               "pinCode",
 	"private_key_passphrase": "secret", // Secret custom field with label
-	"private_pem_key":       "secret", // Secret with label
-	"provider_group":        "text", // Text with label
-	"provider_region":     "text", // Text with label
-	"rotation_scripts":    "script", // Script with label
-	"schedule":            "schedule",
-	"script":              "script",
-	"secret":              "secret",
-	"security_question":   "securityQuestion",
-	"ssl_verification":    "checkbox", // Checkbox with label
-	"text":                "text",
-	"title":               "title", // Text
-	"use_ssl":             "checkbox", // Checkbox with label
-	"url":               "url",
+	"private_pem_key":        "secret", // Secret with label
+	"provider_group":         "text",   // Text with label
+	"provider_region":        "text",   // Text with label
+	"rotation_scripts":       "script", // Script with label
+	"schedule":               "schedule",
+	"script":                 "script",
+	"secret":                 "secret",
+	"security_question":      "securityQuestion",
+	"ssl_verification":       "checkbox", // Checkbox with label
+	"text":                   "text",
+	"title":                  "title",    // Text
+	"use_ssl":                "checkbox", // Checkbox with label
+	"url":                    "url",
 	// schema attributes that use field label instead of field type
 	// "company":            "text",          // contact
 	"cardholder_name":       "text",          // bankCard

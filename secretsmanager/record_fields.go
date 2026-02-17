@@ -684,8 +684,8 @@ func schemaKeyPairField() *schema.Schema {
 					Description: "Field label.",
 				},
 				"generate": {
-					Type:     schema.TypeString,
-					Optional: true,
+					Type:        schema.TypeString,
+					Optional:    true,
 					Description: "Flag to force SSH key pair generation (when set to 'yes' or 'true').",
 					ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
 						v := i.(string)
