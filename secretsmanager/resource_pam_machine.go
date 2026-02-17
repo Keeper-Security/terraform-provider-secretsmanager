@@ -290,8 +290,6 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 		} else {
 			folderUid = fuid
 		}
-	} else {
-		folderUid = folderUid
 	}
 
 	if _, err := createRecord(uid, folderUid, nrc, client); err != nil {
