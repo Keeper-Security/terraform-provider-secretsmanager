@@ -22,14 +22,15 @@ func schemaCheckboxField() *schema.Schema {
 		Description: "Checkbox field data.",
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-				"field_type": {
+				"type": {
 					Type:        schema.TypeString,
 					Computed:    true,
 					Description: "Field type.",
 				},
-				"field_label": {
+				"label": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Computed:    true,
 					Description: "Field label.",
 				},
 				"required": {
@@ -38,11 +39,9 @@ func schemaCheckboxField() *schema.Schema {
 					Description: "Required flag.",
 				},
 				"value": {
-					Type:        schema.TypeList,
+					Type:        schema.TypeBool,
 					Optional:    true,
-					MaxItems:    1,
 					Description: "Field value.",
-					Elem:        &schema.Schema{Type: schema.TypeBool},
 				},
 			},
 		},
@@ -56,14 +55,15 @@ func schemaScriptField() *schema.Schema {
 		Description: "Script field data.",
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-				"field_type": {
+				"type": {
 					Type:        schema.TypeString,
 					Computed:    true,
 					Description: "Field type.",
 				},
-				"field_label": {
+				"label": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Computed:    true,
 					Description: "Field label.",
 				},
 				"required": {
@@ -114,14 +114,15 @@ func schemaPamHostnameField() *schema.Schema {
 		Description: "PAM Hostname field data.",
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-				"field_type": {
+				"type": {
 					Type:        schema.TypeString,
 					Computed:    true,
 					Description: "Field type.",
 				},
-				"field_label": {
+				"label": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Computed:    true,
 					Description: "Field label.",
 				},
 				"required": {
@@ -259,14 +260,15 @@ func schemaPamResourcesField() *schema.Schema {
 		Description: "PAM Resources field data.",
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-				"field_type": {
+				"type": {
 					Type:        schema.TypeString,
 					Computed:    true,
 					Description: "Field type.",
 				},
-				"field_label": {
+				"label": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Computed:    true,
 					Description: "Field label.",
 				},
 				"required": {
@@ -337,14 +339,15 @@ func schemaDatabaseTypeField() *schema.Schema {
 		Description: "Database type field data.",
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-				"field_type": {
+				"type": {
 					Type:        schema.TypeString,
 					Computed:    true,
 					Description: "Field type.",
 				},
-				"field_label": {
+				"label": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Computed:    true,
 					Description: "Field label.",
 				},
 				"required": {
@@ -353,11 +356,9 @@ func schemaDatabaseTypeField() *schema.Schema {
 					Description: "Required flag.",
 				},
 				"value": {
-					Type:        schema.TypeList,
+					Type:        schema.TypeString,
 					Optional:    true,
-					MaxItems:    1,
 					Description: "Database type value.",
-					Elem:        &schema.Schema{Type: schema.TypeString},
 				},
 			},
 		},
@@ -372,14 +373,15 @@ func schemaDirectoryTypeField() *schema.Schema {
 		Description: "Directory type field data.",
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-				"field_type": {
+				"type": {
 					Type:        schema.TypeString,
 					Computed:    true,
 					Description: "Field type.",
 				},
-				"field_label": {
+				"label": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Computed:    true,
 					Description: "Field label.",
 				},
 				"required": {
@@ -388,11 +390,9 @@ func schemaDirectoryTypeField() *schema.Schema {
 					Description: "Required flag.",
 				},
 				"value": {
-					Type:        schema.TypeList,
+					Type:        schema.TypeString,
 					Optional:    true,
-					MaxItems:    1,
 					Description: "Directory type value.",
-					Elem:        &schema.Schema{Type: schema.TypeString},
 				},
 			},
 		},
@@ -407,14 +407,15 @@ func schemaScheduleField() *schema.Schema {
 		Description: "Schedule field data.",
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-				"field_type": {
+				"type": {
 					Type:        schema.TypeString,
 					Computed:    true,
 					Description: "Field type.",
 				},
-				"field_label": {
+				"label": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Computed:    true,
 					Description: "Field label.",
 				},
 				"required": {
@@ -453,6 +454,7 @@ func schemaPrivatePemKeyField() *schema.Schema {
 				"label": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Computed:    true,
 					Description: "Field label.",
 				},
 				"generate": {

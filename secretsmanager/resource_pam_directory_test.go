@@ -36,7 +36,9 @@ func TestAccResourcePamDirectory_create(t *testing.T) {
 					recordingIncludeKeys = false
 				}]
 			}])
-			directory_type = "Active Directory"
+			directory_type {
+				value = "Active Directory"
+			}
 			distinguished_name {
 				label = "Distinguished Name"
 				value = "DC=corp,DC=example,DC=com"
@@ -66,7 +68,7 @@ func TestAccResourcePamDirectory_create(t *testing.T) {
 			value = "10.0.1.5\n10.0.1.6\n10.0.1.7"
 		}
 			use_ssl {
-				value = [true]
+				value = true
 			}
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
@@ -85,7 +87,7 @@ func TestAccResourcePamDirectory_create(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "notes", secretTitle),
 					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.hostname", "ad.corp.example.com"),
 					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.port", "636"),
-					resource.TestCheckResourceAttr(resourceName, "directory_type", "Active Directory"),
+					resource.TestCheckResourceAttr(resourceName, "directory_type.0.value", "Active Directory"),
 					resource.TestCheckResourceAttr(resourceName, "distinguished_name.0.value", "DC=corp,DC=example,DC=com"),
 					resource.TestCheckResourceAttr(resourceName, "domain_name.0.value", "corp.example.com"),
 					resource.TestCheckResourceAttr(resourceName, "directory_id.0.value", "dir-12345678"),
@@ -93,7 +95,7 @@ func TestAccResourcePamDirectory_create(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "provider_group.0.value", "prod-ad-servers"),
 					resource.TestCheckResourceAttr(resourceName, "provider_region.0.value", "us-west-2"),
 					resource.TestCheckResourceAttr(resourceName, "alternative_ips.0.value", "10.0.1.5\n10.0.1.6\n10.0.1.7"),
-					resource.TestCheckResourceAttr(resourceName, "use_ssl.0.value.0", "true"),
+					resource.TestCheckResourceAttr(resourceName, "use_ssl.0.value", "true"),
 				),
 			},
 		},

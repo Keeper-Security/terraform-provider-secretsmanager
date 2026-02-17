@@ -872,7 +872,7 @@ func getFieldResourceDataWithLabel(fieldType, section string, secret *core.Recor
 							ftSchema["value"] = int64(num)
 						} else if boolVal, ok := fiv.(bool); ok {
 							// simple value - bool
-							ftSchema["value"] = []interface{}{boolVal}
+							ftSchema["value"] = boolVal
 						} else if fmap, ok := fiv.(map[string]interface{}); ok && len(fmap) > 0 {
 							// complex value - map struct fields to schema
 							fv := map[string]interface{}{}

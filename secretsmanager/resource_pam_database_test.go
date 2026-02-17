@@ -38,9 +38,11 @@ func TestAccResourcePamDatabase_create(t *testing.T) {
 					database = "production"
 				}]
 			}])
-			database_type = "postgresql"
+			database_type {
+				value = "postgresql"
+			}
 			use_ssl {
-				value = [true]
+				value = true
 			}
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)

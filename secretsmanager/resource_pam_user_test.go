@@ -42,16 +42,14 @@ func TestAccResourcePamUser_create(t *testing.T) {
 				value = "CN=dbadmin,OU=Users,DC=example,DC=com"
 			}
 			private_pem_key {
-				label = "privatePEMKey"
 				value = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA..."
 			}
 			connect_database {
-				label = "connectDatabase"
 				value = "production_db"
 			}
 			managed {
 				label = "Managed"
-				value = [true]
+				value = true
 			}
 		}
 	`, secretTitle, secretFolderUid, secretUid, secretTitle, secretTitle)
@@ -72,7 +70,7 @@ func TestAccResourcePamUser_create(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "distinguished_name.0.value", "CN=dbadmin,OU=Users,DC=example,DC=com"),
 					resource.TestCheckResourceAttr(resourceName, "private_pem_key.0.value", "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA..."),
 					resource.TestCheckResourceAttr(resourceName, "connect_database.0.value", "production_db"),
-					resource.TestCheckResourceAttr(resourceName, "managed.0.value.0", "true"),
+					resource.TestCheckResourceAttr(resourceName, "managed.0.value", "true"),
 				),
 			},
 		},

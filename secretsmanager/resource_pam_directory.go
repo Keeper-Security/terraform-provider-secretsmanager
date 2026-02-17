@@ -116,16 +116,15 @@ func resourcePamDirectoryCreate(ctx context.Context, d *schema.ResourceData, m i
 			nrc.Fields = append(nrc.Fields, field)
 		}
 	}
-	// Handle directory_type as simple validated string field
-	if directoryType := d.Get("directory_type").(string); directoryType != "" {
-		if field, err := NewFieldFromSchema("directoryType", []interface{}{
-			map[string]interface{}{
-				"value": []interface{}{directoryType},
-			},
-		}); err != nil {
+	// Handle directory_type as block field
+	if fieldData := d.Get("directory_type"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("directoryType", fieldData); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
 			nrc.Fields = append(nrc.Fields, field)
+			if err := SetFieldTypeInSchema(d, "directory_type", "directoryType"); err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -348,20 +347,10 @@ func resourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m int
 			return diag.FromErr(err)
 		}
 	}
-	// Read directory_type as simple string from directoryType field
-	if directoryTypeFields := secret.GetFieldsByType("directoryType"); len(directoryTypeFields) > 0 {
-		directoryTypeData := getFieldResourceData("directoryType", "fields", secret)
-		if directoryTypeList, ok := directoryTypeData.([]interface{}); ok && len(directoryTypeList) > 0 {
-			if directoryTypeMap, ok := directoryTypeList[0].(map[string]interface{}); ok {
-				if valueList, ok := directoryTypeMap["value"].([]interface{}); ok && len(valueList) > 0 {
-					if directoryTypeStr, ok := valueList[0].(string); ok {
-						if err = d.Set("directory_type", directoryTypeStr); err != nil {
-							return diag.FromErr(err)
-						}
-					}
-				}
-			}
-		}
+	// Read directory_type as block field
+	directoryTypeData := getFieldResourceData("directoryType", "fields", secret)
+	if err = d.Set("directory_type", directoryTypeData); err != nil {
+		return diag.FromErr(err)
 	}
 	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
@@ -483,10 +472,9 @@ func resourcePamDirectoryUpdate(ctx context.Context, d *schema.ResourceData, m i
 		}
 	}
 	if d.HasChange("directory_type") {
-		// Handle directory_type as simple string field - use SetStandardFieldValue
-		directoryType := d.Get("directory_type").(string)
-		if err := secret.SetStandardFieldValue("directoryType", []interface{}{directoryType}); err != nil {
-			return diag.FromErr(fmt.Errorf("failed to update directory_type: %w", err))
+		// Handle directory_type as block field - use ApplyFieldChange
+		if _, err := ApplyFieldChange("fields", "directory_type", d, secret); err != nil {
+			return diag.FromErr(err)
 		}
 	}
 	if d.HasChange("rotation_scripts") {
