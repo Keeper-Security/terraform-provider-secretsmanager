@@ -160,6 +160,7 @@ var mapSchemaToRecordFieldName map[string]string = map[string]string{
 	"operating_system":    "text", // Text with label
 	"pam_hostname":        "pamHostname",
 	"pam_resources":       "pamResources",
+	"pam_settings":        "pamSettings",
 	"password":            "password",
 	"payment_card":        "paymentCard",
 	"phone":               "phone",
