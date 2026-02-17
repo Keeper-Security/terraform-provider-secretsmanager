@@ -2,7 +2,6 @@ package secretsmanager
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -27,7 +26,7 @@ func resourcePamMachine() *schema.Resource {
 				Computed:     true,
 				Optional:     true,
 				AtLeastOneOf: []string{"folder_uid", "uid"},
-				Description:  "The UID of the folder where the secret is stored. The folder or its parent shared folder must be accessible to your KSM application with 'Can Edit' permissions.",
+				Description:  "The folder UID where the secret is stored. The parent shared folder must be non empty.",
 			},
 			"uid": {
 				Type:         schema.TypeString,
@@ -53,16 +52,20 @@ func resourcePamMachine() *schema.Resource {
 				Description: "The secret notes.",
 			},
 			// PAM Machine specific fields
-			"pam_hostname":     schemaPamHostnameField(),
-			"pam_settings":     schemaPamSettingsField(),
-			"rotation_scripts": schemaScriptField(),
-			"operating_system": schemaTextField(),
-			"instance_name":    schemaTextField(),
-			"instance_id":      schemaTextField(),
-			"provider_group":   schemaTextField(),
-			"provider_region":  schemaTextField(),
-			"file_ref":         schemaFileRefField(),
-			"totp":             schemaOneTimeCodeField(),
+			"pam_hostname":             schemaPamHostnameField(),
+			"login":                    schemaLoginField(),
+			"password":                 schemaPasswordField(""),
+			"rotation_scripts":         schemaScriptField(),
+			"private_pem_key":          schemaPrivatePemKeyField(),
+			"private_key_passphrase":   schemaPrivateKeyPassphraseField(),
+			"operating_system":         schemaTextField(),
+			"ssl_verification":         schemaCheckboxField(),
+			"instance_name":            schemaTextField(),
+			"instance_id":              schemaTextField(),
+			"provider_group":           schemaTextField(),
+			"provider_region":          schemaTextField(),
+			"file_ref":                 schemaFileRefField(),
+			"totp":                     schemaOneTimeCodeField(),
 		},
 	}
 }
@@ -103,13 +106,81 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 			}
 		}
 	}
-	// Handle pam_settings as JSON string
-	// Note: pam_settings is a TypeString, not TypeList, so we don't call SetFieldTypeInSchema
-	if pamSettingsJSON := d.Get("pam_settings").(string); pamSettingsJSON != "" {
-		if field, err := createPamSettingsFieldFromJSON(pamSettingsJSON); err != nil {
+	if fieldData := d.Get("login"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("login", fieldData); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
 			nrc.Fields = append(nrc.Fields, field)
+			if err := SetFieldTypeInSchema(d, "login", "login"); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+	if fieldData := d.Get("password"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("password", fieldData); err != nil {
+			return diag.FromErr(err)
+		} else if field != nil {
+			if generated, err := applyGeneratePassword(fieldData, field); err != nil {
+				return diag.FromErr(err)
+			} else if generated {
+				if err := d.Set("password", fieldData); err != nil {
+					return diag.FromErr(err)
+				}
+			}
+			nrc.Fields = append(nrc.Fields, field)
+			if err := SetFieldTypeInSchema(d, "password", "password"); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
+	// Process private key passphrase — custom field
+	var passphraseValue string
+	if fieldData := d.Get("private_key_passphrase"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("password", fieldData); err != nil {
+			return diag.FromErr(err)
+		} else if field != nil {
+			if generated, err := applyGeneratePassword(fieldData, field); err != nil {
+				return diag.FromErr(err)
+			} else if generated {
+				if err := d.Set("private_key_passphrase", fieldData); err != nil {
+					return diag.FromErr(err)
+				}
+			}
+			if pwField, ok := field.(*core.Password); ok && len(pwField.Value) > 0 {
+				passphraseValue = pwField.Value[0]
+			}
+			secretField := core.NewSecret(passphraseValue)
+			secretField.Label = "Private Key Passphrase"
+			nrc.Custom = append(nrc.Custom, secretField)
+		}
+	}
+
+	// Process private PEM key — standard secret field with generation
+	if fieldData := d.Get("private_pem_key"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		privatePEM, _, err := applyGeneratePamKey(fieldData, passphraseValue)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if privatePEM != "" {
+			if err := d.Set("private_pem_key", fieldData); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+		pemValue := privatePEM
+		if pemValue == "" {
+			if s, ok := fieldData.([]interface{}); ok && len(s) > 0 {
+				if m, ok := s[0].(map[string]interface{}); ok {
+					if v, ok := m["value"].(string); ok {
+						pemValue = v
+					}
+				}
+			}
+		}
+		if pemValue != "" {
+			secretField := core.NewSecret(pemValue)
+			secretField.Label = "Private PEM Key"
+			nrc.Fields = append(nrc.Fields, secretField)
 		}
 	}
 
@@ -131,6 +202,17 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 			field.(*core.Text).Label = "Operating System"
 			nrc.Fields = append(nrc.Fields, field)
 			if err := SetFieldTypeInSchema(d, "operating_system", "text"); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+	if fieldData := d.Get("ssl_verification"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		if field, err := NewFieldFromSchema("checkbox", fieldData); err != nil {
+			return diag.FromErr(err)
+		} else if field != nil {
+			field.(*core.Checkbox).Label = "SSL Verification"
+			nrc.Fields = append(nrc.Fields, field)
+			if err := SetFieldTypeInSchema(d, "ssl_verification", "checkbox"); err != nil {
 				return diag.FromErr(err)
 			}
 		}
@@ -208,26 +290,17 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 		} else {
 			folderUid = fuid
 		}
+	} else {
+		folderUid = folderUid
 	}
 
-	uid, err := createRecord(uid, folderUid, nrc, client)
-	if err != nil {
+	if _, err := createRecord(uid, folderUid, nrc, client); err != nil {
 		return diag.FromErr(err)
+	} else {
+		d.SetId(uid)
+		resourcePamMachineRead(ctx, d, m)
 	}
 
-	if fuid := strings.TrimSpace(d.Get("folder_uid").(string)); fuid == "*" {
-		if err = d.Set("folder_uid", folderUid); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-	if err = d.Set("uid", uid); err != nil {
-		return diag.FromErr(err)
-	}
-	if err = d.Set("type", "pamMachine"); err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(uid)
 	return diags
 }
 
@@ -280,8 +353,30 @@ func resourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m inter
 		return diag.FromErr(err)
 	}
 
+	login := getFieldResourceData("login", "fields", secret)
+	if err = d.Set("login", login); err != nil {
+		return diag.FromErr(err)
+	}
+	password := getFieldResourceData("password", "fields", secret)
+	mergePassword(d.Get("password"), password)
+	if err = d.Set("password", password); err != nil {
+		return diag.FromErr(err)
+	}
 	oneTimeCode := getFieldResourceData("oneTimeCode", "fields", secret)
 	if err = d.Set("totp", oneTimeCode); err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Private PEM Key (standard secret field)
+	privatePemKey := getFieldResourceDataWithLabel("secret", "fields", secret, "Private PEM Key")
+	mergePamKeyField(d.Get("private_pem_key"), privatePemKey)
+	if err = d.Set("private_pem_key", privatePemKey); err != nil {
+		return diag.FromErr(err)
+	}
+	// Private Key Passphrase (custom secret field)
+	pkPassphrase := getFieldResourceDataWithLabel("secret", "custom", secret, "Private Key Passphrase")
+	mergePamPassphrase(d.Get("private_key_passphrase"), pkPassphrase)
+	if err = d.Set("private_key_passphrase", pkPassphrase); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -290,20 +385,16 @@ func resourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m inter
 	if err = d.Set("pam_hostname", pamHostname); err != nil {
 		return diag.FromErr(err)
 	}
-	// Read pam_settings as JSON string
-	if pamSettingsFields := secret.GetFieldsByType("pamSettings"); len(pamSettingsFields) > 0 {
-		if pamSettingsJSON, err := pamSettingsFieldToJSON(pamSettingsFields[0]); err != nil {
-			return diag.FromErr(err)
-		} else if err = d.Set("pam_settings", pamSettingsJSON); err != nil {
-			return diag.FromErr(err)
-		}
-	}
 	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
 		return diag.FromErr(err)
 	}
 	operatingSystem := getFieldResourceDataWithLabel("text", "fields", secret, "Operating System")
 	if err = d.Set("operating_system", operatingSystem); err != nil {
+		return diag.FromErr(err)
+	}
+	sslVerification := getFieldResourceDataWithLabel("checkbox", "fields", secret, "SSL Verification")
+	if err = d.Set("ssl_verification", sslVerification); err != nil {
 		return diag.FromErr(err)
 	}
 	instanceName := getFieldResourceDataWithLabel("text", "fields", secret, "Instance Name")
@@ -359,50 +450,67 @@ func resourcePamMachineUpdate(ctx context.Context, d *schema.ResourceData, m int
 		secret.SetNotes(d.Get("notes").(string))
 	}
 
-	if d.HasChange("pam_hostname") {
-		// Handle pam_hostname using SetStandardFieldValue which calls update() to sync RecordDict to RawJson
-		pamHostnameData := d.Get("pam_hostname")
-		pamHostnameList, ok := pamHostnameData.([]interface{})
-		if !ok || len(pamHostnameList) == 0 {
-			return diag.Errorf("pam_hostname is not a valid list")
-		}
-		pamHostnameMap, ok := pamHostnameList[0].(map[string]interface{})
-		if !ok {
-			return diag.Errorf("pam_hostname[0] is not a valid map")
-		}
-		valueList, ok := pamHostnameMap["value"].([]interface{})
-		if !ok || len(valueList) == 0 {
-			return diag.Errorf("pam_hostname value is not a valid list")
-		}
-		valueMap, ok := valueList[0].(map[string]interface{})
-		if !ok {
-			return diag.Errorf("pam_hostname value[0] is not a valid map")
-		}
-
-		// Construct the pamHostname value - SDK expects []interface{} with Host map
-		hostValue := []interface{}{
-			map[string]interface{}{
-				"hostName": valueMap["hostname"],
-				"port":     valueMap["port"],
-			},
-		}
-
-		// Use SetStandardFieldValue which calls update() to sync RecordDict to RawJson
-		if err := secret.SetStandardFieldValue("pamHostname", hostValue); err != nil {
-			return diag.FromErr(fmt.Errorf("failed to update pam_hostname: %w", err))
+	if d.HasChange("login") {
+		if _, err := ApplyFieldChange("fields", "login", d, secret); err != nil {
+			return diag.FromErr(err)
 		}
 	}
-	if d.HasChange("pam_settings") {
-		// Handle pam_settings JSON string field - parse and use SetStandardFieldValue to sync to RawJson
-		pamSettingsJSON := d.Get("pam_settings").(string)
-		var pamSettingsValue interface{}
-		if err := json.Unmarshal([]byte(pamSettingsJSON), &pamSettingsValue); err != nil {
-			return diag.FromErr(fmt.Errorf("failed to parse pam_settings JSON: %w", err))
+	if d.HasChange("password") {
+		if _, err := ApplyFieldChange("fields", "password", d, secret); err != nil {
+			return diag.FromErr(err)
 		}
-
-		// Use SetStandardFieldValue which calls update() to sync RecordDict to RawJson
-		if err := secret.SetStandardFieldValue("pamSettings", pamSettingsValue); err != nil {
-			return diag.FromErr(fmt.Errorf("failed to update pam_settings: %w", err))
+	}
+	if d.HasChange("private_key_passphrase") {
+		if _, err := ApplyFieldChange("custom", "private_key_passphrase", d, secret); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if d.HasChange("private_pem_key") {
+		fieldData := d.Get("private_pem_key")
+		var passphrase string
+		if ppData := d.Get("private_key_passphrase"); ppData != nil {
+			if s, ok := ppData.([]interface{}); ok && len(s) > 0 {
+				if m, ok := s[0].(map[string]interface{}); ok {
+					if v, ok := m["value"].(string); ok {
+						passphrase = v
+					}
+				}
+			}
+		}
+		privatePEM, _, err := applyGeneratePamKey(fieldData, passphrase)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if privatePEM != "" {
+			if err := d.Set("private_pem_key", fieldData); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+		pemValue := privatePEM
+		if pemValue == "" {
+			if s, ok := fieldData.([]interface{}); ok && len(s) > 0 {
+				if m, ok := s[0].(map[string]interface{}); ok {
+					if v, ok := m["value"].(string); ok {
+						pemValue = v
+					}
+				}
+			}
+		}
+		secretField := core.NewSecret(pemValue)
+		secretField.Label = "Private PEM Key"
+		if secret.FieldExists("fields", "secret") {
+			if err := secret.UpdateField("fields", secretField); err != nil {
+				return diag.FromErr(err)
+			}
+		} else {
+			if err := secret.InsertField("fields", secretField); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+	if d.HasChange("pam_hostname") {
+		if _, err := ApplyFieldChange("fields", "pam_hostname", d, secret); err != nil {
+			return diag.FromErr(err)
 		}
 	}
 	if d.HasChange("rotation_scripts") {
@@ -412,6 +520,11 @@ func resourcePamMachineUpdate(ctx context.Context, d *schema.ResourceData, m int
 	}
 	if d.HasChange("operating_system") {
 		if _, err := ApplyFieldChange("fields", "operating_system", d, secret); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if d.HasChange("ssl_verification") {
+		if _, err := ApplyFieldChange("fields", "ssl_verification", d, secret); err != nil {
 			return diag.FromErr(err)
 		}
 	}
