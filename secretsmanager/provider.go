@@ -2704,6 +2704,81 @@ func mergePamPassphrase(schemaField interface{}, recordField interface{}) {
 	delete(rfmap, "label")
 }
 
+// applyGenerateKeyPair generates an SSH key pair for the key_pair field.
+// If passphrase is provided, the private key is encrypted with it.
+func applyGenerateKeyPair(fieldData interface{}, field interface{}, passphrase string) (generated bool, e error) {
+	if fv, ok := field.(*core.KeyPairs); ok {
+		if generate, _ := ParseGeneratePassword(fieldData); generate {
+			keyType, keyBits := ParseKeyTypeAndBits(fieldData)
+
+			result, err := GenerateSSHKeyPair(keyType, keyBits, passphrase)
+			if err != nil {
+				return false, err
+			}
+
+			// Update the core field value
+			keyPair := core.KeyPair{
+				PublicKey:  result.PublicKey,
+				PrivateKey: result.PrivateKey,
+			}
+			if len(fv.Value) > 0 {
+				fv.Value = fv.Value[0:0]
+			}
+			fv.Value = append(fv.Value, keyPair)
+
+			// Update schema data
+			if s, ok := fieldData.([]interface{}); ok && len(s) > 0 {
+				if fmap, ok := s[0].(map[string]interface{}); ok {
+					fmap["value"] = []interface{}{
+						map[string]interface{}{
+							"public_key":  result.PublicKey,
+							"private_key": result.PrivateKey,
+						},
+					}
+				}
+			}
+			return true, nil
+		}
+	} else {
+		return false, fmt.Errorf("applyGenerateKeyPair expects field to be of type *core.KeyPairs")
+	}
+	return false, nil
+}
+
+// mergeKeyPair preserves schema-only attributes (generate, key_type, key_bits)
+// that aren't stored in the vault record, so they survive the Read cycle.
+func mergeKeyPair(schemaField interface{}, recordField interface{}) {
+	if schemaField != nil && recordField != nil {
+		var generate, keyType, keyBits interface{}
+		if sfi, ok := schemaField.([]interface{}); ok && len(sfi) > 0 {
+			if sfmap, ok := sfi[0].(map[string]interface{}); ok {
+				if v, found := sfmap["generate"]; found {
+					generate = v
+				}
+				if v, found := sfmap["key_type"]; found {
+					keyType = v
+				}
+				if v, found := sfmap["key_bits"]; found {
+					keyBits = v
+				}
+			}
+		}
+		if sfi, ok := recordField.([]interface{}); ok && len(sfi) > 0 {
+			if sfmap, ok := sfi[0].(map[string]interface{}); ok {
+				if generate != nil {
+					sfmap["generate"] = generate
+				}
+				if keyType != nil {
+					sfmap["key_type"] = keyType
+				}
+				if keyBits != nil {
+					sfmap["key_bits"] = keyBits
+				}
+			}
+		}
+	}
+}
+
 func ParseKeyTypeAndBits(data interface{}) (SSHKeyType, int) {
 	keyType := SSHKeyTypeED25519
 	keyBits := 4096
