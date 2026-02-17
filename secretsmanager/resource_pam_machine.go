@@ -53,6 +53,7 @@ func resourcePamMachine() *schema.Resource {
 			},
 			// PAM Machine specific fields
 			"pam_hostname":           schemaPamHostnameField(),
+			"pam_settings":           schemaPamSettingsField(),
 			"login":                  schemaLoginField(),
 			"password":               schemaPasswordField(""),
 			"rotation_scripts":       schemaScriptField(),
