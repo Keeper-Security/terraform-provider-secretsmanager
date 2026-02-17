@@ -1,6 +1,48 @@
 # secretsmanager_bank_card Resource
 
-Use this resource to access secrets of type `bankCard` stored in Keeper Vault
+Use this resource to create and manage secrets of type `bankCard` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_bank_card" "my_bank_card" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  payment_card {
+    label          = "My Card"
+    required       = true
+    privacy_screen = true
+    value {
+      card_number          = "123456780"
+      card_expiration_date = "12/2121"
+      card_security_code   = "787"
+    }
+  }
+
+  cardholder_name {
+    label          = "My Card Name"
+    required       = true
+    privacy_screen = true
+    value          = "John Doe"
+  }
+
+  pin_code {
+    label          = "My Pin Code"
+    required       = true
+    privacy_screen = true
+    value          = "7870"
+  }
+
+  address_ref {
+    label          = "My Address Ref"
+    required       = true
+    privacy_screen = true
+    value          = "<address ref UID>"
+  }
+}
+```
 
 ## Schema
 

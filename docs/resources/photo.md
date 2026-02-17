@@ -1,6 +1,21 @@
 # secretsmanager_photo Resource
 
-Use this resource to access secrets of type `photo` stored in Keeper Vault
+Use this resource to create and manage secrets of type `photo` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_photo" "my_photos" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  file_ref {
+    value { uid = "<file1 UID>" }
+    value { uid = "<file2 UID>" }
+  }
+}
+```
 
 ## Schema
 

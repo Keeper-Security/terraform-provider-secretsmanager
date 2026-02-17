@@ -1,6 +1,30 @@
 # secretsmanager_address Resource
 
-Use this resource to access secrets of type `address` stored in Keeper Vault
+Use this resource to create and manage secrets of type `address` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_address" "my_address" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  address {
+    label          = "My Address"
+    required       = true
+    privacy_screen = true
+    value {
+      street1 = "7422 Avalon"
+      street2 = "Apt 21"
+      city    = "Los Angeles"
+      state   = "CA"
+      country = "United States"
+      zip     = "90003-2334"
+    }
+  }
+}
+```
 
 ## Schema
 

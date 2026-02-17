@@ -1,6 +1,55 @@
 # secretsmanager_driver_license Resource
 
-Use this resource to access secrets of type `driverLicense` stored in Keeper Vault
+Use this resource to create and manage secrets of type `driverLicense` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_driver_license" "my_driver_license" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  driver_license_number {
+    label          = "My Driver License"
+    required       = true
+    privacy_screen = true
+    value          = "My Driver License# 1234"
+  }
+
+  name {
+    label          = "John"
+    required       = true
+    privacy_screen = true
+    value {
+      first  = "John"
+      middle = "D"
+      last   = "Doe"
+    }
+  }
+
+  birth_date {
+    label          = "Birth Date"
+    required       = true
+    privacy_screen = true
+    value          = 1651186276
+  }
+
+  expiration_date {
+    label          = "Driver License Expiration Date"
+    required       = true
+    privacy_screen = true
+    value          = 21651186276
+  }
+
+  address_ref {
+    label          = "My Address Ref"
+    required       = true
+    privacy_screen = true
+    value          = "<address ref UID>"
+  }
+}
+```
 
 ## Schema
 
