@@ -36,7 +36,7 @@ output "ad_directory_type" {
 }
 
 output "ad_distinguished_name" {
-  value = try(data.secretsmanager_pam_directory.ad_by_uid.distinguished_name[0].value, [])
+  value = try(data.secretsmanager_pam_directory.ad_by_uid.distinguished_name[0].value, "")
 }
 
 # Access pamSettings as JSON
@@ -50,7 +50,7 @@ locals {
   ad_settings = jsondecode(data.secretsmanager_pam_directory.ad_by_uid.pam_settings)
   protocol    = try(local.ad_settings[0].connection[0].protocol, "unknown")
   port        = try(local.ad_settings[0].connection[0].port, "389")
-  ssl_enabled = try(data.secretsmanager_pam_directory.ad_by_uid.use_ssl[0].value[0], false)
+  ssl_enabled = try(data.secretsmanager_pam_directory.ad_by_uid.use_ssl[0].value, false)
 }
 
 output "ad_protocol" {

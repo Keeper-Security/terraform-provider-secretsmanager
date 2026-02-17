@@ -78,7 +78,7 @@ resource "secretsmanager_pam_machine" "windows_server" {
   # Optional: Operating system
   # operating_system {
   #   label = "OS"
-  #   value = ["Windows Server 2022"]
+  #   value = "Windows Server 2022"
   # }
 
 }
@@ -107,22 +107,22 @@ resource "secretsmanager_pam_machine" "aws_instance" {
   # Instance metadata
   instance_name {
     label = "Instance Name"
-    value = ["web-server-prod-01"]
+    value = "web-server-prod-01"
   }
 
   instance_id {
     label = "Instance ID"
-    value = ["i-0123456789abcdef0"]
+    value = "i-0123456789abcdef0"
   }
 
   provider_group {
     label = "Provider"
-    value = ["AWS"]
+    value = "AWS"
   }
 
   provider_region {
     label = "Region"
-    value = ["us-east-1"]
+    value = "us-east-1"
   }
 }
 

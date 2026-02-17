@@ -43,12 +43,12 @@ resource "secretsmanager_pam_directory" "active_directory" {
 
   distinguished_name {
     label = "Base DN"
-    value = ["DC=corp,DC=example,DC=com"]
+    value = "DC=corp,DC=example,DC=com"
   }
 
   use_ssl {
     label = "Use SSL"
-    value = [true]
+    value = true
   }
 }
 
@@ -78,11 +78,11 @@ resource "secretsmanager_pam_directory" "openldap" {
 
   distinguished_name {
     label = "Base DN"
-    value = ["dc=dev,dc=example,dc=com"]
+    value = "dc=dev,dc=example,dc=com"
   }
 
   use_ssl {
-    value = [false] # Plain LDAP for dev
+    value = false # Plain LDAP for dev
   }
 }
 
@@ -116,12 +116,12 @@ resource "secretsmanager_pam_directory" "secure_ad" {
 
   distinguished_name {
     label = "Search Base DN"
-    value = ["OU=Users,DC=prod,DC=example,DC=com"]
+    value = "OU=Users,DC=prod,DC=example,DC=com"
   }
 
   use_ssl {
     label = "Enforce SSL"
-    value = [true]
+    value = true
   }
 
   # Optional: Rotation scripts

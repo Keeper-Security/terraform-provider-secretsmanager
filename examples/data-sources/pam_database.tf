@@ -36,7 +36,7 @@ output "db_type" {
 }
 
 output "db_use_ssl" {
-  value = try(data.secretsmanager_pam_database.mysql_by_uid.use_ssl[0].value[0], false)
+  value = try(data.secretsmanager_pam_database.mysql_by_uid.use_ssl[0].value, false)
 }
 
 # Access pamSettings as JSON

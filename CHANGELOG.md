@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix shortcuts/linked records error (KSM-522) - resolve duplicate UID handling across multiple shared folders
 - Fix "changes to folder_uid not allowed" errors during Terraform apply operations
 - Use `reflect.DeepEqual` for JSON comparison to handle map ordering correctly instead of string comparison
+- Fix PAM field value types (database_type, directory_type, use_ssl, managed, connect_database, distinguished_name) to use simple types (TypeString/TypeBool) instead of arrays for consistency with SDK and regular field patterns
 - Fix PAM field labels to match backend schema (useSSL, connectDatabase)
 - Fix field access patterns in PAM data source examples
 - Fix test helpers in `data_source_records_test.go` (ProviderFactories → Providers)

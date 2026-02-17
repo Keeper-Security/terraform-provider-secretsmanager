@@ -46,13 +46,13 @@ resource "secretsmanager_pam_database" "postgres_prod" {
 
   use_ssl {
     label = "useSSL"
-    value = [true]
+    value = true
   }
 
   # Optional: Connect to specific database
   connect_database {
     label = "Default Database"
-    value = ["production"]
+    value = "production"
   }
 }
 
@@ -83,7 +83,7 @@ resource "secretsmanager_pam_database" "mysql_staging" {
   database_type = "mysql"
 
   use_ssl {
-    value = [false]
+    value = false
   }
 }
 
@@ -112,24 +112,24 @@ resource "secretsmanager_pam_database" "aws_rds_postgres" {
   database_type = "postgresql"
 
   use_ssl {
-    value = [true]
+    value = true
   }
 
   # Database ID (RDS instance identifier)
   database_id {
     label = "RDS Instance ID"
-    value = ["mydb-cluster"]
+    value = "mydb-cluster"
   }
 
   # Cloud provider metadata
   provider_group {
     label = "Provider"
-    value = ["AWS"]
+    value = "AWS"
   }
 
   provider_region {
     label = "Region"
-    value = ["us-east-1"]
+    value = "us-east-1"
   }
 }
 
@@ -175,5 +175,5 @@ output "mysql_staging_uid" {
 }
 
 output "aws_rds_database_id" {
-  value = secretsmanager_pam_database.aws_rds_postgres.database_id[0].value[0]
+  value = secretsmanager_pam_database.aws_rds_postgres.database_id[0].value
 }
