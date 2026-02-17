@@ -1,11 +1,15 @@
 package secretsmanager
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	core "github.com/keeper-security/secrets-manager-go/core"
 )
 
 // PAM-specific field schema functions
@@ -152,6 +156,99 @@ func schemaPamHostnameField() *schema.Schema {
 			},
 		},
 	}
+}
+
+// suppressEquivalentJSON compares two JSON strings for structural equality
+func suppressEquivalentJSON(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	if oldValue == newValue {
+		return true
+	}
+
+	// Parse both JSON strings
+	var oldJSON, newJSON interface{}
+	if err := json.Unmarshal([]byte(oldValue), &oldJSON); err != nil {
+		return false
+	}
+	if err := json.Unmarshal([]byte(newValue), &newJSON); err != nil {
+		return false
+	}
+
+	return reflect.DeepEqual(oldJSON, newJSON)
+}
+
+// schemaPamSettingsField returns the schema for PAM Settings field.
+// This field contains protocol-specific connection configuration stored as JSON.
+// The structure varies significantly by protocol (RDP, SSH, MySQL, PostgreSQL, etc.).
+func schemaPamSettingsField() *schema.Schema {
+	return &schema.Schema{
+		Type:             schema.TypeString,
+		Optional:         true,
+		ValidateFunc:     validation.StringIsJSON,
+		DiffSuppressFunc: suppressEquivalentJSON,
+		Description: "PAM connection settings as JSON string. Structure varies by protocol:\n" +
+			"- RDP: protocol, port, recordingIncludeKeys, security, ignoreCert, resizeMethod, enableFullWindowDrag, enableWallpaper, sftp\n" +
+			"- SSH: protocol, port, recordingIncludeKeys, colorScheme, allowSupplyUser, hostKey, command, fontSize, sftp\n" +
+			"- Database: protocol, port, recordingIncludeKeys, allowSupplyUser, database, allowSupplyHost\n" +
+			"All protocols support portForward sub-object with port and reusePort fields.",
+	}
+}
+
+// createPamSettingsFieldFromJSON creates a PAM settings field from JSON string
+func createPamSettingsFieldFromJSON(jsonStr string) (interface{}, error) {
+	if jsonStr == "" {
+		return nil, nil
+	}
+
+	// Validate JSON
+	var test interface{}
+	if err := json.Unmarshal([]byte(jsonStr), &test); err != nil {
+		return nil, fmt.Errorf("failed to parse pam_settings JSON: %w", err)
+	}
+
+	// Create a field struct that uses RawMessage to preserve exact JSON
+	field := &struct {
+		core.KeeperRecordField
+		Value json.RawMessage `json:"value"`
+	}{
+		KeeperRecordField: core.KeeperRecordField{Type: "pamSettings"},
+		Value:             json.RawMessage(jsonStr),
+	}
+
+	return field, nil
+}
+
+// pamSettingsFieldToJSON converts a PAM settings field to JSON string
+func pamSettingsFieldToJSON(field interface{}) (string, error) {
+	if field == nil {
+		return "", nil
+	}
+
+	var value interface{}
+
+	// Try as *core.PamSettings first
+	if pamSettings, ok := field.(*core.PamSettings); ok {
+		if pamSettings.Value == nil || len(pamSettings.Value) == 0 {
+			return "", nil
+		}
+		value = pamSettings.Value
+	} else if fieldMap, ok := field.(map[string]interface{}); ok {
+		// Handle raw field map from GetFieldsByType()
+		if v, found := fieldMap["value"]; found && v != nil {
+			value = v
+		} else {
+			return "", nil
+		}
+	} else {
+		return "", fmt.Errorf("field is not a PamSettings type or field map")
+	}
+
+	// Serialize to compact JSON
+	jsonBytes, err := json.Marshal(value)
+	if err != nil {
+		return "", fmt.Errorf("failed to serialize pam_settings to JSON: %w", err)
+	}
+
+	return string(jsonBytes), nil
 }
 
 func schemaPamResourcesField() *schema.Schema {
