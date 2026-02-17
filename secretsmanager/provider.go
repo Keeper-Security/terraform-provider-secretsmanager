@@ -162,8 +162,9 @@ var mapSchemaToRecordFieldName map[string]string = map[string]string{
 	"payment_card":        "paymentCard",
 	"phone":               "phone",
 	"pin_code":            "pinCode",
-	"private_pem_key":     "secret", // Secret with label
-	"provider_group":      "text", // Text with label
+	"private_key_passphrase": "secret", // Secret custom field with label
+	"private_pem_key":       "secret", // Secret with label
+	"provider_group":        "text", // Text with label
 	"provider_region":     "text", // Text with label
 	"rotation_scripts":    "script", // Script with label
 	"schedule":            "schedule",
@@ -2617,6 +2618,106 @@ func applyGeneratePassword(fieldData interface{}, field interface{}) (generated 
 		return false, fmt.Errorf("applyGeneratePassword expects field to be of type *core.Password")
 	}
 	return false, nil
+}
+
+// applyGeneratePamKey generates an SSH key pair for PAM records.
+// The private key PEM is stored in the secret field value.
+// Returns the public key string for optional storage elsewhere.
+func applyGeneratePamKey(fieldData interface{}, passphrase string) (privatePEM string, publicKey string, e error) {
+	if generate, _ := ParseGeneratePassword(fieldData); generate {
+		keyType, keyBits := ParseKeyTypeAndBits(fieldData)
+
+		result, err := GenerateSSHKeyPair(keyType, keyBits, passphrase)
+		if err != nil {
+			return "", "", err
+		}
+
+		// Update schema data with generated value
+		if s, ok := fieldData.([]interface{}); ok && len(s) > 0 {
+			if fmap, ok := s[0].(map[string]interface{}); ok {
+				fmap["value"] = result.PrivateKey
+				fmap["public_key"] = result.PublicKey
+			}
+		}
+		return result.PrivateKey, result.PublicKey, nil
+	}
+	return "", "", nil
+}
+
+// mergePamKeyField preserves schema-only attributes (generate, key_type, key_bits, public_key)
+// that aren't stored in the vault record, so they survive the Read cycle.
+func mergePamKeyField(schemaField interface{}, recordField interface{}) {
+	if schemaField == nil || recordField == nil {
+		return
+	}
+	sfi, ok := schemaField.([]interface{})
+	if !ok || len(sfi) == 0 {
+		return
+	}
+	sfmap, ok := sfi[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+	rfi, ok := recordField.([]interface{})
+	if !ok || len(rfi) == 0 {
+		return
+	}
+	rfmap, ok := rfi[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+	for _, key := range []string{"generate", "key_type", "key_bits", "public_key"} {
+		if v, found := sfmap[key]; found {
+			rfmap[key] = v
+		}
+	}
+}
+
+// mergePamPassphrase preserves schema-only attributes (generate, complexity)
+// for the private key passphrase custom field.
+func mergePamPassphrase(schemaField interface{}, recordField interface{}) {
+	if schemaField == nil || recordField == nil {
+		return
+	}
+	sfi, ok := schemaField.([]interface{})
+	if !ok || len(sfi) == 0 {
+		return
+	}
+	sfmap, ok := sfi[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+	rfi, ok := recordField.([]interface{})
+	if !ok || len(rfi) == 0 {
+		return
+	}
+	rfmap, ok := rfi[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+	for _, key := range []string{"generate", "complexity"} {
+		if v, found := sfmap[key]; found {
+			rfmap[key] = v
+		}
+	}
+	// Don't leak the vault label into schema state
+	delete(rfmap, "label")
+}
+
+func ParseKeyTypeAndBits(data interface{}) (SSHKeyType, int) {
+	keyType := SSHKeyTypeED25519
+	keyBits := 4096
+	if s, ok := data.([]interface{}); ok && len(s) > 0 {
+		if m, ok := s[0].(map[string]interface{}); ok {
+			if kt, ok := m["key_type"].(string); ok && kt != "" {
+				keyType = SSHKeyType(kt)
+			}
+			if kb, ok := m["key_bits"].(int); ok && kb > 0 {
+				keyBits = kb
+			}
+		}
+	}
+	return keyType, keyBits
 }
 
 func isThrottled(e error) bool {

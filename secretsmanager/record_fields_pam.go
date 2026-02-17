@@ -1,6 +1,10 @@
 package secretsmanager
 
 import (
+	"fmt"
+
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -327,6 +331,189 @@ func schemaScheduleField() *schema.Schema {
 					MaxItems:    1,
 					Description: "Schedule value.",
 					Elem:        &schema.Schema{Type: schema.TypeString},
+				},
+			},
+		},
+	}
+}
+
+// schemaPrivatePemKeyField defines the schema for the "Private PEM Key" field
+// on PAM record types (pamUser, pamMachine). This is a secret-type standard field
+// that stores a PEM-encoded private key. Supports SSH key generation.
+func schemaPrivatePemKeyField() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeList,
+		Optional:    true,
+		MaxItems:    1,
+		Description: "Private PEM Key field data. Stored as a secret field labeled 'Private PEM Key'.",
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"type": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Description: "Field type.",
+				},
+				"label": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Description: "Field label.",
+				},
+				"generate": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Description: "Flag to force SSH key generation (when set to 'yes' or 'true').",
+					ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
+						v := i.(string)
+						if v == "" || v == "true" || v == "yes" {
+							return nil
+						}
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity:      diag.Error,
+							Summary:       fmt.Sprintf("invalid generate = %s", v),
+							Detail:        fmt.Sprintf("expected 'generate' to be one of ['true', 'yes', ''], got %s", v),
+							AttributePath: p,
+						}}
+					},
+				},
+				"key_type": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Default:     "ssh-ed25519",
+					Description: "SSH key type. One of: ssh-ed25519 (default), ssh-rsa, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521.",
+					ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
+						v := i.(string)
+						valid := []string{"ssh-ed25519", "ssh-rsa", "ecdsa-sha2-nistp256", "ecdsa-sha2-nistp384", "ecdsa-sha2-nistp521"}
+						for _, s := range valid {
+							if v == s {
+								return nil
+							}
+						}
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity:      diag.Error,
+							Summary:       fmt.Sprintf("invalid key_type = %s", v),
+							Detail:        fmt.Sprintf("expected 'key_type' to be one of %v, got %s", valid, v),
+							AttributePath: p,
+						}}
+					},
+				},
+				"key_bits": {
+					Type:        schema.TypeInt,
+					Optional:    true,
+					Default:     4096,
+					Description: "Key size in bits. Only used for ssh-rsa. Valid: 2048, 3072, 4096.",
+					ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
+						v := i.(int)
+						if v == 2048 || v == 3072 || v == 4096 {
+							return nil
+						}
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity:      diag.Error,
+							Summary:       fmt.Sprintf("invalid key_bits = %d", v),
+							Detail:        fmt.Sprintf("expected 'key_bits' to be one of [2048, 3072, 4096], got %d", v),
+							AttributePath: p,
+						}}
+					},
+				},
+				"required": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: "Required flag.",
+				},
+				"privacy_screen": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: "Privacy screen flag.",
+				},
+				"value": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Computed:    true,
+					Sensitive:   true,
+					Description: "Private key in PEM format. Computed when generate is set.",
+				},
+				"public_key": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Description: "Public key in OpenSSH format. Computed when generate is set.",
+				},
+			},
+		},
+	}
+}
+
+// schemaPrivateKeyPassphraseField defines the schema for the "Private Key Passphrase"
+// custom field on PAM record types. This is stored as a custom secret field.
+func schemaPrivateKeyPassphraseField() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeList,
+		Optional:    true,
+		MaxItems:    1,
+		Description: "Private Key Passphrase. Stored as a custom field labeled 'Private Key Passphrase'.",
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"type": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Description: "Field type.",
+				},
+				"generate": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Description: "Flag to force passphrase generation (when set to 'yes' or 'true').",
+					ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
+						v := i.(string)
+						if v == "" || v == "true" || v == "yes" {
+							return nil
+						}
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity:      diag.Error,
+							Summary:       fmt.Sprintf("invalid generate = %s", v),
+							Detail:        fmt.Sprintf("expected 'generate' to be one of ['true', 'yes', ''], got %s", v),
+							AttributePath: p,
+						}}
+					},
+				},
+				"complexity": {
+					Type:        schema.TypeList,
+					Optional:    true,
+					MaxItems:    1,
+					Description: "Passphrase complexity.",
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"length": {
+								Type:        schema.TypeInt,
+								Optional:    true,
+								Description: "Passphrase length.",
+							},
+							"caps": {
+								Type:        schema.TypeInt,
+								Optional:    true,
+								Description: "Number of uppercase characters.",
+							},
+							"lowercase": {
+								Type:        schema.TypeInt,
+								Optional:    true,
+								Description: "Number of lowercase characters.",
+							},
+							"digits": {
+								Type:        schema.TypeInt,
+								Optional:    true,
+								Description: "Number of digits.",
+							},
+							"special": {
+								Type:        schema.TypeInt,
+								Optional:    true,
+								Description: "Number of special characters.",
+							},
+						},
+					},
+				},
+				"value": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Computed:    true,
+					Sensitive:   true,
+					Description: "Passphrase value. Computed when generate is set.",
 				},
 			},
 		},
