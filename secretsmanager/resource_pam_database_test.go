@@ -38,9 +38,7 @@ func TestAccResourcePamDatabase_create(t *testing.T) {
 					database = "production"
 				}]
 			}])
-			database_type {
-				value = "postgresql"
-			}
+			database_type = "postgresql"
 			use_ssl {
 				value = true
 			}
@@ -61,6 +59,7 @@ func TestAccResourcePamDatabase_create(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "notes", secretTitle),
 					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.hostname", "db.example.com"),
 					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.port", "5432"),
+					resource.TestCheckResourceAttr(resourceName, "database_type", "postgresql"),
 				),
 			},
 		},

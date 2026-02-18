@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Add `secretsmanager_pam_directory` resource and data source for Active Directory and LDAP credentials
   - Enhanced `secretsmanager_pam_user` data source with `private_pem_key` field support
   - Add `pamSettings` field for protocol-specific connection configuration as JSON
+  - PAM-specific fields use flat value syntax consistent with standard fields: `database_type = "postgresql"`, `directory_type = "Active Directory"`, `use_ssl { value = true }`
   - Add schema functions in `record_fields_pam.go` for PAM-specific fields
   - Add 16 new acceptance tests validating complete CRUD lifecycle for PAM types
   - Add 6 comprehensive example files demonstrating PAM resource and data source usage
@@ -56,9 +57,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix shortcuts/linked records error (KSM-522) - resolve duplicate UID handling across multiple shared folders
 - Fix "changes to folder_uid not allowed" errors during Terraform apply operations
 - Use `reflect.DeepEqual` for JSON comparison to handle map ordering correctly instead of string comparison
-- Fix PAM field value types (database_type, directory_type, use_ssl, managed, connect_database, distinguished_name) to use simple types (TypeString/TypeBool) instead of arrays for consistency with SDK and regular field patterns
-- Fix PAM field labels to match backend schema (useSSL, connectDatabase)
-- Fix field access patterns in PAM data source examples
 - Fix test helpers in `data_source_records_test.go` (ProviderFactories → Providers)
 - Use `t.Skip()` instead of `t.Fatal()` for missing test setup to prevent CI failures
 

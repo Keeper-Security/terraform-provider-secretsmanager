@@ -146,15 +146,12 @@ func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m in
 			}
 		}
 	}
-	if fieldData := d.Get("database_type"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
-		if field, err := NewFieldFromSchema("databaseType", fieldData); err != nil {
-			return diag.FromErr(err)
-		} else if field != nil {
-			nrc.Fields = append(nrc.Fields, field)
-			if err := SetFieldTypeInSchema(d, "database_type", "databaseType"); err != nil {
-				return diag.FromErr(err)
-			}
+	if dbType := d.Get("database_type").(string); dbType != "" {
+		field := &core.DatabaseType{
+			KeeperRecordField: core.KeeperRecordField{Type: "databaseType"},
+			Value:             []string{dbType},
 		}
+		nrc.Fields = append(nrc.Fields, field)
 	}
 	if fieldData := d.Get("provider_group"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
 		if field, err := NewFieldFromSchema("text", fieldData); err != nil {
@@ -309,10 +306,17 @@ func resourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m inte
 	if err = d.Set("database_id", databaseId); err != nil {
 		return diag.FromErr(err)
 	}
-	// Read database_type as block field
-	databaseTypeData := getFieldResourceData("databaseType", "fields", secret)
-	if err = d.Set("database_type", databaseTypeData); err != nil {
-		return diag.FromErr(err)
+	if databaseTypeFields := secret.GetFieldsByType("databaseType"); len(databaseTypeFields) > 0 {
+		fieldMap := databaseTypeFields[0]
+		if valueInterface, exists := fieldMap["value"]; exists {
+			if valueList, ok := valueInterface.([]interface{}); ok && len(valueList) > 0 {
+				if dbType, ok := valueList[0].(string); ok {
+					if err = d.Set("database_type", dbType); err != nil {
+						return diag.FromErr(err)
+					}
+				}
+			}
+		}
 	}
 	providerGroup := getFieldResourceDataWithLabel("text", "fields", secret, "Provider Group")
 	if err = d.Set("provider_group", providerGroup); err != nil {
@@ -421,9 +425,9 @@ func resourcePamDatabaseUpdate(ctx context.Context, d *schema.ResourceData, m in
 		}
 	}
 	if d.HasChange("database_type") {
-		// Handle database_type as block field - use ApplyFieldChange
-		if _, err := ApplyFieldChange("fields", "database_type", d, secret); err != nil {
-			return diag.FromErr(err)
+		dbType := d.Get("database_type").(string)
+		if err := secret.SetStandardFieldValue("databaseType", []interface{}{dbType}); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to update database_type: %w", err))
 		}
 	}
 	if d.HasChange("provider_group") {

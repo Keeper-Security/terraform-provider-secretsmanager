@@ -333,69 +333,19 @@ func schemaPamResourcesField() *schema.Schema {
 
 func schemaDatabaseTypeField() *schema.Schema {
 	return &schema.Schema{
-		Type:        schema.TypeList,
+		Type:        schema.TypeString,
 		Optional:    true,
-		MaxItems:    1,
-		Description: "Database type field data.",
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"type": {
-					Type:        schema.TypeString,
-					Computed:    true,
-					Description: "Field type.",
-				},
-				"label": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					Computed:    true,
-					Description: "Field label.",
-				},
-				"required": {
-					Type:        schema.TypeBool,
-					Optional:    true,
-					Description: "Required flag.",
-				},
-				"value": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					Description: "Database type value.",
-				},
-			},
-		},
+		Computed:    true,
+		Description: "Database type (e.g. postgresql, mysql, mongodb).",
 	}
 }
 
 func schemaDirectoryTypeField() *schema.Schema {
 	return &schema.Schema{
-		Type:        schema.TypeList,
+		Type:        schema.TypeString,
 		Optional:    true,
-		MaxItems:    1,
-		Description: "Directory type field data.",
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"type": {
-					Type:        schema.TypeString,
-					Computed:    true,
-					Description: "Field type.",
-				},
-				"label": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					Computed:    true,
-					Description: "Field label.",
-				},
-				"required": {
-					Type:        schema.TypeBool,
-					Optional:    true,
-					Description: "Required flag.",
-				},
-				"value": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					Description: "Directory type value.",
-				},
-			},
-		},
+		Computed:    true,
+		Description: "Directory type (e.g. Active Directory, OpenLDAP).",
 	}
 }
 

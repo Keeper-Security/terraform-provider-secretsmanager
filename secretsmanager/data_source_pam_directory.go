@@ -98,16 +98,13 @@ func dataSourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m i
 			return diag.FromErr(err)
 		}
 	}
-	// Read directory_type as simple string from directoryType field
 	if directoryTypeFields := secret.GetFieldsByType("directoryType"); len(directoryTypeFields) > 0 {
-		directoryTypeData := getFieldResourceData("directoryType", "fields", secret)
-		if directoryTypeList, ok := directoryTypeData.([]interface{}); ok && len(directoryTypeList) > 0 {
-			if directoryTypeMap, ok := directoryTypeList[0].(map[string]interface{}); ok {
-				if valueList, ok := directoryTypeMap["value"].([]interface{}); ok && len(valueList) > 0 {
-					if directoryTypeStr, ok := valueList[0].(string); ok {
-						if err = d.Set("directory_type", directoryTypeStr); err != nil {
-							return diag.FromErr(err)
-						}
+		fieldMap := directoryTypeFields[0]
+		if valueInterface, exists := fieldMap["value"]; exists {
+			if valueList, ok := valueInterface.([]interface{}); ok && len(valueList) > 0 {
+				if dirType, ok := valueList[0].(string); ok {
+					if err = d.Set("directory_type", dirType); err != nil {
+						return diag.FromErr(err)
 					}
 				}
 			}
