@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix PAM data sources (`pam_database`, `pam_directory`, `pam_machine`, `pam_user`) returning empty values for all TypeList fields (`pam_hostname`, `database_id`, `operating_system`, etc.) — add `Computed: true` to shared TypeList schema functions (KSM-793)
 - Fix `secretsmanager_pam_machine` resource Create failing with "Root object was present, but now absent" when `uid` is auto-generated — set `uid`/`type` in state before returning from Create, matching `pam_database` pattern (KSM-793)
+- Fix `secretsmanager_pam_machine` resource Update not persisting `pam_hostname` changes — use `SetStandardFieldValue` to sync RecordDict to RawJson, matching `pam_database` pattern (KSM-793)
 - Fix shortcuts/linked records error (KSM-522) - resolve duplicate UID handling across multiple shared folders
 - Fix "changes to folder_uid not allowed" errors during Terraform apply operations
 - Use `reflect.DeepEqual` for JSON comparison to handle map ordering correctly instead of string comparison

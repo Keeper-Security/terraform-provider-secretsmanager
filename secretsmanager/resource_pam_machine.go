@@ -520,8 +520,31 @@ func resourcePamMachineUpdate(ctx context.Context, d *schema.ResourceData, m int
 		}
 	}
 	if d.HasChange("pam_hostname") {
-		if _, err := ApplyFieldChange("fields", "pam_hostname", d, secret); err != nil {
-			return diag.FromErr(err)
+		pamHostnameData := d.Get("pam_hostname")
+		pamHostnameList, ok := pamHostnameData.([]interface{})
+		if !ok || len(pamHostnameList) == 0 {
+			return diag.Errorf("pam_hostname is not a valid list")
+		}
+		pamHostnameMap, ok := pamHostnameList[0].(map[string]interface{})
+		if !ok {
+			return diag.Errorf("pam_hostname[0] is not a valid map")
+		}
+		valueList, ok := pamHostnameMap["value"].([]interface{})
+		if !ok || len(valueList) == 0 {
+			return diag.Errorf("pam_hostname value is not a valid list")
+		}
+		valueMap, ok := valueList[0].(map[string]interface{})
+		if !ok {
+			return diag.Errorf("pam_hostname value[0] is not a valid map")
+		}
+		hostValue := []interface{}{
+			map[string]interface{}{
+				"hostName": valueMap["hostname"],
+				"port":     valueMap["port"],
+			},
+		}
+		if err := secret.SetStandardFieldValue("pamHostname", hostValue); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to update pam_hostname: %w", err))
 		}
 	}
 	if d.HasChange("rotation_scripts") {
