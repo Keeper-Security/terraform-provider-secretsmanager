@@ -39,7 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Add `pamSettings` field for protocol-specific connection configuration as JSON
   - PAM-specific fields use flat value syntax consistent with standard fields: `database_type = "postgresql"`, `directory_type = "Active Directory"`, `use_ssl { value = true }`
   - Add schema functions in `record_fields_pam.go` for PAM-specific fields
-  - Add 16 new acceptance tests validating complete CRUD lifecycle for PAM types
+  - Add 21 acceptance tests covering full CRUD lifecycle, data source field readback, and auto-generated UID for all 4 PAM types
+  - Add data source documentation for all 4 PAM types (`pam_machine`, `pam_database`, `pam_directory`, `pam_user`)
   - Add 6 comprehensive example files demonstrating PAM resource and data source usage
 
 - **Regex Pattern Support** (KSM-389):
@@ -54,9 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add explicit `contents: read` permissions to test workflow for security compliance
 
 ### Fixed
-- Fix PAM data sources (`pam_database`, `pam_directory`, `pam_machine`, `pam_user`) returning empty values for all TypeList fields (`pam_hostname`, `database_id`, `operating_system`, etc.) — add `Computed: true` to shared TypeList schema functions (KSM-793)
-- Fix `secretsmanager_pam_machine` resource Create failing with "Root object was present, but now absent" when `uid` is auto-generated — set `uid`/`type` in state before returning from Create, matching `pam_database` pattern (KSM-793)
-- Fix `secretsmanager_pam_machine` resource Update not persisting `pam_hostname` changes — use `SetStandardFieldValue` to sync RecordDict to RawJson, matching `pam_database` pattern (KSM-793)
 - Fix shortcuts/linked records error (KSM-522) - resolve duplicate UID handling across multiple shared folders
 - Fix "changes to folder_uid not allowed" errors during Terraform apply operations
 - Use `reflect.DeepEqual` for JSON comparison to handle map ordering correctly instead of string comparison
