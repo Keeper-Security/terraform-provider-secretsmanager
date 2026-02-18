@@ -76,6 +76,7 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 	client := *provider.client
 	var diags diag.Diagnostics
 
+	var err error
 	uid := strings.TrimSpace(d.Get("uid").(string))
 	if uid == "" {
 		uid = core.GenerateUid()
@@ -293,13 +294,24 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 		}
 	}
 
-	if _, err := createRecord(uid, folderUid, nrc, client); err != nil {
+	uid, err = createRecord(uid, folderUid, nrc, client)
+	if err != nil {
 		return diag.FromErr(err)
-	} else {
-		d.SetId(uid)
-		resourcePamMachineRead(ctx, d, m)
 	}
 
+	if fuid := strings.TrimSpace(d.Get("folder_uid").(string)); fuid == "*" {
+		if err = d.Set("folder_uid", folderUid); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if err = d.Set("uid", uid); err != nil {
+		return diag.FromErr(err)
+	}
+	if err = d.Set("type", "pamMachine"); err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(uid)
 	return diags
 }
 

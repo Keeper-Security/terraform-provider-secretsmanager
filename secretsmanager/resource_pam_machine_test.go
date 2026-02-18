@@ -65,6 +65,47 @@ func TestAccResourcePamMachine_create(t *testing.T) {
 	})
 }
 
+func TestAccResourcePamMachine_create_no_uid(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretTitle := "tf_acc_test_pam_machine_no_uid"
+	if secretFolderUid == "" {
+		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
+	}
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_pam_machine" "%v" {
+			folder_uid = "%v"
+			title = "%v"
+			notes = "%v"
+			pam_hostname {
+				value {
+					hostname = "192.168.1.50"
+					port = "22"
+				}
+			}
+		}
+	`, secretTitle, secretFolderUid, secretTitle, secretTitle)
+
+	resourceName := fmt.Sprintf("secretsmanager_pam_machine.%v", secretTitle)
+	resource.Test(t, resource.TestCase{
+		Providers: testAccProviders,
+		PreCheck:  testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "type", "pamMachine"),
+					resource.TestCheckResourceAttr(resourceName, "title", secretTitle),
+					resource.TestCheckResourceAttr(resourceName, "notes", secretTitle),
+					resource.TestCheckResourceAttrSet(resourceName, "uid"),
+					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.hostname", "192.168.1.50"),
+					resource.TestCheckResourceAttr(resourceName, "pam_hostname.0.value.0.port", "22"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourcePamMachine_update(t *testing.T) {
 	secretFolderUid := testAcc.getTestFolder()
 	secretUid := core.GenerateUid()

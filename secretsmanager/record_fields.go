@@ -509,6 +509,7 @@ func schemaFileRefField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
 		Optional:    true,
+		Computed:    true,
 		MaxItems:    1,
 		Description: "FileRef field data.",
 		Elem: &schema.Resource{
@@ -970,6 +971,7 @@ func schemaOneTimeCodeField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
 		Optional:    true,
+		Computed:    true,
 		MaxItems:    1,
 		Description: "TOTP field data.",
 		Elem: &schema.Resource{
@@ -1437,6 +1439,7 @@ func schemaTextField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
 		Optional:    true,
+		Computed:    true,
 		MaxItems:    1,
 		Description: "Text field data.",
 		Elem: &schema.Resource{

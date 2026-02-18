@@ -18,6 +18,7 @@ func schemaCheckboxField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
 		Optional:    true,
+		Computed:    true,
 		MaxItems:    1,
 		Description: "Checkbox field data.",
 		Elem: &schema.Resource{
@@ -52,6 +53,7 @@ func schemaScriptField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
 		Optional:    true,
+		Computed:    true,
 		Description: "Script field data.",
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
@@ -110,6 +112,7 @@ func schemaPamHostnameField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
 		Optional:    true,
+		Computed:    true,
 		MaxItems:    1,
 		Description: "PAM Hostname field data.",
 		Elem: &schema.Resource{
