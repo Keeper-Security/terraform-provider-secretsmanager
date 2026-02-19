@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add explicit `contents: read` permissions to test workflow for security compliance
 
 ### Fixed
+- Fix PAM User data source returning empty values for `connect_database` and `private_pem_key` fields (KSM-794)
 - Fix shortcuts/linked records error (KSM-522) - resolve duplicate UID handling across multiple shared folders
 - Fix "changes to folder_uid not allowed" errors during Terraform apply operations
 - Use `reflect.DeepEqual` for JSON comparison to handle map ordering correctly instead of string comparison

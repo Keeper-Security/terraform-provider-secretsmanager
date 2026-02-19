@@ -32,6 +32,27 @@ func TestAccDataSourcePamMachine(t *testing.T) {
 				label = "Operating System"
 				value = "Linux"
 			}
+			rotation_scripts {
+				value {
+					command = "echo hello"
+				}
+			}
+			instance_name {
+				label = "Instance Name"
+				value = "web-server-01"
+			}
+			instance_id {
+				label = "Instance Id"
+				value = "i-1234567890abcdef0"
+			}
+			provider_group {
+				label = "Provider Group"
+				value = "production-servers"
+			}
+			provider_region {
+				label = "Provider Region"
+				value = "us-east-1"
+			}
 		}
 
 		data "secretsmanager_pam_machine" "%v" {
@@ -54,6 +75,11 @@ func TestAccDataSourcePamMachine(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.hostname", "192.168.1.100"),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.port", "22"),
 					resource.TestCheckResourceAttr(dataName, "operating_system.0.value", "Linux"),
+					resource.TestCheckResourceAttr(dataName, "rotation_scripts.0.value.0.command", "echo hello"),
+					resource.TestCheckResourceAttr(dataName, "instance_name.0.value", "web-server-01"),
+					resource.TestCheckResourceAttr(dataName, "instance_id.0.value", "i-1234567890abcdef0"),
+					resource.TestCheckResourceAttr(dataName, "provider_group.0.value", "production-servers"),
+					resource.TestCheckResourceAttr(dataName, "provider_region.0.value", "us-east-1"),
 				),
 			},
 		},

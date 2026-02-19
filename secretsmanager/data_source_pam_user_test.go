@@ -25,9 +25,20 @@ func TestAccDataSourcePamUser(t *testing.T) {
 			login {
 				value = "testuser"
 			}
+			rotation_scripts {
+				value {
+					command = "echo hello"
+				}
+			}
 			distinguished_name {
 				label = "Distinguished Name"
 				value = "CN=testuser,OU=Users,DC=example,DC=com"
+			}
+			private_pem_key {
+				value = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA..."
+			}
+			connect_database {
+				value = "production_db"
 			}
 			managed {
 				label = "Managed"
@@ -53,7 +64,10 @@ func TestAccDataSourcePamUser(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "title", secretTitle),
 					resource.TestCheckResourceAttr(dataName, "notes", secretTitle),
 					resource.TestCheckResourceAttr(dataName, "login.0.value", "testuser"),
+					resource.TestCheckResourceAttr(dataName, "rotation_scripts.0.value.0.command", "echo hello"),
 					resource.TestCheckResourceAttr(dataName, "distinguished_name.0.value", "CN=testuser,OU=Users,DC=example,DC=com"),
+					resource.TestCheckResourceAttr(dataName, "private_pem_key.0.value", "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA..."),
+					resource.TestCheckResourceAttr(dataName, "connect_database.0.value", "production_db"),
 					resource.TestCheckResourceAttr(dataName, "managed.0.value", "true"),
 				),
 			},

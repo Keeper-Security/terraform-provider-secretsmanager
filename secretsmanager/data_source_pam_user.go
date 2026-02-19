@@ -93,7 +93,7 @@ func dataSourcePamUserRead(ctx context.Context, d *schema.ResourceData, m interf
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
 		return diag.FromErr(err)
 	}
-	privatePemKey := getFieldResourceDataWithLabel("secret", "fields", secret, "privatePEMKey")
+	privatePemKey := getFieldResourceDataWithLabel("secret", "fields", secret, "Private PEM Key")
 	if err = d.Set("private_pem_key", privatePemKey); err != nil {
 		return diag.FromErr(err)
 	}
@@ -101,7 +101,7 @@ func dataSourcePamUserRead(ctx context.Context, d *schema.ResourceData, m interf
 	if err = d.Set("distinguished_name", distinguishedName); err != nil {
 		return diag.FromErr(err)
 	}
-	connectDatabase := getFieldResourceDataWithLabel("text", "fields", secret, "connectDatabase")
+	connectDatabase := getFieldResourceDataWithLabel("text", "fields", secret, "Connect Database")
 	if err = d.Set("connect_database", connectDatabase); err != nil {
 		return diag.FromErr(err)
 	}

@@ -32,6 +32,20 @@ func TestAccDataSourcePamDatabase(t *testing.T) {
 			use_ssl {
 				value = true
 			}
+			rotation_scripts {
+				value {
+					command = "echo hello"
+				}
+			}
+			database_id {
+				value = "db-prod-01"
+			}
+			provider_group {
+				value = "production-servers"
+			}
+			provider_region {
+				value = "us-east-1"
+			}
 		}
 
 		data "secretsmanager_pam_database" "%v" {
@@ -54,6 +68,11 @@ func TestAccDataSourcePamDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.hostname", "db.example.com"),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.port", "5432"),
 					resource.TestCheckResourceAttr(dataName, "database_type", "postgresql"),
+					resource.TestCheckResourceAttr(dataName, "use_ssl.0.value", "true"),
+					resource.TestCheckResourceAttr(dataName, "rotation_scripts.0.value.0.command", "echo hello"),
+					resource.TestCheckResourceAttr(dataName, "database_id.0.value", "db-prod-01"),
+					resource.TestCheckResourceAttr(dataName, "provider_group.0.value", "production-servers"),
+					resource.TestCheckResourceAttr(dataName, "provider_region.0.value", "us-east-1"),
 				),
 			},
 		},

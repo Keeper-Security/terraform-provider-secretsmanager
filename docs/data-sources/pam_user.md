@@ -28,7 +28,7 @@ In addition to all arguments above, the following attributes are exported:
 * `rotation_scripts` - Script field for rotation scripts. Label: "Rotation Scripts".
 * `private_pem_key` - Secret field containing the private PEM key. Label: "Private PEM Key".
 * `distinguished_name` - Text field for the distinguished name. Label: "Distinguished Name".
-* `connect_database` - Text field for the database to connect to. Label: "connectDatabase".
+* `connect_database` - Text field for the database to connect to. Label: "Connect Database".
 * `managed` - Checkbox field indicating whether the user is managed. Label: "Managed".
 * `file_ref` - A list containing file reference information:
   - `uid` - File UID.

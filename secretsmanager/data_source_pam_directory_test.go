@@ -33,6 +33,38 @@ func TestAccDataSourcePamDirectory(t *testing.T) {
 				label = "Distinguished Name"
 				value = "DC=corp,DC=example,DC=com"
 			}
+			rotation_scripts {
+				value {
+					command = "echo hello"
+				}
+			}
+			use_ssl {
+				value = true
+			}
+			domain_name {
+				label = "domainName"
+				value = "corp.example.com"
+			}
+			directory_id {
+				label = "directoryId"
+				value = "dir-12345678"
+			}
+			user_match {
+				label = "userMatch"
+				value = "sAMAccountName"
+			}
+			provider_group {
+				label = "providerGroup"
+				value = "prod-ad-servers"
+			}
+			provider_region {
+				label = "providerRegion"
+				value = "us-west-2"
+			}
+			alternative_ips {
+				label = "alternativeIPs"
+				value = "10.0.1.5\n10.0.1.6\n10.0.1.7"
+			}
 		}
 
 		data "secretsmanager_pam_directory" "%v" {
@@ -56,6 +88,14 @@ func TestAccDataSourcePamDirectory(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.port", "636"),
 					resource.TestCheckResourceAttr(dataName, "directory_type", "Active Directory"),
 					resource.TestCheckResourceAttr(dataName, "distinguished_name.0.value", "DC=corp,DC=example,DC=com"),
+					resource.TestCheckResourceAttr(dataName, "rotation_scripts.0.value.0.command", "echo hello"),
+					resource.TestCheckResourceAttr(dataName, "use_ssl.0.value", "true"),
+					resource.TestCheckResourceAttr(dataName, "domain_name.0.value", "corp.example.com"),
+					resource.TestCheckResourceAttr(dataName, "directory_id.0.value", "dir-12345678"),
+					resource.TestCheckResourceAttr(dataName, "user_match.0.value", "sAMAccountName"),
+					resource.TestCheckResourceAttr(dataName, "provider_group.0.value", "prod-ad-servers"),
+					resource.TestCheckResourceAttr(dataName, "provider_region.0.value", "us-west-2"),
+					resource.TestCheckResourceAttr(dataName, "alternative_ips.0.value", "10.0.1.5\n10.0.1.6\n10.0.1.7"),
 				),
 			},
 		},
