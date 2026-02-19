@@ -277,3 +277,127 @@ func TestAccResourcePamMachine_import(t *testing.T) {
 		},
 	})
 }
+
+func TestAccResourcePamMachine_generatePrivatePemKey(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_test_pam_machine_generate_pem_key"
+	if secretFolderUid == "" {
+		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
+	}
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_pam_machine" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			pam_hostname {
+				value {
+					hostname = "10.0.0.1"
+					port = "22"
+				}
+			}
+			private_pem_key {
+				generate = "yes"
+				key_type = "ssh-ed25519"
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	resourceName := fmt.Sprintf("secretsmanager_pam_machine.%v", secretTitle)
+	resource.Test(t, resource.TestCase{
+		Providers: testAccProviders,
+		PreCheck:  testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr(resourceName, "type", "pamMachine"),
+					checkSecretResourceState(resourceName, func(s *terraform.InstanceState) error {
+						privKey := s.Attributes["private_pem_key.0.value"]
+						if privKey == "" {
+							return fmt.Errorf("expected non-empty private_pem_key value")
+						}
+						if len(privKey) < 20 {
+							return fmt.Errorf("private_pem_key value too short: %s", privKey)
+						}
+						pubKey := s.Attributes["private_pem_key.0.public_key"]
+						if pubKey == "" {
+							return fmt.Errorf("expected non-empty private_pem_key public_key")
+						}
+						return nil
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourcePamMachine_generatePrivatePemKeyWithPassphrase(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_test_pam_machine_generate_pem_passphrase"
+	if secretFolderUid == "" {
+		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
+	}
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_pam_machine" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			pam_hostname {
+				value {
+					hostname = "10.0.0.1"
+					port = "22"
+				}
+			}
+			private_key_passphrase {
+				generate = "yes"
+				complexity {
+					length = 20
+					caps = 5
+					lowercase = 5
+					digits = 5
+					special = 5
+				}
+			}
+			private_pem_key {
+				generate = "yes"
+				key_type = "ssh-rsa"
+				key_bits = 4096
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	resourceName := fmt.Sprintf("secretsmanager_pam_machine.%v", secretTitle)
+	resource.Test(t, resource.TestCase{
+		Providers: testAccProviders,
+		PreCheck:  testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr(resourceName, "type", "pamMachine"),
+					checkSecretResourceState(resourceName, func(s *terraform.InstanceState) error {
+						privKey := s.Attributes["private_pem_key.0.value"]
+						if privKey == "" {
+							return fmt.Errorf("expected non-empty private_pem_key value")
+						}
+						pubKey := s.Attributes["private_pem_key.0.public_key"]
+						if pubKey == "" {
+							return fmt.Errorf("expected non-empty private_pem_key public_key")
+						}
+						passphrase := s.Attributes["private_key_passphrase.0.value"]
+						if passphrase == "" {
+							return fmt.Errorf("expected non-empty private_key_passphrase value")
+						}
+						return nil
+					}),
+				),
+			},
+		},
+	})
+}
