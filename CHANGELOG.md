@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0]
 
 ### Security
-- Upgrade Go from 1.24.0 to 1.24.8 to address critical vulnerabilities
-- Update GitHub Actions workflows to use Go 1.24.8 for builds and SBOM generation
+- Upgrade Go from 1.24.0 to 1.24.13 to address critical vulnerabilities
+- Update GitHub Actions workflows to use Go 1.24.13 for builds and SBOM generation
 
 ### Added
 - **SSH Key Generation** (KSM-788):
@@ -69,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Resources updated: address, bank_account, bank_card, birth_certificate, contact, database_credentials, driver_license, encrypted_notes, file, health_insurance, login, membership, passport, photo, server_credentials, software_license, ssh_keys, ssn_card
 - Clarify `folder_uid` description to reflect sub-folder support (parent shared folder access sufficient)
 - Clarify checkbox field comment to explain Keeper stores values as single-element arrays
-- Add Go version compatibility flag (`-compat=1.24.8`) to goreleaser config
+- Add Go version compatibility flag (`-compat=1.24.13`) to goreleaser config
 
 
 ## [1.1.7]
