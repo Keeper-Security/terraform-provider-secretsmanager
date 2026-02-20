@@ -2,6 +2,7 @@ package secretsmanager
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -106,6 +107,15 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 			if err := SetFieldTypeInSchema(d, "pam_hostname", "pamHostname"); err != nil {
 				return diag.FromErr(err)
 			}
+		}
+	}
+	// Handle pam_settings as JSON string
+	// Note: pam_settings is a TypeString, not TypeList, so we don't call SetFieldTypeInSchema
+	if pamSettingsJSON := d.Get("pam_settings").(string); pamSettingsJSON != "" {
+		if field, err := createPamSettingsFieldFromJSON(pamSettingsJSON); err != nil {
+			return diag.FromErr(err)
+		} else if field != nil {
+			nrc.Fields = append(nrc.Fields, field)
 		}
 	}
 	if fieldData := d.Get("login"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
@@ -396,6 +406,14 @@ func resourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m inter
 	if err = d.Set("pam_hostname", pamHostname); err != nil {
 		return diag.FromErr(err)
 	}
+	// Read pam_settings as JSON string
+	if pamSettingsFields := secret.GetFieldsByType("pamSettings"); len(pamSettingsFields) > 0 {
+		if pamSettingsJSON, err := pamSettingsFieldToJSON(pamSettingsFields[0]); err != nil {
+			return diag.FromErr(err)
+		} else if err = d.Set("pam_settings", pamSettingsJSON); err != nil {
+			return diag.FromErr(err)
+		}
+	}
 	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
 		return diag.FromErr(err)
@@ -545,6 +563,19 @@ func resourcePamMachineUpdate(ctx context.Context, d *schema.ResourceData, m int
 		}
 		if err := secret.SetStandardFieldValue("pamHostname", hostValue); err != nil {
 			return diag.FromErr(fmt.Errorf("failed to update pam_hostname: %w", err))
+		}
+	}
+	if d.HasChange("pam_settings") {
+		// Handle pam_settings JSON string field - parse and use SetStandardFieldValue to sync to RawJson
+		pamSettingsJSON := d.Get("pam_settings").(string)
+		var pamSettingsValue interface{}
+		if err := json.Unmarshal([]byte(pamSettingsJSON), &pamSettingsValue); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to parse pam_settings JSON: %w", err))
+		}
+
+		// Use SetStandardFieldValue which calls update() to sync RecordDict to RawJson
+		if err := secret.SetStandardFieldValue("pamSettings", pamSettingsValue); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to update pam_settings: %w", err))
 		}
 	}
 	if d.HasChange("rotation_scripts") {

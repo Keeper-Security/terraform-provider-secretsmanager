@@ -28,6 +28,12 @@ func TestAccDataSourcePamDirectory(t *testing.T) {
 					port     = "636"
 				}
 			}
+			pam_settings = jsonencode([{
+				connection = [{
+					protocol = "ldaps"
+					port = "636"
+				}]
+			}])
 			directory_type = "Active Directory"
 			distinguished_name {
 				label = "Distinguished Name"
@@ -86,6 +92,7 @@ func TestAccDataSourcePamDirectory(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "notes", secretTitle),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.hostname", "ad.corp.example.com"),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.port", "636"),
+					resource.TestCheckResourceAttrSet(dataName, "pam_settings"),
 					resource.TestCheckResourceAttr(dataName, "directory_type", "Active Directory"),
 					resource.TestCheckResourceAttr(dataName, "distinguished_name.0.value", "DC=corp,DC=example,DC=com"),
 					resource.TestCheckResourceAttr(dataName, "rotation_scripts.0.value.0.command", "echo hello"),

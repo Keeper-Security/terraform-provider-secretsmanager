@@ -187,6 +187,7 @@ func schemaPamSettingsField() *schema.Schema {
 	return &schema.Schema{
 		Type:             schema.TypeString,
 		Optional:         true,
+		Computed:         true,
 		ValidateFunc:     validation.StringIsJSON,
 		DiffSuppressFunc: suppressEquivalentJSON,
 		Description: "PAM connection settings as JSON string. Structure varies by protocol:\n" +

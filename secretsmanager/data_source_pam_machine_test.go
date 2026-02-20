@@ -28,6 +28,12 @@ func TestAccDataSourcePamMachine(t *testing.T) {
 					port     = "22"
 				}
 			}
+			pam_settings = jsonencode([{
+				connection = [{
+					protocol = "ssh"
+					port = "22"
+				}]
+			}])
 			operating_system {
 				label = "Operating System"
 				value = "Linux"
@@ -74,6 +80,7 @@ func TestAccDataSourcePamMachine(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "notes", secretTitle),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.hostname", "192.168.1.100"),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.port", "22"),
+					resource.TestCheckResourceAttrSet(dataName, "pam_settings"),
 					resource.TestCheckResourceAttr(dataName, "operating_system.0.value", "Linux"),
 					resource.TestCheckResourceAttr(dataName, "rotation_scripts.0.value.0.command", "echo hello"),
 					resource.TestCheckResourceAttr(dataName, "instance_name.0.value", "web-server-01"),

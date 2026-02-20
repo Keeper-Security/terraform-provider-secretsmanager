@@ -28,6 +28,12 @@ func TestAccDataSourcePamDatabase(t *testing.T) {
 					port     = "5432"
 				}
 			}
+			pam_settings = jsonencode([{
+				connection = [{
+					protocol = "postgresql"
+					port = "5432"
+				}]
+			}])
 			database_type = "postgresql"
 			use_ssl {
 				value = true
@@ -67,6 +73,7 @@ func TestAccDataSourcePamDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "notes", secretTitle),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.hostname", "db.example.com"),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.port", "5432"),
+					resource.TestCheckResourceAttrSet(dataName, "pam_settings"),
 					resource.TestCheckResourceAttr(dataName, "database_type", "postgresql"),
 					resource.TestCheckResourceAttr(dataName, "use_ssl.0.value", "true"),
 					resource.TestCheckResourceAttr(dataName, "rotation_scripts.0.value.0.command", "echo hello"),
