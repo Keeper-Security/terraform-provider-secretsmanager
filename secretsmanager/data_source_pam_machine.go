@@ -40,16 +40,21 @@ func dataSourcePamMachine() *schema.Resource {
 				Description: "The secret notes.",
 			},
 			// PAM Machine specific fields
-			"pam_hostname":     schemaPamHostnameField(),
-			"pam_settings":     schemaPamSettingsField(),
-			"rotation_scripts": schemaScriptField(),
-			"operating_system": schemaTextField(),
-			"instance_name":    schemaTextField(),
-			"instance_id":      schemaTextField(),
-			"provider_group":   schemaTextField(),
-			"provider_region":  schemaTextField(),
-			"file_ref":         schemaFileRefField(),
-			"totp":             schemaOneTimeCodeField(),
+			"pam_hostname":           schemaPamHostnameField(),
+			"pam_settings":           schemaPamSettingsField(),
+			"login":                  schemaLoginField(),
+			"password":               schemaPasswordField(""),
+			"rotation_scripts":       schemaScriptField(),
+			"private_pem_key":        schemaSecretField(),
+			"private_key_passphrase": schemaSecretField(),
+			"operating_system":       schemaTextField(),
+			"ssl_verification":       schemaCheckboxField(),
+			"instance_name":          schemaTextField(),
+			"instance_id":            schemaTextField(),
+			"provider_group":         schemaTextField(),
+			"provider_region":        schemaTextField(),
+			"file_ref":               schemaFileRefField(),
+			"totp":                   schemaOneTimeCodeField(),
 		},
 	}
 }
@@ -94,12 +99,32 @@ func dataSourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m int
 			return diag.FromErr(err)
 		}
 	}
+	login := getFieldResourceData("login", "fields", secret)
+	if err = d.Set("login", login); err != nil {
+		return diag.FromErr(err)
+	}
+	password := getFieldResourceData("password", "fields", secret)
+	if err = d.Set("password", password); err != nil {
+		return diag.FromErr(err)
+	}
 	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
 		return diag.FromErr(err)
 	}
+	privatePemKey := getFieldResourceDataWithLabel("secret", "fields", secret, "Private PEM Key")
+	if err = d.Set("private_pem_key", privatePemKey); err != nil {
+		return diag.FromErr(err)
+	}
+	privateKeyPassphrase := getFieldResourceDataWithLabel("secret", "custom", secret, "Private Key Passphrase")
+	if err = d.Set("private_key_passphrase", privateKeyPassphrase); err != nil {
+		return diag.FromErr(err)
+	}
 	operatingSystem := getFieldResourceDataWithLabel("text", "fields", secret, "Operating System")
 	if err = d.Set("operating_system", operatingSystem); err != nil {
+		return diag.FromErr(err)
+	}
+	sslVerification := getFieldResourceDataWithLabel("checkbox", "fields", secret, "SSL Verification")
+	if err = d.Set("ssl_verification", sslVerification); err != nil {
 		return diag.FromErr(err)
 	}
 	instanceName := getFieldResourceDataWithLabel("text", "fields", secret, "Instance Name")

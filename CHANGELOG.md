@@ -11,7 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - Upgrade Go from 1.24.0 to 1.24.13 to address critical vulnerabilities
-- Update GitHub Actions workflows to use Go 1.24.13 for builds and SBOM generation
 
 ### Added
 - **SSH Key Generation** (KSM-788):
@@ -56,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix PAM `pam_settings` field readback for PAM data sources and PAM Machine resource lifecycle handling (KSM-796)
+- Fix PAM Machine data source missing `login`, `password`, `private_pem_key`, `private_key_passphrase`, and `ssl_verification` fields (KSM-797)
 - Fix PAM User data source returning empty values for `connect_database` and `private_pem_key` fields (KSM-794)
 - Fix shortcuts/linked records error (KSM-522) - resolve duplicate UID handling across multiple shared folders
 - Fix "changes to folder_uid not allowed" errors during Terraform apply operations

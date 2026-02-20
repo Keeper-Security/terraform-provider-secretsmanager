@@ -34,9 +34,25 @@ func TestAccDataSourcePamMachine(t *testing.T) {
 					port = "22"
 				}]
 			}])
+			login {
+				value = "svc_machine"
+			}
+			password {
+				value = "StrongMachinePass123!"
+			}
 			operating_system {
 				label = "Operating System"
 				value = "Linux"
+			}
+			private_pem_key {
+				value = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA..."
+			}
+			private_key_passphrase {
+				value = "TestPassphrase#123"
+			}
+			ssl_verification {
+				label = "SSL Verification"
+				value = true
 			}
 			rotation_scripts {
 				value {
@@ -81,7 +97,12 @@ func TestAccDataSourcePamMachine(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.hostname", "192.168.1.100"),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.port", "22"),
 					resource.TestCheckResourceAttrSet(dataName, "pam_settings"),
+					resource.TestCheckResourceAttr(dataName, "login.0.value", "svc_machine"),
+					resource.TestCheckResourceAttr(dataName, "password.0.value", "StrongMachinePass123!"),
 					resource.TestCheckResourceAttr(dataName, "operating_system.0.value", "Linux"),
+					resource.TestCheckResourceAttr(dataName, "private_pem_key.0.value", "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA..."),
+					resource.TestCheckResourceAttr(dataName, "private_key_passphrase.0.value", "TestPassphrase#123"),
+					resource.TestCheckResourceAttr(dataName, "ssl_verification.0.value", "true"),
 					resource.TestCheckResourceAttr(dataName, "rotation_scripts.0.value.0.command", "echo hello"),
 					resource.TestCheckResourceAttr(dataName, "instance_name.0.value", "web-server-01"),
 					resource.TestCheckResourceAttr(dataName, "instance_id.0.value", "i-1234567890abcdef0"),
