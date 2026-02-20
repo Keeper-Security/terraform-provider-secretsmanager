@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix PAM `pam_settings` field readback for PAM data sources and PAM Machine resource lifecycle handling (KSM-796)
 - Fix PAM Machine data source missing `login`, `password`, `private_pem_key`, `private_key_passphrase`, and `ssl_verification` fields (KSM-797)
+- Fix PAM data source coverage gaps for `folder_uid`, `totp`, and PAM User `private_key_passphrase` readback (KSM-798)
 - Fix PAM User data source returning empty values for `connect_database` and `private_pem_key` fields (KSM-794)
 - Fix shortcuts/linked records error (KSM-522) - resolve duplicate UID handling across multiple shared folders
 - Fix "changes to folder_uid not allowed" errors during Terraform apply operations

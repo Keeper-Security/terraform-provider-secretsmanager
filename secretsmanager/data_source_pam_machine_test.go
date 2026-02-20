@@ -54,6 +54,9 @@ func TestAccDataSourcePamMachine(t *testing.T) {
 				label = "SSL Verification"
 				value = true
 			}
+			totp {
+				value = "otpauth://totp/keeper:machine?secret=JBSWY3DPEHPK3PXP&issuer=Keeper"
+			}
 			rotation_scripts {
 				value {
 					command = "echo hello"
@@ -94,6 +97,7 @@ func TestAccDataSourcePamMachine(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "type", "pamMachine"),
 					resource.TestCheckResourceAttr(dataName, "title", secretTitle),
 					resource.TestCheckResourceAttr(dataName, "notes", secretTitle),
+					resource.TestCheckResourceAttr(dataName, "folder_uid", secretFolderUid),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.hostname", "192.168.1.100"),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.port", "22"),
 					resource.TestCheckResourceAttrSet(dataName, "pam_settings"),
@@ -108,6 +112,7 @@ func TestAccDataSourcePamMachine(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "instance_id.0.value", "i-1234567890abcdef0"),
 					resource.TestCheckResourceAttr(dataName, "provider_group.0.value", "production-servers"),
 					resource.TestCheckResourceAttr(dataName, "provider_region.0.value", "us-east-1"),
+					resource.TestCheckResourceAttr(dataName, "totp.0.value", "otpauth://totp/keeper:machine?secret=JBSWY3DPEHPK3PXP&issuer=Keeper"),
 				),
 			},
 		},

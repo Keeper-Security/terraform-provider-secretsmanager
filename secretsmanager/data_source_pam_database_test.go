@@ -38,6 +38,9 @@ func TestAccDataSourcePamDatabase(t *testing.T) {
 			use_ssl {
 				value = true
 			}
+			totp {
+				value = "otpauth://totp/keeper:database?secret=JBSWY3DPEHPK3PXP&issuer=Keeper"
+			}
 			rotation_scripts {
 				value {
 					command = "echo hello"
@@ -71,6 +74,7 @@ func TestAccDataSourcePamDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "type", "pamDatabase"),
 					resource.TestCheckResourceAttr(dataName, "title", secretTitle),
 					resource.TestCheckResourceAttr(dataName, "notes", secretTitle),
+					resource.TestCheckResourceAttr(dataName, "folder_uid", secretFolderUid),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.hostname", "db.example.com"),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.port", "5432"),
 					resource.TestCheckResourceAttrSet(dataName, "pam_settings"),
@@ -80,6 +84,7 @@ func TestAccDataSourcePamDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "database_id.0.value", "db-prod-01"),
 					resource.TestCheckResourceAttr(dataName, "provider_group.0.value", "production-servers"),
 					resource.TestCheckResourceAttr(dataName, "provider_region.0.value", "us-east-1"),
+					resource.TestCheckResourceAttr(dataName, "totp.0.value", "otpauth://totp/keeper:database?secret=JBSWY3DPEHPK3PXP&issuer=Keeper"),
 				),
 			},
 		},

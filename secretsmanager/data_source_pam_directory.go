@@ -84,6 +84,15 @@ func dataSourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m i
 	if err = d.Set("notes", secret.Notes()); err != nil {
 		return diag.FromErr(err)
 	}
+	fuid := secret.InnerFolderUid()
+	if fuid == "" {
+		fuid = secret.FolderUid()
+	}
+	if fuid != "" {
+		if err = d.Set("folder_uid", fuid); err != nil {
+			return diag.FromErr(err)
+		}
+	}
 
 	// PAM Directory specific fields
 	pamHostname := getFieldResourceData("pamHostname", "fields", secret)
@@ -144,6 +153,10 @@ func dataSourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m i
 	}
 	alternativeIPs := getFieldResourceDataWithLabel("multiline", "fields", secret, "alternativeIPs")
 	if err = d.Set("alternative_ips", alternativeIPs); err != nil {
+		return diag.FromErr(err)
+	}
+	oneTimeCode := getFieldResourceData("oneTimeCode", "fields", secret)
+	if err = d.Set("totp", oneTimeCode); err != nil {
 		return diag.FromErr(err)
 	}
 

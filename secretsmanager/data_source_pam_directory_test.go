@@ -47,6 +47,9 @@ func TestAccDataSourcePamDirectory(t *testing.T) {
 			use_ssl {
 				value = true
 			}
+			totp {
+				value = "otpauth://totp/keeper:directory?secret=JBSWY3DPEHPK3PXP&issuer=Keeper"
+			}
 			domain_name {
 				label = "domainName"
 				value = "corp.example.com"
@@ -90,6 +93,7 @@ func TestAccDataSourcePamDirectory(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "type", "pamDirectory"),
 					resource.TestCheckResourceAttr(dataName, "title", secretTitle),
 					resource.TestCheckResourceAttr(dataName, "notes", secretTitle),
+					resource.TestCheckResourceAttr(dataName, "folder_uid", secretFolderUid),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.hostname", "ad.corp.example.com"),
 					resource.TestCheckResourceAttr(dataName, "pam_hostname.0.value.0.port", "636"),
 					resource.TestCheckResourceAttrSet(dataName, "pam_settings"),
@@ -103,6 +107,7 @@ func TestAccDataSourcePamDirectory(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "provider_group.0.value", "prod-ad-servers"),
 					resource.TestCheckResourceAttr(dataName, "provider_region.0.value", "us-west-2"),
 					resource.TestCheckResourceAttr(dataName, "alternative_ips.0.value", "10.0.1.5\n10.0.1.6\n10.0.1.7"),
+					resource.TestCheckResourceAttr(dataName, "totp.0.value", "otpauth://totp/keeper:directory?secret=JBSWY3DPEHPK3PXP&issuer=Keeper"),
 				),
 			},
 		},

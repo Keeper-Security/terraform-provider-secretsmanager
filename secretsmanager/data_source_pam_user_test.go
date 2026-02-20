@@ -25,6 +25,9 @@ func TestAccDataSourcePamUser(t *testing.T) {
 			login {
 				value = "testuser"
 			}
+			password {
+				value = "PamUserStrongPass#123"
+			}
 			rotation_scripts {
 				value {
 					command = "echo hello"
@@ -37,12 +40,18 @@ func TestAccDataSourcePamUser(t *testing.T) {
 			private_pem_key {
 				value = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA..."
 			}
+			private_key_passphrase {
+				value = "UserPassphrase#123"
+			}
 			connect_database {
 				value = "production_db"
 			}
 			managed {
 				label = "Managed"
 				value = true
+			}
+			totp {
+				value = "otpauth://totp/keeper:user?secret=JBSWY3DPEHPK3PXP&issuer=Keeper"
 			}
 		}
 
@@ -63,12 +72,16 @@ func TestAccDataSourcePamUser(t *testing.T) {
 					resource.TestCheckResourceAttr(dataName, "type", "pamUser"),
 					resource.TestCheckResourceAttr(dataName, "title", secretTitle),
 					resource.TestCheckResourceAttr(dataName, "notes", secretTitle),
+					resource.TestCheckResourceAttr(dataName, "folder_uid", secretFolderUid),
 					resource.TestCheckResourceAttr(dataName, "login.0.value", "testuser"),
+					resource.TestCheckResourceAttr(dataName, "password.0.value", "PamUserStrongPass#123"),
 					resource.TestCheckResourceAttr(dataName, "rotation_scripts.0.value.0.command", "echo hello"),
 					resource.TestCheckResourceAttr(dataName, "distinguished_name.0.value", "CN=testuser,OU=Users,DC=example,DC=com"),
 					resource.TestCheckResourceAttr(dataName, "private_pem_key.0.value", "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA..."),
+					resource.TestCheckResourceAttr(dataName, "private_key_passphrase.0.value", "UserPassphrase#123"),
 					resource.TestCheckResourceAttr(dataName, "connect_database.0.value", "production_db"),
 					resource.TestCheckResourceAttr(dataName, "managed.0.value", "true"),
+					resource.TestCheckResourceAttr(dataName, "totp.0.value", "otpauth://totp/keeper:user?secret=JBSWY3DPEHPK3PXP&issuer=Keeper"),
 				),
 			},
 		},
