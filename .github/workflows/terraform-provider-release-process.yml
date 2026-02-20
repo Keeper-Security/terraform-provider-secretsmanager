@@ -73,7 +73,11 @@ jobs:
           # Install Manifest CLI
           curl -sSfL https://raw.githubusercontent.com/manifest-cyber/cli/main/install.sh | sh -s -- -b /usr/local/bin v0.18.3          
           
-          # Create Syft configuration focusing only on Go
+          # Build release artifact and scan the binary (runtime deps only).
+          mkdir -p dist
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dist/terraform-provider-secretsmanager .
+
+          # Create Syft configuration focused on Go metadata.
           cat > syft-config.yaml << 'EOF'
           package:
             search:
@@ -109,13 +113,11 @@ jobs:
           EOF
           
           echo "Provider version: ${PROVIDER_VERSION}"
-          
-          # Debug: show what will be scanned
-          echo "Files to be scanned:"
-          find . -name "*.go" -o -name "go.mod" -o -name "go.sum"
+          echo "Artifact to be scanned:"
+          ls -lah dist/terraform-provider-secretsmanager
           
           # Generate and publish SBOM using Manifest
-          manifest sbom . \
+          manifest sbom dist/terraform-provider-secretsmanager \
             --generator=syft \
             --name=terraform-provider-secretsmanager \
             --version=${PROVIDER_VERSION} \
