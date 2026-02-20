@@ -39,6 +39,15 @@ output "ad_distinguished_name" {
   value = try(data.secretsmanager_pam_directory.ad_by_uid.distinguished_name[0].value, "")
 }
 
+output "ad_folder_uid" {
+  value = data.secretsmanager_pam_directory.ad_by_uid.folder_uid
+}
+
+output "ad_totp_uri" {
+  value     = try(data.secretsmanager_pam_directory.ad_by_uid.totp[0].value, "")
+  sensitive = true
+}
+
 # Access pamSettings as JSON
 output "ad_pam_settings" {
   value     = jsondecode(data.secretsmanager_pam_directory.ad_by_uid.pam_settings)

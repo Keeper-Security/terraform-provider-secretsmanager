@@ -45,7 +45,5 @@ In addition to all arguments above, the following attributes are exported:
   - `size` - File size.
   - `last_modified` - File last modification timestamp.
   - `content_base64` - File content base64 encoded.
-* `totp` - A list containing Time-based One-time password information:
-  - `url` - TOTP URL.
-  - `token` - Current TOTP password.
-  - `ttl` - Time to live in seconds for current token.
+* `totp` - One-time code field represented as a block list with:
+  - `value` - TOTP URI/secret value (e.g. `otpauth://...`).

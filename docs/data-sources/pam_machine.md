@@ -27,8 +27,13 @@ In addition to all arguments above, the following attributes are exported:
   - `hostname` - Hostname or IP address.
   - `port` - Port number.
 * `pam_settings` - PAM connection settings as a JSON string.
+* `login` - Login field containing the username.
+* `password` - Password field (sensitive).
+* `private_pem_key` - Secret field containing the private PEM key. Label: "Private PEM Key".
+* `private_key_passphrase` - Secret field containing the passphrase used for private key protection. Label: "Private Key Passphrase".
 * `rotation_scripts` - Script field for rotation scripts. Label: "Rotation Scripts".
 * `operating_system` - Text field for the operating system. Label: "Operating System".
+* `ssl_verification` - Checkbox field indicating whether SSL verification is enabled. Label: "SSL Verification".
 * `instance_name` - Text field for the instance name. Label: "Instance Name".
 * `instance_id` - Text field for the instance identifier. Label: "Instance Id".
 * `provider_group` - Text field for provider group. Label: "Provider Group".
@@ -41,7 +46,5 @@ In addition to all arguments above, the following attributes are exported:
   - `size` - File size.
   - `last_modified` - File last modification timestamp.
   - `content_base64` - File content base64 encoded.
-* `totp` - A list containing Time-based One-time password information:
-  - `url` - TOTP URL.
-  - `token` - Current TOTP password.
-  - `ttl` - Time to live in seconds for current token.
+* `totp` - One-time code field represented as a block list with:
+  - `value` - TOTP URI/secret value (e.g. `otpauth://...`).

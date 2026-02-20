@@ -39,6 +39,15 @@ output "db_use_ssl" {
   value = try(data.secretsmanager_pam_database.mysql_by_uid.use_ssl[0].value, false)
 }
 
+output "db_folder_uid" {
+  value = data.secretsmanager_pam_database.mysql_by_uid.folder_uid
+}
+
+output "db_totp_uri" {
+  value     = try(data.secretsmanager_pam_database.mysql_by_uid.totp[0].value, "")
+  sensitive = true
+}
+
 # Access pamSettings as JSON
 output "db_pam_settings" {
   value     = jsondecode(data.secretsmanager_pam_database.mysql_by_uid.pam_settings)

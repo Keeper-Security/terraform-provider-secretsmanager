@@ -31,6 +31,33 @@ output "ssh_port" {
   value = data.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].value[0].port
 }
 
+output "machine_folder_uid" {
+  value = data.secretsmanager_pam_machine.ssh_server_by_uid.folder_uid
+}
+
+output "machine_login" {
+  value = try(data.secretsmanager_pam_machine.ssh_server_by_uid.login[0].value, "")
+}
+
+output "machine_ssl_verification" {
+  value = try(data.secretsmanager_pam_machine.ssh_server_by_uid.ssl_verification[0].value, false)
+}
+
+output "machine_private_pem_key" {
+  value     = try(data.secretsmanager_pam_machine.ssh_server_by_uid.private_pem_key[0].value, "")
+  sensitive = true
+}
+
+output "machine_private_key_passphrase" {
+  value     = try(data.secretsmanager_pam_machine.ssh_server_by_uid.private_key_passphrase[0].value, "")
+  sensitive = true
+}
+
+output "machine_totp_uri" {
+  value     = try(data.secretsmanager_pam_machine.ssh_server_by_uid.totp[0].value, "")
+  sensitive = true
+}
+
 # Access pamSettings as JSON
 output "ssh_pam_settings" {
   value     = jsondecode(data.secretsmanager_pam_machine.ssh_server_by_uid.pam_settings)

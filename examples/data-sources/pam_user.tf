@@ -32,6 +32,15 @@ output "db_password" {
   sensitive = true
 }
 
+output "db_folder_uid" {
+  value = data.secretsmanager_pam_user.db_admin_by_uid.folder_uid
+}
+
+output "db_private_key_passphrase" {
+  value     = try(data.secretsmanager_pam_user.db_admin_by_uid.private_key_passphrase[0].value, "")
+  sensitive = true
+}
+
 output "db_distinguished_name" {
   value = try(data.secretsmanager_pam_user.db_admin_by_uid.distinguished_name[0].value, "")
 }
@@ -47,6 +56,11 @@ output "db_managed" {
 # Example: Check if TOTP is configured
 output "has_2fa" {
   value = length(data.secretsmanager_pam_user.db_admin_by_uid.totp) > 0
+}
+
+output "totp_uri" {
+  value     = try(data.secretsmanager_pam_user.db_admin_by_uid.totp[0].value, "")
+  sensitive = true
 }
 
 # Example: Access rotation scripts
