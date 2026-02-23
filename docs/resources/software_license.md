@@ -1,6 +1,37 @@
 # secretsmanager_software_license Resource
 
-Use this resource to access secrets of type `softwareLicense` stored in Keeper Vault
+Use this resource to create and manage secrets of type `softwareLicense` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_software_license" "my_software_license" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  license_number {
+    label          = "My License"
+    required       = true
+    privacy_screen = true
+    value          = "My License# 1234"
+  }
+
+  activation_date {
+    label          = "License Activation Date"
+    required       = true
+    privacy_screen = true
+    value          = 1651186276
+  }
+
+  expiration_date {
+    label          = "License Expiration Date"
+    required       = true
+    privacy_screen = true
+    value          = 21651186276
+  }
+}
+```
 
 ## Schema
 

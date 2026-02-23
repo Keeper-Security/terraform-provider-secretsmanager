@@ -1,6 +1,30 @@
 # secretsmanager_encrypted_notes Resource
 
-Use this resource to access secrets of type `encryptedNotes` stored in Keeper Vault
+Use this resource to create and manage secrets of type `encryptedNotes` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_encrypted_notes" "my_encrypted_notes" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  note {
+    label          = "My Note"
+    required       = true
+    privacy_screen = true
+    value          = "My Note"
+  }
+
+  date {
+    label          = "Date"
+    required       = true
+    privacy_screen = true
+    value          = 1651186276
+  }
+}
+```
 
 ## Schema
 

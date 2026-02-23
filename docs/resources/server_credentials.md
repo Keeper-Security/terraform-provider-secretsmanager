@@ -1,6 +1,48 @@
 # secretsmanager_server_credentials Resource
 
-Use this resource to access secrets of type `serverCredentials` stored in Keeper Vault
+Use this resource to create and manage secrets of type `serverCredentials` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_server_credentials" "my_server_credentials" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  host {
+    label          = "My Host"
+    required       = true
+    privacy_screen = true
+    value {
+      host_name = "127.0.0.1"
+      port      = "22"
+    }
+  }
+
+  login {
+    label          = "My Login"
+    required       = true
+    privacy_screen = true
+    value          = "MyLogin"
+  }
+
+  password {
+    label              = "My Pass"
+    required           = true
+    privacy_screen     = true
+    enforce_generation = true
+    generate           = "yes"
+    complexity {
+      length    = 20
+      caps      = 5
+      lowercase = 5
+      digits    = 5
+      special   = 5
+    }
+  }
+}
+```
 
 ## Schema
 

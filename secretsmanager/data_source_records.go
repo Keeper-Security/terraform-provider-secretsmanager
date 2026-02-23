@@ -5,12 +5,18 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/keeper-security/secrets-manager-go/core"
+)
+
+const (
+	// maxRegexPatternLength limits regex pattern complexity to prevent ReDoS attacks
+	maxRegexPatternLength = 500
 )
 
 func dataSourceRecords() *schema.Resource {
@@ -20,7 +26,7 @@ func dataSourceRecords() *schema.Resource {
 			"uids": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "List of record UIDs to fetch",
+				Description: "List of record UIDs to fetch. Most efficient option - fetches only requested records.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -28,7 +34,15 @@ func dataSourceRecords() *schema.Resource {
 			"titles": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "List of record titles to fetch (requires fetching all records first)",
+				Description: "List of exact record titles to match. WARNING: Fetches ALL vault records and filters client-side. Use 'uids' for better performance.",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			"title_patterns": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "List of regex patterns (Go syntax) to match record titles. WARNING: Fetches ALL vault records and filters client-side. Use 'uids' for better performance. Max pattern length: 500 chars. See https://pkg.go.dev/regexp/syntax for syntax reference.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -126,13 +140,14 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 	client := *provider.client
 	var diags diag.Diagnostics
 
-	// Get UIDs and titles from config
+	// Get UIDs, titles, and title patterns from config
 	uidsRaw := d.Get("uids").([]interface{})
 	titlesRaw := d.Get("titles").([]interface{})
+	titlePatternsRaw := d.Get("title_patterns").([]interface{})
 
 	// Validate that at least one is provided
-	if len(uidsRaw) == 0 && len(titlesRaw) == 0 {
-		return diag.Errorf("at least one of 'uids' or 'titles' must be provided")
+	if len(uidsRaw) == 0 && len(titlesRaw) == 0 && len(titlePatternsRaw) == 0 {
+		return diag.Errorf("at least one of 'uids', 'titles', or 'title_patterns' must be provided")
 	}
 
 	// Convert to string slices
@@ -146,6 +161,24 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 		titles[i] = strings.TrimSpace(title.(string))
 	}
 
+	// Compile regex patterns with complexity validation
+	titlePatterns := make([]*regexp.Regexp, len(titlePatternsRaw))
+	for i, pattern := range titlePatternsRaw {
+		patternStr := strings.TrimSpace(pattern.(string))
+
+		// Validate pattern length to prevent ReDoS attacks
+		if len(patternStr) > maxRegexPatternLength {
+			return diag.Errorf("regex pattern exceeds maximum length of %d characters (got %d): '%s'",
+				maxRegexPatternLength, len(patternStr), patternStr)
+		}
+
+		re, err := regexp.Compile(patternStr)
+		if err != nil {
+			return diag.Errorf("invalid regex pattern '%s': %v", patternStr, err)
+		}
+		titlePatterns[i] = re
+	}
+
 	// Future enhancement: enforce batch size limit
 	// const maxBatchSize = 500
 	// totalRecords := len(uids) + len(titles)
@@ -156,9 +189,9 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 	var secrets []*core.Record
 	var err error
 
-	// Optimization: If we have titles, we need to fetch all records anyway
-	// So we can filter both UIDs and titles from the same result set
-	if len(titles) > 0 {
+	// Optimization: If we have titles or patterns, we need to fetch all records anyway
+	// So we can filter both UIDs, titles, and patterns from the same result set
+	if len(titles) > 0 || len(titlePatterns) > 0 {
 		// Fetch all records once
 		allSecrets, err := client.GetSecrets([]string{})
 		if err != nil {
@@ -176,9 +209,19 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 			titleMap[title] = true
 		}
 
-		// Filter records by UIDs and titles
+		// Helper function to check if title matches any pattern
+		matchesPattern := func(title string) bool {
+			for _, pattern := range titlePatterns {
+				if pattern.MatchString(title) {
+					return true
+				}
+			}
+			return false
+		}
+
+		// Filter records by UIDs, titles, and patterns
 		for _, record := range allSecrets {
-			if uidMap[record.Uid] || titleMap[record.Title()] {
+			if uidMap[record.Uid] || titleMap[record.Title()] || matchesPattern(record.Title()) {
 				secrets = append(secrets, record)
 			}
 		}
@@ -229,10 +272,10 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 	// Convert records to Terraform schema format
 	recordsList := make([]interface{}, len(secrets))
 	recordsMap := make(map[string]interface{})
-	
+
 	for i, secret := range secrets {
 		record := make(map[string]interface{})
-		
+
 		record["uid"] = secret.Uid
 		record["type"] = secret.Type()
 		record["title"] = secret.Title()
@@ -251,7 +294,7 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 		record["file_ref"] = fileItems
 
 		recordsList[i] = record
-		
+
 		// Store JSON-encoded record in map for UID-based access
 		// This allows users to decode and access the full record structure
 		if jsonData, err := json.Marshal(record); err == nil {
@@ -276,7 +319,7 @@ func dataSourceRecordsRead(ctx context.Context, d *schema.ResourceData, m interf
 		allIds = append(allIds, record.Uid)
 	}
 	sort.Strings(allIds)
-	
+
 	h := sha256.New()
 	h.Write([]byte(strings.Join(allIds, ",")))
 	d.SetId(fmt.Sprintf("%x", h.Sum(nil)))

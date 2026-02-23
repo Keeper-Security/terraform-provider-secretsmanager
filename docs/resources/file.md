@@ -1,6 +1,21 @@
 # secretsmanager_file Resource
 
-Use this resource to access secrets of type `file` stored in Keeper Vault
+Use this resource to create and manage secrets of type `file` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_file" "my_files" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  file_ref {
+    value { uid = "<file1 UID>" }
+    value { uid = "<file2 UID>" }
+  }
+}
+```
 
 ## Schema
 

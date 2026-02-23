@@ -1,6 +1,55 @@
 # secretsmanager_database_credentials Resource
 
-Use this resource to access secrets of type `databaseCredentials` stored in Keeper Vault
+Use this resource to create and manage secrets of type `databaseCredentials` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_database_credentials" "my_database_credentials" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  login {
+    label          = "My Login"
+    required       = true
+    privacy_screen = true
+    value          = "MyLogin"
+  }
+
+  password {
+    label              = "My Pass"
+    required           = true
+    privacy_screen     = true
+    enforce_generation = true
+    generate           = "yes"
+    complexity {
+      length    = 20
+      caps      = 5
+      lowercase = 5
+      digits    = 5
+      special   = 5
+    }
+  }
+
+  host {
+    label          = "My Host"
+    required       = true
+    privacy_screen = true
+    value {
+      host_name = "127.0.0.1"
+      port      = "3306"
+    }
+  }
+
+  db_type {
+    label          = "My DB Type"
+    required       = true
+    privacy_screen = true
+    value          = "MySQL"
+  }
+}
+```
 
 ## Schema
 

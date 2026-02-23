@@ -26,7 +26,7 @@ func resourcePhoto() *schema.Resource {
 				Computed:     true,
 				Optional:     true,
 				AtLeastOneOf: []string{"folder_uid", "uid"},
-				Description:  "The folder UID where the secret is stored. The parent shared folder must be non empty.",
+				Description:  "The UID of the folder where the secret is stored. The folder or its parent shared folder must be accessible to your KSM application with 'Can Edit' permissions.",
 			},
 			"uid": {
 				Type:         schema.TypeString,

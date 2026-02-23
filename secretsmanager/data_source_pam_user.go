@@ -15,7 +15,7 @@ func dataSourcePamUser() *schema.Resource {
 			"path": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "The path to PAM User secret.",
+				Description:  "The UID or KSM notation path to the PAM User secret (e.g., record UID or UID/field/password).",
 				ExactlyOneOf: []string{"path", "title"},
 			},
 			"title": {
@@ -40,14 +40,16 @@ func dataSourcePamUser() *schema.Resource {
 				Description: "The secret notes.",
 			},
 			// PAM User specific fields
-			"login":              schemaLoginField(),
-			"password":           schemaPasswordField(""),
-			"rotation_scripts":   schemaScriptField(),
-			"distinguished_name": schemaTextField(),
-			"connect_database":   schemaTextField(),
-			"managed":            schemaCheckboxField(),
-			"file_ref":           schemaFileRefField(),
-			"totp":               schemaOneTimeCodeField(),
+			"login":                  schemaLoginField(),
+			"password":               schemaPasswordField(""),
+			"rotation_scripts":       schemaScriptField(),
+			"private_pem_key":        schemaSecretField(),
+			"private_key_passphrase": schemaSecretField(),
+			"distinguished_name":     schemaTextField(),
+			"connect_database":       schemaTextField(),
+			"managed":                schemaCheckboxField(),
+			"file_ref":               schemaFileRefField(),
+			"totp":                   schemaOneTimeCodeField(),
 		},
 	}
 }
@@ -78,10 +80,51 @@ func dataSourcePamUserRead(ctx context.Context, d *schema.ResourceData, m interf
 	if err = d.Set("notes", secret.Notes()); err != nil {
 		return diag.FromErr(err)
 	}
-	if err = d.Set("login", secret.GetFieldValueByType("login")); err != nil {
+	fuid := secret.InnerFolderUid()
+	if fuid == "" {
+		fuid = secret.FolderUid()
+	}
+	if fuid != "" {
+		if err = d.Set("folder_uid", fuid); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// PAM User specific fields
+	login := getFieldResourceData("login", "fields", secret)
+	if err = d.Set("login", login); err != nil {
 		return diag.FromErr(err)
 	}
-	if err = d.Set("password", secret.GetFieldValueByType("password")); err != nil {
+	password := getFieldResourceData("password", "fields", secret)
+	if err = d.Set("password", password); err != nil {
+		return diag.FromErr(err)
+	}
+	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
+	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
+		return diag.FromErr(err)
+	}
+	privatePemKey := getFieldResourceDataWithLabel("secret", "fields", secret, "Private PEM Key")
+	if err = d.Set("private_pem_key", privatePemKey); err != nil {
+		return diag.FromErr(err)
+	}
+	privateKeyPassphrase := getFieldResourceDataWithLabel("secret", "custom", secret, "Private Key Passphrase")
+	if err = d.Set("private_key_passphrase", privateKeyPassphrase); err != nil {
+		return diag.FromErr(err)
+	}
+	distinguishedName := getFieldResourceDataWithLabel("text", "fields", secret, "Distinguished Name")
+	if err = d.Set("distinguished_name", distinguishedName); err != nil {
+		return diag.FromErr(err)
+	}
+	connectDatabase := getFieldResourceDataWithLabel("text", "fields", secret, "Connect Database")
+	if err = d.Set("connect_database", connectDatabase); err != nil {
+		return diag.FromErr(err)
+	}
+	managed := getFieldResourceDataWithLabel("checkbox", "fields", secret, "Managed")
+	if err = d.Set("managed", managed); err != nil {
+		return diag.FromErr(err)
+	}
+	oneTimeCode := getFieldResourceData("oneTimeCode", "fields", secret)
+	if err = d.Set("totp", oneTimeCode); err != nil {
 		return diag.FromErr(err)
 	}
 

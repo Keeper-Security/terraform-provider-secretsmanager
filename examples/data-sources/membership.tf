@@ -2,61 +2,61 @@ terraform {
   required_providers {
     secretsmanager = {
       source  = "keeper-security/secretsmanager"
-      version = ">= 1.1.7"
+      version = ">= 1.2.0"
     }
     local = {
-      source = "hashicorp/local"
+      source  = "hashicorp/local"
       version = "2.1.0"
     }
   }
 }
 
-provider "local" { }
+provider "local" {}
 provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
 }
 
 data "secretsmanager_membership" "my_membership" {
-  path        = "<record UID>"
+  path = "<record UID>"
 }
 
 resource "local_file" "out" {
   filename        = "${path.module}/out.txt"
   file_permission = "0644"
   content         = <<EOT
-UID:    ${ data.secretsmanager_membership.my_membership.path }
-Type:   ${ data.secretsmanager_membership.my_membership.type }
-Title:  ${ data.secretsmanager_membership.my_membership.title }
-Notes:  ${ data.secretsmanager_membership.my_membership.notes }
+UID:    ${data.secretsmanager_membership.my_membership.path}
+Type:   ${data.secretsmanager_membership.my_membership.type}
+Title:  ${data.secretsmanager_membership.my_membership.title}
+Notes:  ${data.secretsmanager_membership.my_membership.notes}
 ======
 
-Acct.#:   ${ data.secretsmanager_membership.my_membership.account_number }
-Password: ${ data.secretsmanager_membership.my_membership.password }
+Acct.#:   ${data.secretsmanager_membership.my_membership.account_number}
+Password: ${data.secretsmanager_membership.my_membership.password}
 
 Name:
 -----
-%{ for n in data.secretsmanager_membership.my_membership.name ~}
-First Name:   ${ n.first }
-Midlle Name:  ${ n.middle }
-Last Name:    ${ n.last }
+%{for n in data.secretsmanager_membership.my_membership.name~}
+First Name:   ${n.first}
+Midlle Name:  ${n.middle}
+Last Name:    ${n.last}
 
-%{ endfor ~}
+%{endfor~}
 
 FileRefs:
 ---------
-%{ for fr in data.secretsmanager_membership.my_membership.file_ref ~}
-UID:      ${ fr.uid }
-Title:    ${ fr.title }
-Name:     ${ fr.name }
-Type:     ${ fr.type }
-Size:     ${ fr.size }
-Last Modified:  ${ fr.last_modified }
+%{for fr in data.secretsmanager_membership.my_membership.file_ref~}
+UID:      ${fr.uid}
+Title:    ${fr.title}
+Name:     ${fr.name}
+Type:     ${fr.type}
+Size:     ${fr.size}
+Last Modified:  ${fr.last_modified}
 
-Content/Base64: ${ fr.content_base64 }
+Content/Base64: ${fr.content_base64}
 
 
-%{ endfor ~}
+%{endfor~}
 EOT
 }
 

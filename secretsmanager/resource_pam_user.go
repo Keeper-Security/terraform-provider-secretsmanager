@@ -52,14 +52,16 @@ func resourcePamUser() *schema.Resource {
 				Description: "The secret notes.",
 			},
 			// PAM User specific fields
-			"login":              schemaLoginField(),
-			"password":           schemaPasswordField(""),
-			"rotation_scripts":   schemaScriptField(),
-			"distinguished_name": schemaTextField(),
-			"connect_database":   schemaTextField(),
-			"managed":            schemaCheckboxField(),
-			"file_ref":           schemaFileRefField(),
-			"totp":               schemaOneTimeCodeField(),
+			"login":                  schemaLoginField(),
+			"password":               schemaPasswordField(""),
+			"rotation_scripts":       schemaScriptField(),
+			"private_pem_key":        schemaPrivatePemKeyField(),
+			"private_key_passphrase": schemaPrivateKeyPassphraseField(),
+			"distinguished_name":     schemaTextField(),
+			"connect_database":       schemaTextField(),
+			"managed":                schemaCheckboxField(),
+			"file_ref":               schemaFileRefField(),
+			"totp":                   schemaOneTimeCodeField(),
 		},
 	}
 }
@@ -115,6 +117,59 @@ func resourcePamUserCreate(ctx context.Context, d *schema.ResourceData, m interf
 			if err := SetFieldTypeInSchema(d, "password", "password"); err != nil {
 				return diag.FromErr(err)
 			}
+		}
+	}
+
+	// Process private key passphrase — stored as custom field (type: secret, label: "Private Key Passphrase")
+	var passphraseValue string
+	if fieldData := d.Get("private_key_passphrase"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		// Use password generation infrastructure for passphrase
+		if field, err := NewFieldFromSchema("password", fieldData); err != nil {
+			return diag.FromErr(err)
+		} else if field != nil {
+			if generated, err := applyGeneratePassword(fieldData, field); err != nil {
+				return diag.FromErr(err)
+			} else if generated {
+				if err := d.Set("private_key_passphrase", fieldData); err != nil {
+					return diag.FromErr(err)
+				}
+			}
+			if pwField, ok := field.(*core.Password); ok && len(pwField.Value) > 0 {
+				passphraseValue = pwField.Value[0]
+			}
+			// Store as custom field
+			secretField := core.NewSecret(passphraseValue)
+			secretField.Label = "Private Key Passphrase"
+			nrc.Custom = append(nrc.Custom, secretField)
+		}
+	}
+
+	// Process private PEM key — standard secret field, may generate using passphrase
+	if fieldData := d.Get("private_pem_key"); fieldData != nil && len(fieldData.([]interface{})) > 0 {
+		privatePEM, _, err := applyGeneratePamKey(fieldData, passphraseValue)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if privatePEM != "" {
+			if err := d.Set("private_pem_key", fieldData); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+		// Get value (generated or manual)
+		pemValue := privatePEM
+		if pemValue == "" {
+			if s, ok := fieldData.([]interface{}); ok && len(s) > 0 {
+				if m, ok := s[0].(map[string]interface{}); ok {
+					if v, ok := m["value"].(string); ok {
+						pemValue = v
+					}
+				}
+			}
+		}
+		if pemValue != "" {
+			secretField := core.NewSecret(pemValue)
+			secretField.Label = "Private PEM Key"
+			nrc.Fields = append(nrc.Fields, secretField)
 		}
 	}
 
@@ -279,6 +334,20 @@ func resourcePamUserRead(ctx context.Context, d *schema.ResourceData, m interfac
 		return diag.FromErr(err)
 	}
 
+	// Private PEM Key (standard secret field)
+	privatePemKey := getFieldResourceDataWithLabel("secret", "fields", secret, "Private PEM Key")
+	mergePamKeyField(d.Get("private_pem_key"), privatePemKey)
+	if err = d.Set("private_pem_key", privatePemKey); err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Private Key Passphrase (custom secret field)
+	passphrase := getFieldResourceDataWithLabel("secret", "custom", secret, "Private Key Passphrase")
+	mergePamPassphrase(d.Get("private_key_passphrase"), passphrase)
+	if err = d.Set("private_key_passphrase", passphrase); err != nil {
+		return diag.FromErr(err)
+	}
+
 	// PAM-specific fields
 	rotationScripts := getFieldResourceDataWithLabel("script", "fields", secret, "Rotation Scripts")
 	if err = d.Set("rotation_scripts", rotationScripts); err != nil {
@@ -342,6 +411,57 @@ func resourcePamUserUpdate(ctx context.Context, d *schema.ResourceData, m interf
 	if d.HasChange("password") {
 		if _, err := ApplyFieldChange("fields", "password", d, secret); err != nil {
 			return diag.FromErr(err)
+		}
+	}
+	// Handle private key passphrase (custom field)
+	if d.HasChange("private_key_passphrase") {
+		if _, err := ApplyFieldChange("custom", "private_key_passphrase", d, secret); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	// Handle private PEM key (standard field with potential regeneration)
+	if d.HasChange("private_pem_key") {
+		fieldData := d.Get("private_pem_key")
+		// Extract passphrase for potential key encryption
+		var passphrase string
+		if ppData := d.Get("private_key_passphrase"); ppData != nil {
+			if s, ok := ppData.([]interface{}); ok && len(s) > 0 {
+				if m, ok := s[0].(map[string]interface{}); ok {
+					if v, ok := m["value"].(string); ok {
+						passphrase = v
+					}
+				}
+			}
+		}
+		privatePEM, _, err := applyGeneratePamKey(fieldData, passphrase)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if privatePEM != "" {
+			if err := d.Set("private_pem_key", fieldData); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+		pemValue := privatePEM
+		if pemValue == "" {
+			if s, ok := fieldData.([]interface{}); ok && len(s) > 0 {
+				if m, ok := s[0].(map[string]interface{}); ok {
+					if v, ok := m["value"].(string); ok {
+						pemValue = v
+					}
+				}
+			}
+		}
+		secretField := core.NewSecret(pemValue)
+		secretField.Label = "Private PEM Key"
+		if secret.FieldExists("fields", "secret") {
+			if err := secret.UpdateField("fields", secretField); err != nil {
+				return diag.FromErr(err)
+			}
+		} else {
+			if err := secret.InsertField("fields", secretField); err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 	if d.HasChange("rotation_scripts") {

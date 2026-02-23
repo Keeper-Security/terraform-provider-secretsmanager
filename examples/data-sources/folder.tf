@@ -2,16 +2,16 @@ terraform {
   required_providers {
     secretsmanager = {
       source  = "keeper-security/secretsmanager"
-      version = ">= 1.1.7"
+      version = ">= 1.2.0"
     }
     local = {
-      source = "hashicorp/local"
+      source  = "hashicorp/local"
       version = "2.1.0"
     }
   }
 }
 
-provider "local" { }
+provider "local" {}
 provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
@@ -25,10 +25,10 @@ resource "local_file" "out" {
   filename        = "${path.module}/out.txt"
   file_permission = "0644"
   content         = <<EOT
-UID:       ${ data.secretsmanager_folder.my_folder.uid }
-Name:      ${ data.secretsmanager_folder.my_folder.name }
-ParentUID: ${ data.secretsmanager_folder.my_folder.parent_uid }
-Shared:    ${ data.secretsmanager_folder.my_folder.shared }
+UID:       ${data.secretsmanager_folder.my_folder.uid}
+Name:      ${data.secretsmanager_folder.my_folder.name}
+ParentUID: ${data.secretsmanager_folder.my_folder.parent_uid}
+Shared:    ${data.secretsmanager_folder.my_folder.shared}
 EOT
 }
 
