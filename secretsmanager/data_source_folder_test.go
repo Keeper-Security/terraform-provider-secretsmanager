@@ -2,7 +2,6 @@ package secretsmanager
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -10,18 +9,11 @@ import (
 )
 
 func TestAccDataSourceFolder(t *testing.T) {
-	accProvider, d := getConfiguredProvider(os.Getenv(envCredential))
-	if d.HasError() {
-		t.Fail()
+	// Get test folder UID - this will be populated during test setup
+	testFolderUid := testAcc.getTestFolder()
+	if testFolderUid == "" {
+		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
 	}
-	client := *accProvider.client
-
-	folders, err := findFolder("", "", "tf_acc_test_dir", client)
-	if err != nil || len(folders) == 0 {
-		t.Fail()
-	}
-
-	testFolderUid := folders[0].FolderUid
 	secretTitle := "tf_acc_test_datasource_folder"
 	secretTitleNew := secretTitle + "_new"
 	resourceName := fmt.Sprintf("secretsmanager_folder.%v", secretTitleNew)

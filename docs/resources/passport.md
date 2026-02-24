@@ -1,6 +1,77 @@
 # secretsmanager_passport Resource
 
-Use this resource to access secrets of type `passport` stored in Keeper Vault
+Use this resource to create and manage secrets of type `passport` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_passport" "my_passport" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  passport_number {
+    label          = "My Passport"
+    required       = true
+    privacy_screen = true
+    value          = "Passport# 1234"
+  }
+
+  name {
+    label          = "John"
+    required       = true
+    privacy_screen = true
+    value {
+      first  = "John"
+      middle = "D"
+      last   = "Doe"
+    }
+  }
+
+  birth_date {
+    label          = "Birth Date"
+    required       = true
+    privacy_screen = true
+    value          = 1651186276
+  }
+
+  date_issued {
+    label          = "Date Issued"
+    required       = true
+    privacy_screen = true
+    value          = 4651186276
+  }
+
+  expiration_date {
+    label          = "Passport Expiration Date"
+    required       = true
+    privacy_screen = true
+    value          = 21651186276
+  }
+
+  password {
+    label              = "My Pass"
+    required           = true
+    privacy_screen     = true
+    enforce_generation = true
+    generate           = "yes"
+    complexity {
+      length    = 20
+      caps      = 5
+      lowercase = 5
+      digits    = 5
+      special   = 5
+    }
+  }
+
+  address_ref {
+    label          = "My Address Ref"
+    required       = true
+    privacy_screen = true
+    value          = "<address ref UID>"
+  }
+}
+```
 
 ## Schema
 

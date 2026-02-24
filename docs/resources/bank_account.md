@@ -1,6 +1,82 @@
 # secretsmanager_bank_account Resource
 
-Use this resource to access secrets of type `bankAccount` stored in Keeper Vault
+Use this resource to create and manage secrets of type `bankAccount` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_bank_account" "my_bank_account" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  bank_account {
+    label          = "My Bank Account"
+    required       = true
+    privacy_screen = true
+    value {
+      account_type   = "Other"
+      routing_number = "1234567890"
+      account_number = "0987654321"
+      other_type     = "Investment"
+    }
+  }
+
+  name {
+    label          = "John"
+    required       = true
+    privacy_screen = true
+    value {
+      first  = "John"
+      middle = "D"
+      last   = "Doe"
+    }
+  }
+
+  login {
+    label          = "My Login"
+    required       = true
+    privacy_screen = true
+    value          = "MyLogin"
+  }
+
+  password {
+    label              = "My Pass"
+    required           = true
+    privacy_screen     = true
+    enforce_generation = true
+    generate           = "yes"
+    complexity {
+      length    = 20
+      caps      = 5
+      lowercase = 5
+      digits    = 5
+      special   = 5
+    }
+  }
+
+  url {
+    label          = "My Url"
+    required       = true
+    privacy_screen = true
+    value          = "https://192.168.1.1/"
+  }
+
+  card_ref {
+    label          = "My Card Ref"
+    required       = true
+    privacy_screen = true
+    value          = "<card ref UID>"
+  }
+
+  totp {
+    label          = "My TOTP"
+    required       = true
+    privacy_screen = true
+    value          = "otpauth://totp/Acme:Buster?secret=JBSWY3DPEHPK3PXP&issuer=Acme&algorithm=SHA1&digits=6&period=30"
+  }
+}
+```
 
 ## Schema
 

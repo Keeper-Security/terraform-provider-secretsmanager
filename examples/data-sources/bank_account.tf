@@ -2,95 +2,95 @@ terraform {
   required_providers {
     secretsmanager = {
       source  = "keeper-security/secretsmanager"
-      version = ">= 1.1.7"
+      version = ">= 1.2.0"
     }
     local = {
-      source = "hashicorp/local"
+      source  = "hashicorp/local"
       version = "2.1.0"
     }
   }
 }
 
-provider "local" { }
+provider "local" {}
 provider "secretsmanager" {
   credential = "<CREDENTIAL>"
   # credential = file("~/.keeper/credential")
 }
 
 data "secretsmanager_bank_account" "my_account" {
-  path        = "<record UID>"
+  path = "<record UID>"
 }
 
 resource "local_file" "out" {
   filename        = "${path.module}/out.txt"
   file_permission = "0644"
   content         = <<EOT
-UID:    ${ data.secretsmanager_bank_account.my_account.path }
-Type:   ${ data.secretsmanager_bank_account.my_account.type }
-Title:  ${ data.secretsmanager_bank_account.my_account.title }
-Notes:  ${ data.secretsmanager_bank_account.my_account.notes }
+UID:    ${data.secretsmanager_bank_account.my_account.path}
+Type:   ${data.secretsmanager_bank_account.my_account.type}
+Title:  ${data.secretsmanager_bank_account.my_account.title}
+Notes:  ${data.secretsmanager_bank_account.my_account.notes}
 ======
 
 Bank Account:
 -------------
-%{ for a in data.secretsmanager_bank_account.my_account.bank_account ~}
-Account Type:   ${ a.account_type }
-Other Type:     ${ a.other_type }
-Routing Number: ${ a.routing_number }
-Account Number: ${ a.account_number }
+%{for a in data.secretsmanager_bank_account.my_account.bank_account~}
+Account Type:   ${a.account_type}
+Other Type:     ${a.other_type}
+Routing Number: ${a.routing_number}
+Account Number: ${a.account_number}
 
-%{ endfor ~}
+%{endfor~}
 
 Name:
 -----
-%{ for n in data.secretsmanager_bank_account.my_account.name ~}
-First Name:   ${ n.first }
-Midlle Name:  ${ n.middle }
-Last Name:    ${ n.last }
+%{for n in data.secretsmanager_bank_account.my_account.name~}
+First Name:   ${n.first}
+Midlle Name:  ${n.middle}
+Last Name:    ${n.last}
 
-%{ endfor ~}
+%{endfor~}
 
-Login:    ${ data.secretsmanager_bank_account.my_account.login }
-Password: ${ data.secretsmanager_bank_account.my_account.password }
-URL:      ${ data.secretsmanager_bank_account.my_account.url }
+Login:    ${data.secretsmanager_bank_account.my_account.login}
+Password: ${data.secretsmanager_bank_account.my_account.password}
+URL:      ${data.secretsmanager_bank_account.my_account.url}
 
 Card Ref:
 ---------
-%{ for r in data.secretsmanager_bank_account.my_account.card_ref ~}
- Card Reference#:  ${ r.uid }
+%{for r in data.secretsmanager_bank_account.my_account.card_ref~}
+ Card Reference#:  ${r.uid}
  ----------------
-%{ for cc in r.payment_card ~}
-  Card Number:          ${ cc.card_number }
-  Card Expiration Date: ${ cc.card_expiration_date }
-  Card Security Code:   ${ cc.card_security_code }
-%{ endfor ~}
- Cardholder Name:  ${ r.cardholder_name }
- PIN Code:         ${ r.pin_code }
-%{ endfor }
+%{for cc in r.payment_card~}
+  Card Number:          ${cc.card_number}
+  Card Expiration Date: ${cc.card_expiration_date}
+  Card Security Code:   ${cc.card_security_code}
+%{endfor~}
+ Cardholder Name:  ${r.cardholder_name}
+ PIN Code:         ${r.pin_code}
+%{endfor}
 
 FileRefs:
 ---------
-%{ for fr in data.secretsmanager_bank_account.my_account.file_ref ~}
-UID:      ${ fr.uid }
-Title:    ${ fr.title }
-Name:     ${ fr.name }
-Type:     ${ fr.type }
-Size:     ${ fr.size }
-Last Modified:  ${ fr.last_modified }
+%{for fr in data.secretsmanager_bank_account.my_account.file_ref~}
+UID:      ${fr.uid}
+Title:    ${fr.title}
+Name:     ${fr.name}
+Type:     ${fr.type}
+Size:     ${fr.size}
+Last Modified:  ${fr.last_modified}
 
-Content/Base64: ${ fr.content_base64 }
+Content/Base64: ${fr.content_base64}
 
 
-%{ endfor ~}
+%{endfor~}
 
 TOTP:
 -----
-%{ for t in data.secretsmanager_bank_account.my_account.totp ~}
-URL:    ${ t.url }
-Token:  ${ t.token }
-TTL:    ${ t.ttl }
+%{for t in data.secretsmanager_bank_account.my_account.totp~}
+URL:    ${t.url}
+Token:  ${t.token}
+TTL:    ${t.ttl}
 
-%{ endfor ~}
+%{endfor~}
 
 EOT
 }

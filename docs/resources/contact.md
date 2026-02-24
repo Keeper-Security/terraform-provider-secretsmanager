@@ -1,6 +1,60 @@
 # secretsmanager_contact Resource
 
-Use this resource to access secrets of type `contact` stored in Keeper Vault
+Use this resource to create and manage secrets of type `contact` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_contact" "my_contact" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  name {
+    label          = "John"
+    required       = true
+    privacy_screen = true
+    value {
+      first  = "John"
+      middle = "D"
+      last   = "Doe"
+    }
+  }
+
+  company {
+    label          = "My Company"
+    required       = true
+    privacy_screen = true
+    value          = "My Company"
+  }
+
+  email {
+    label          = "My Email"
+    required       = true
+    privacy_screen = true
+    value          = "My Email"
+  }
+
+  phone {
+    label          = "My Phone"
+    required       = true
+    privacy_screen = true
+    value {
+      region = "US"
+      number = "202-555-0130"
+      ext    = "9987"
+      type   = "Work"
+    }
+  }
+
+  address_ref {
+    label          = "My Address Ref"
+    required       = true
+    privacy_screen = true
+    value          = "<address ref UID>"
+  }
+}
+```
 
 ## Schema
 

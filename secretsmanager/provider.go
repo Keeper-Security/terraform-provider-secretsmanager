@@ -49,6 +49,7 @@ func Provider() *schema.Provider {
 			"secretsmanager_login":                dataSourceLogin(),
 			"secretsmanager_membership":           dataSourceMembership(),
 			"secretsmanager_pam_database":         dataSourcePamDatabase(),
+			"secretsmanager_pam_directory":        dataSourcePamDirectory(),
 			"secretsmanager_pam_machine":          dataSourcePamMachine(),
 			"secretsmanager_pam_user":             dataSourcePamUser(),
 			"secretsmanager_passport":             dataSourcePassport(),
@@ -75,6 +76,7 @@ func Provider() *schema.Provider {
 			"secretsmanager_login":                resourceLogin(),
 			"secretsmanager_membership":           resourceMembership(),
 			"secretsmanager_pam_database":         resourcePamDatabase(),
+			"secretsmanager_pam_directory":        resourcePamDirectory(),
 			"secretsmanager_pam_machine":          resourcePamMachine(),
 			"secretsmanager_pam_user":             resourcePamUser(),
 			"secretsmanager_passport":             resourcePassport(),
@@ -126,55 +128,57 @@ type providerMeta struct {
 
 // map attribute names from schema to field types in record v3
 var mapSchemaToRecordFieldName map[string]string = map[string]string{
-	"account_number":      "accountNumber", // Text
-	"address":             "address",
-	"address_ref":         "addressRef",
-	"bank_account":        "bankAccount",
-	"birth_date":          "birthDate",
-	"card_ref":            "cardRef",
-	"checkbox":            "checkbox",
-	"company":             "text", // Text
-	"connect_database":    "text", // Text with label
-	"database_id":         "text", // Text with label
-	"database_type":       "databaseType",
-	"date":                "date",
-	"directory_type":      "directoryType",
-	"distinguished_name":  "text", // Text with label
-	"email":               "email",
-	"expiration_date":     "expirationDate",
-	"file_ref":            "fileRef",
-	"group_number":        "groupNumber", // Text
-	"host":                "host",
-	"instance_id":         "text", // Text with label
-	"instance_name":       "text", // Text with label
-	"key_pair":            "keyPair",
-	"license_number":      "licenseNumber",
-	"login":               "login",
-	"managed":             "checkbox", // Checkbox with label
-	"multiline":           "multiline",
-	"name":                "name",
-	"note":                "note", // SecureNote
-	"one_time_code":       "oneTimeCode",
-	"operating_system":    "text", // Text with label
-	"pam_hostname":        "pamHostname",
-	"pam_resources":       "pamResources",
-	"password":            "password",
-	"payment_card":        "paymentCard",
-	"phone":               "phone",
-	"pin_code":            "pinCode",
-	"private_pem_key":     "secret", // Secret with label
-	"provider_group":      "text", // Text with label
-	"provider_region":     "text", // Text with label
-	"rotation_scripts":    "script", // Script with label
-	"schedule":            "schedule",
-	"script":              "script",
-	"secret":              "secret",
-	"security_question":   "securityQuestion",
-	"ssl_verification":    "checkbox", // Checkbox with label
-	"text":                "text",
-	"title":               "title", // Text
-	"use_ssl":             "checkbox", // Checkbox with label
-	"url":               "url",
+	"account_number":         "accountNumber", // Text
+	"address":                "address",
+	"address_ref":            "addressRef",
+	"bank_account":           "bankAccount",
+	"birth_date":             "birthDate",
+	"card_ref":               "cardRef",
+	"checkbox":               "checkbox",
+	"company":                "text", // Text
+	"connect_database":       "text", // Text with label
+	"database_id":            "text", // Text with label
+	"database_type":          "databaseType",
+	"date":                   "date",
+	"directory_type":         "directoryType",
+	"distinguished_name":     "text", // Text with label
+	"email":                  "email",
+	"expiration_date":        "expirationDate",
+	"file_ref":               "fileRef",
+	"group_number":           "groupNumber", // Text
+	"host":                   "host",
+	"instance_id":            "text", // Text with label
+	"instance_name":          "text", // Text with label
+	"key_pair":               "keyPair",
+	"license_number":         "licenseNumber",
+	"login":                  "login",
+	"managed":                "checkbox", // Checkbox with label
+	"multiline":              "multiline",
+	"name":                   "name",
+	"note":                   "note", // SecureNote
+	"one_time_code":          "oneTimeCode",
+	"operating_system":       "text", // Text with label
+	"pam_hostname":           "pamHostname",
+	"pam_resources":          "pamResources",
+	"pam_settings":           "pamSettings",
+	"password":               "password",
+	"payment_card":           "paymentCard",
+	"phone":                  "phone",
+	"pin_code":               "pinCode",
+	"private_key_passphrase": "secret", // Secret custom field with label
+	"private_pem_key":        "secret", // Secret with label
+	"provider_group":         "text",   // Text with label
+	"provider_region":        "text",   // Text with label
+	"rotation_scripts":       "script", // Script with label
+	"schedule":               "schedule",
+	"script":                 "script",
+	"secret":                 "secret",
+	"security_question":      "securityQuestion",
+	"ssl_verification":       "checkbox", // Checkbox with label
+	"text":                   "text",
+	"title":                  "title",    // Text
+	"use_ssl":                "checkbox", // Checkbox with label
+	"url":                    "url",
 	// schema attributes that use field label instead of field type
 	// "company":            "text",          // contact
 	"cardholder_name":       "text",          // bankCard
@@ -868,7 +872,7 @@ func getFieldResourceDataWithLabel(fieldType, section string, secret *core.Recor
 							ftSchema["value"] = int64(num)
 						} else if boolVal, ok := fiv.(bool); ok {
 							// simple value - bool
-							ftSchema["value"] = []interface{}{boolVal}
+							ftSchema["value"] = boolVal
 						} else if fmap, ok := fiv.(map[string]interface{}); ok && len(fmap) > 0 {
 							// complex value - map struct fields to schema
 							fv := map[string]interface{}{}
@@ -2617,6 +2621,181 @@ func applyGeneratePassword(fieldData interface{}, field interface{}) (generated 
 		return false, fmt.Errorf("applyGeneratePassword expects field to be of type *core.Password")
 	}
 	return false, nil
+}
+
+// applyGeneratePamKey generates an SSH key pair for PAM records.
+// The private key PEM is stored in the secret field value.
+// Returns the public key string for optional storage elsewhere.
+func applyGeneratePamKey(fieldData interface{}, passphrase string) (privatePEM string, publicKey string, e error) {
+	if generate, _ := ParseGeneratePassword(fieldData); generate {
+		keyType, keyBits := ParseKeyTypeAndBits(fieldData)
+
+		result, err := GenerateSSHKeyPair(keyType, keyBits, passphrase)
+		if err != nil {
+			return "", "", err
+		}
+
+		// Update schema data with generated value
+		if s, ok := fieldData.([]interface{}); ok && len(s) > 0 {
+			if fmap, ok := s[0].(map[string]interface{}); ok {
+				fmap["value"] = result.PrivateKey
+				fmap["public_key"] = result.PublicKey
+			}
+		}
+		return result.PrivateKey, result.PublicKey, nil
+	}
+	return "", "", nil
+}
+
+// mergePamKeyField preserves schema-only attributes (generate, key_type, key_bits, public_key)
+// that aren't stored in the vault record, so they survive the Read cycle.
+func mergePamKeyField(schemaField interface{}, recordField interface{}) {
+	if schemaField == nil || recordField == nil {
+		return
+	}
+	sfi, ok := schemaField.([]interface{})
+	if !ok || len(sfi) == 0 {
+		return
+	}
+	sfmap, ok := sfi[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+	rfi, ok := recordField.([]interface{})
+	if !ok || len(rfi) == 0 {
+		return
+	}
+	rfmap, ok := rfi[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+	for _, key := range []string{"generate", "key_type", "key_bits", "public_key"} {
+		if v, found := sfmap[key]; found {
+			rfmap[key] = v
+		}
+	}
+}
+
+// mergePamPassphrase preserves schema-only attributes (generate, complexity)
+// for the private key passphrase custom field.
+func mergePamPassphrase(schemaField interface{}, recordField interface{}) {
+	if schemaField == nil || recordField == nil {
+		return
+	}
+	sfi, ok := schemaField.([]interface{})
+	if !ok || len(sfi) == 0 {
+		return
+	}
+	sfmap, ok := sfi[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+	rfi, ok := recordField.([]interface{})
+	if !ok || len(rfi) == 0 {
+		return
+	}
+	rfmap, ok := rfi[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+	for _, key := range []string{"generate", "complexity"} {
+		if v, found := sfmap[key]; found {
+			rfmap[key] = v
+		}
+	}
+	// Don't leak the vault label into schema state
+	delete(rfmap, "label")
+}
+
+// applyGenerateKeyPair generates an SSH key pair for the key_pair field.
+// If passphrase is provided, the private key is encrypted with it.
+func applyGenerateKeyPair(fieldData interface{}, field interface{}, passphrase string) (generated bool, e error) {
+	if fv, ok := field.(*core.KeyPairs); ok {
+		if generate, _ := ParseGeneratePassword(fieldData); generate {
+			keyType, keyBits := ParseKeyTypeAndBits(fieldData)
+
+			result, err := GenerateSSHKeyPair(keyType, keyBits, passphrase)
+			if err != nil {
+				return false, err
+			}
+
+			// Update the core field value
+			keyPair := core.KeyPair{
+				PublicKey:  result.PublicKey,
+				PrivateKey: result.PrivateKey,
+			}
+			if len(fv.Value) > 0 {
+				fv.Value = fv.Value[0:0]
+			}
+			fv.Value = append(fv.Value, keyPair)
+
+			// Update schema data
+			if s, ok := fieldData.([]interface{}); ok && len(s) > 0 {
+				if fmap, ok := s[0].(map[string]interface{}); ok {
+					fmap["value"] = []interface{}{
+						map[string]interface{}{
+							"public_key":  result.PublicKey,
+							"private_key": result.PrivateKey,
+						},
+					}
+				}
+			}
+			return true, nil
+		}
+	} else {
+		return false, fmt.Errorf("applyGenerateKeyPair expects field to be of type *core.KeyPairs")
+	}
+	return false, nil
+}
+
+// mergeKeyPair preserves schema-only attributes (generate, key_type, key_bits)
+// that aren't stored in the vault record, so they survive the Read cycle.
+func mergeKeyPair(schemaField interface{}, recordField interface{}) {
+	if schemaField != nil && recordField != nil {
+		var generate, keyType, keyBits interface{}
+		if sfi, ok := schemaField.([]interface{}); ok && len(sfi) > 0 {
+			if sfmap, ok := sfi[0].(map[string]interface{}); ok {
+				if v, found := sfmap["generate"]; found {
+					generate = v
+				}
+				if v, found := sfmap["key_type"]; found {
+					keyType = v
+				}
+				if v, found := sfmap["key_bits"]; found {
+					keyBits = v
+				}
+			}
+		}
+		if sfi, ok := recordField.([]interface{}); ok && len(sfi) > 0 {
+			if sfmap, ok := sfi[0].(map[string]interface{}); ok {
+				if generate != nil {
+					sfmap["generate"] = generate
+				}
+				if keyType != nil {
+					sfmap["key_type"] = keyType
+				}
+				if keyBits != nil {
+					sfmap["key_bits"] = keyBits
+				}
+			}
+		}
+	}
+}
+
+func ParseKeyTypeAndBits(data interface{}) (SSHKeyType, int) {
+	keyType := SSHKeyTypeED25519
+	keyBits := 4096
+	if s, ok := data.([]interface{}); ok && len(s) > 0 {
+		if m, ok := s[0].(map[string]interface{}); ok {
+			if kt, ok := m["key_type"].(string); ok && kt != "" {
+				keyType = SSHKeyType(kt)
+			}
+			if kb, ok := m["key_bits"].(int); ok && kb > 0 {
+				keyBits = kb
+			}
+		}
+	}
+	return keyType, keyBits
 }
 
 func isThrottled(e error) bool {

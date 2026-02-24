@@ -1,6 +1,35 @@
 # secretsmanager_birth_certificate Resource
 
-Use this resource to access secrets of type `birthCertificate` stored in Keeper Vault
+Use this resource to create and manage secrets of type `birthCertificate` in Keeper Vault
+
+## Example Usage
+
+```terraform
+resource "secretsmanager_birth_certificate" "my_birth_certificate" {
+  folder_uid = "<folder UID>"
+  title      = "My Title"
+  notes      = "My Notes"
+
+  name {
+    label          = "John"
+    required       = true
+    privacy_screen = true
+    value {
+      first  = "John"
+      middle = "D"
+      last   = "Doe"
+    }
+  }
+
+  birth_date {
+    label          = "Birth Date"
+    required       = true
+    privacy_screen = true
+    value          = 1651186276
+    # unix time in milliseconds
+  }
+}
+```
 
 ## Schema
 
