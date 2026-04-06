@@ -1,0 +1,30 @@
+terraform {
+  required_providers {
+    secretsmanager = {
+      source  = "keeper-security/secretsmanager"
+      version = ">= 1.2.0"
+    }
+  }
+}
+
+provider "secretsmanager" {
+  credential = "<CREDENTIAL>"
+  # credential = file("~/.keeper/credential")
+}
+
+# Ephemeral resources do not store secret values in the Terraform state file.
+# This makes them a more secure option for accessing sensitive credentials.
+
+ephemeral "secretsmanager_encrypted_notes" "my_notes" {
+  path = "<record UID>"
+}
+
+output "notes" {
+  value     = ephemeral.secretsmanager_encrypted_notes.my_notes.note
+  ephemeral = true
+}
+
+output "date" {
+  value     = ephemeral.secretsmanager_encrypted_notes.my_notes.date
+  ephemeral = true
+}
