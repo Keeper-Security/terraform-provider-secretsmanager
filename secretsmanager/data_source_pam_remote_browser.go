@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func dataSourcePamRemoteBrowser() *schema.Resource {
@@ -43,11 +42,9 @@ func dataSourcePamRemoteBrowser() *schema.Resource {
 			// PAM Remote Browser specific fields
 			"rbi_url": schemaTextField(),
 			"pam_remote_browser_settings": {
-				Type:             schema.TypeString,
-				Computed:         true,
-				ValidateFunc:     validation.StringIsJSON,
-				DiffSuppressFunc: suppressEquivalentJSON,
-				Description:      "PAM Remote Browser connection settings as JSON string.",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "PAM Remote Browser connection settings as JSON string.",
 			},
 			"traffic_encryption_seed": schemaTextField(),
 			"file_ref":                schemaFileRefField(),
