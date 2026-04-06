@@ -710,7 +710,8 @@ func bankAccountToListValue(ctx context.Context, secret *core.Record) (types.Lis
 }
 
 // addressRefToListValue fetches the referenced address record and converts it to a Framework types.List.
-// If the UID is empty or the referenced record cannot be fetched, it returns an empty list without error.
+// If the UID is empty, returns an empty list. If the referenced record cannot be fetched, returns a
+// partial object (uid only, fields empty) with a warning diagnostic so callers are aware.
 func addressRefToListValue(ctx context.Context, secret *core.Record, client core.SecretsManager) (types.List, diag.Diagnostics) {
 	uid := strings.TrimSpace(secret.GetFieldValueByType("addressRef"))
 	if uid == "" {
@@ -727,7 +728,12 @@ func addressRefToListValue(ctx context.Context, secret *core.Record, client core
 		"country": types.StringValue(""),
 	}
 
-	if refs, err := getSecrets(client, []string{uid}); err == nil && len(refs) > 0 {
+	var diags diag.Diagnostics
+	refs, err := getSecrets(client, []string{uid})
+	if err != nil || len(refs) == 0 {
+		diags.AddWarning("Referenced Address Record Not Found",
+			"Could not fetch addressRef record with UID '"+uid+"'. Address fields will be empty.")
+	} else {
 		if fields := refs[0].GetFieldsByType("address"); len(fields) > 0 {
 			if values, ok := fields[0]["value"].([]interface{}); ok && len(values) > 0 {
 				if vmap, ok := values[0].(map[string]interface{}); ok {
@@ -754,16 +760,20 @@ func addressRefToListValue(ctx context.Context, secret *core.Record, client core
 		}
 	}
 
-	obj, diags := types.ObjectValue(addressRefObjectType.AttrTypes, attrs)
+	obj, objDiags := types.ObjectValue(addressRefObjectType.AttrTypes, attrs)
+	diags.Append(objDiags...)
 	if diags.HasError() {
 		return types.ListNull(addressRefObjectType), diags
 	}
 
-	return types.ListValue(addressRefObjectType, []attr.Value{obj})
+	list, listDiags := types.ListValue(addressRefObjectType, []attr.Value{obj})
+	diags.Append(listDiags...)
+	return list, diags
 }
 
 // cardRefToListValue fetches the referenced card record and converts it to a Framework types.List.
-// If the UID is empty or the referenced record cannot be fetched, it returns an empty list without error.
+// If the UID is empty, returns an empty list. If the referenced record cannot be fetched, returns a
+// partial object (uid only, fields empty) with a warning diagnostic so callers are aware.
 func cardRefToListValue(ctx context.Context, secret *core.Record, client core.SecretsManager) (types.List, diag.Diagnostics) {
 	uid := strings.TrimSpace(secret.GetFieldValueByType("cardRef"))
 	if uid == "" {
@@ -783,7 +793,12 @@ func cardRefToListValue(ctx context.Context, secret *core.Record, client core.Se
 		"pin_code":        types.StringValue(""),
 	}
 
-	if refs, err := getSecrets(client, []string{uid}); err == nil && len(refs) > 0 {
+	var diags diag.Diagnostics
+	refs, err := getSecrets(client, []string{uid})
+	if err != nil || len(refs) == 0 {
+		diags.AddWarning("Referenced Card Record Not Found",
+			"Could not fetch cardRef record with UID '"+uid+"'. Card fields will be empty.")
+	} else {
 		ref := refs[0]
 
 		cardNumber, cardExpDate, cardSecCode := "", "", ""
@@ -822,12 +837,15 @@ func cardRefToListValue(ctx context.Context, secret *core.Record, client core.Se
 		cardAttrs["pin_code"] = types.StringValue(ref.GetFieldValueByType("pinCode"))
 	}
 
-	obj, diags := types.ObjectValue(cardRefObjectType.AttrTypes, cardAttrs)
+	obj, objDiags := types.ObjectValue(cardRefObjectType.AttrTypes, cardAttrs)
+	diags.Append(objDiags...)
 	if diags.HasError() {
 		return types.ListNull(cardRefObjectType), diags
 	}
 
-	return types.ListValue(cardRefObjectType, []attr.Value{obj})
+	list, listDiags := types.ListValue(cardRefObjectType, []attr.Value{obj})
+	diags.Append(listDiags...)
+	return list, diags
 }
 
 // pamHostnameToListValue converts the pamHostname field to a Framework types.List.

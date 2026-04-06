@@ -86,6 +86,11 @@ func (e *ephemeralSsnCard) Open(ctx context.Context, req ephemeral.OpenRequest, 
 		return
 	}
 
+	if e.meta.client == nil {
+		resp.Diagnostics.AddError("Provider Not Configured", "KSM client is not configured. Ensure the provider credential is set.")
+		return
+	}
+
 	client := *e.meta.client
 	path := strings.TrimSpace(data.Path.ValueString())
 	title := ""
