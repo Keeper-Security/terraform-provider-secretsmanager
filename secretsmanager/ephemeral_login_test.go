@@ -2,6 +2,7 @@ package secretsmanager
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -52,6 +53,32 @@ func TestAccEphemeralLoginByTitle(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: config,
+			},
+		},
+	})
+}
+
+func TestAccEphemeralLoginWrongType(t *testing.T) {
+	// Use a bankCard record UID with the login ephemeral resource — should error
+	secretUid, secretTitle := testAcc.getRecordInfo("bankCard")
+	if secretUid == "" || secretTitle == "" {
+		t.Fatal("Failed to access test data - missing bankCard UID and/or Title")
+	}
+
+	config := fmt.Sprintf(`
+		ephemeral "secretsmanager_login" "wrong_type" {
+			path = "%v"
+			title = "%v"
+		}
+	`, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config:      config,
+				ExpectError: regexp.MustCompile(`Record Type Mismatch`),
 			},
 		},
 	})
