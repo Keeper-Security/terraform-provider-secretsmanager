@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Ephemeral Resources** (KSM-871):
+  - Add ephemeral resource support for Terraform 1.10+, ensuring secrets are never stored in `terraform.tfstate`
+  - Ephemeral resources available for all record types: `login`, `field`, `record`, `database_credentials`, `server_credentials`, `ssh_keys`, `encrypted_notes`, `address`, `bank_account`, `bank_card`, `birth_certificate`, `contact`, `driver_license`, `health_insurance`, `membership`, `passport`, `photo`, `software_license`, `ssn_card`, `file`, `pam_user`, `pam_machine`, `pam_database`, `pam_directory`
+  - Use `ephemeral "secretsmanager_<type>" "name" { ... }` instead of `data` blocks to keep secrets out of state
+  - Introduce Terraform Plugin Framework alongside existing SDKv2 via protocol v6 mux server
+  - Add `terraform-plugin-framework` v1.18.0 and `terraform-plugin-mux` v0.22.0 dependencies
+  - All existing resources and data sources remain fully backward compatible
+  - Add documentation and examples for all ephemeral resources
+
+- **PAM Remote Browser** (KSM-871):
+  - Add `secretsmanager_pam_remote_browser` resource, data source, and ephemeral resource
+  - Support for Remote Browser Isolation (RBI) URL, browser settings (JSON), traffic encryption seed, file references, and TOTP
+  - Full CRUD lifecycle with import support
+
 ## [1.2.0]
 
 ### Security

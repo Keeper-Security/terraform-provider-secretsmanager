@@ -1,11 +1,16 @@
 package secretsmanager
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -18,6 +23,7 @@ const (
 
 var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
+var testAccProtoV6ProviderFactories map[string]func() (tfprotov6.ProviderServer, error)
 var testAcc *testAccValues
 
 type testAccValues struct {
@@ -37,6 +43,26 @@ func init() {
 	testAccProvider = Provider()
 	testAccProviders = map[string]*schema.Provider{
 		"secretsmanager": testAccProvider,
+	}
+
+	testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
+		"secretsmanager": func() (tfprotov6.ProviderServer, error) {
+			ctx := context.Background()
+			sdkv2Provider := Provider()
+			upgradedSdkv2, err := tf5to6server.UpgradeServer(ctx, sdkv2Provider.GRPCProvider)
+			if err != nil {
+				return nil, err
+			}
+			servers := []func() tfprotov6.ProviderServer{
+				func() tfprotov6.ProviderServer { return upgradedSdkv2 },
+				providerserver.NewProtocol6(NewFWProvider()),
+			}
+			muxServer, err := tf6muxserver.NewMuxServer(ctx, servers...)
+			if err != nil {
+				return nil, err
+			}
+			return muxServer.ProviderServer(), nil
+		},
 	}
 
 	testAcc = &testAccValues{
