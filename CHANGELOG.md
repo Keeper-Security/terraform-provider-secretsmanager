@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0]
+
 ### Added
 - **Ephemeral Resources** (KSM-871):
   - Add ephemeral resource support for Terraform 1.10+, ensuring secrets are never stored in `terraform.tfstate`
-  - Ephemeral resources available for all record types: `login`, `field`, `record`, `database_credentials`, `server_credentials`, `ssh_keys`, `encrypted_notes`, `address`, `bank_account`, `bank_card`, `birth_certificate`, `contact`, `driver_license`, `health_insurance`, `membership`, `passport`, `photo`, `software_license`, `ssn_card`, `file`, `pam_user`, `pam_machine`, `pam_database`, `pam_directory`
+  - Ephemeral resources available for all 25 record types: `login`, `field`, `record`, `database_credentials`, `server_credentials`, `ssh_keys`, `encrypted_notes`, `address`, `bank_account`, `bank_card`, `birth_certificate`, `contact`, `driver_license`, `health_insurance`, `membership`, `passport`, `photo`, `software_license`, `ssn_card`, `file`, `pam_user`, `pam_machine`, `pam_database`, `pam_directory`, `pam_remote_browser`
   - Use `ephemeral "secretsmanager_<type>" "name" { ... }` instead of `data` blocks to keep secrets out of state
   - Introduce Terraform Plugin Framework alongside existing SDKv2 via protocol v6 mux server
   - Add `terraform-plugin-framework` v1.18.0 and `terraform-plugin-mux` v0.22.0 dependencies
@@ -21,6 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Add `secretsmanager_pam_remote_browser` resource, data source, and ephemeral resource
   - Support for Remote Browser Isolation (RBI) URL, browser settings (JSON), traffic encryption seed, file references, and TOTP
   - Full CRUD lifecycle with import support
+
+### Fixed
+- Remove invalid `DiffSuppressFunc` and `ValidateFunc` from computed-only `pam_remote_browser_settings` field in the `pam_remote_browser` data source
+- Add nil-check guard in all ephemeral resource `Open()` methods to prevent panics if provider configuration is missing
+- Surface warning diagnostics when referenced `addressRef` or `cardRef` records cannot be fetched, instead of silently returning empty fields
+- Mark `credential` provider attribute as sensitive to prevent credentials appearing in plan output
 
 ## [1.2.0]
 
@@ -98,7 +106,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix folder UID validation and empty folder restriction in resource schema descriptions
 
-[Unreleased]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.1.7...v1.2.0
 [1.1.7]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.1.6...v1.1.7
 [1.1.6]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/releases/tag/v1.1.6
