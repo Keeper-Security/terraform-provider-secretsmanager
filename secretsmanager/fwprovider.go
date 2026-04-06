@@ -44,6 +44,7 @@ func (p *fwProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *p
 		Attributes: map[string]fwschema.Attribute{
 			"credential": fwschema.StringAttribute{
 				Optional:    true,
+				Sensitive:   true,
 				Description: "Credential to use for Secrets Manager authentication. Can also be sourced from the `KEEPER_CREDENTIAL` environment variable.",
 			},
 		},

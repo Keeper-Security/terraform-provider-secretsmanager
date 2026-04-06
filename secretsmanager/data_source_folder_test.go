@@ -29,7 +29,7 @@ func TestAccDataSourceFolder(t *testing.T) {
 	`, secretTitleNew, testFolderUid, secretTitle, secretTitle, resourceName, resourceName)
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{

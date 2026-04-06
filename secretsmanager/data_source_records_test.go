@@ -13,7 +13,7 @@ import (
 func TestAccDataSourceRecords_Basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceRecordsConfig_basic(),
@@ -33,7 +33,7 @@ func TestAccDataSourceRecords_Basic(t *testing.T) {
 func TestAccDataSourceRecords_WithTitles(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceRecordsConfig_withTitles(),
@@ -50,7 +50,7 @@ func TestAccDataSourceRecords_WithTitles(t *testing.T) {
 func TestAccDataSourceRecords_MultipleTitles(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceRecordsConfig_mixed(),
@@ -67,7 +67,7 @@ func TestAccDataSourceRecords_MultipleTitles(t *testing.T) {
 func TestAccDataSourceRecords_LargeBatch(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceRecordsConfig_largeBatch(),
@@ -159,7 +159,7 @@ data "secretsmanager_records" "test" {
 func TestAccDataSourceRecords_WithTitlePatterns(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceRecordsConfig_withTitlePatterns(),
@@ -188,7 +188,7 @@ func TestAccDataSourceRecords_WithTitlePatterns(t *testing.T) {
 func TestAccDataSourceRecords_InvalidPattern(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccDataSourceRecordsConfig_invalidPattern(),
@@ -201,7 +201,7 @@ func TestAccDataSourceRecords_InvalidPattern(t *testing.T) {
 func TestAccDataSourceRecords_PatternTooLong(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccDataSourceRecordsConfig_patternTooLong(),
@@ -214,7 +214,7 @@ func TestAccDataSourceRecords_PatternTooLong(t *testing.T) {
 func TestAccDataSourceRecords_CombinedWithPatterns(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceRecordsConfig_combinedWithPatterns(),
@@ -243,7 +243,7 @@ func TestAccDataSourceRecords_CombinedWithPatterns(t *testing.T) {
 func TestAccDataSourceRecords_MultiplePatterns(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceRecordsConfig_multiplePatterns(),

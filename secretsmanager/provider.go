@@ -27,6 +27,7 @@ func Provider() *schema.Provider {
 			"credential": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("KEEPER_CREDENTIAL", nil),
 				Description: "Credential to use for Secrets Manager authentication. Can also be sourced from the `KEEPER_CREDENTIAL` environment variable.",
 			},

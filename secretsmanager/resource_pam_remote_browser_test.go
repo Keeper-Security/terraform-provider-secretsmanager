@@ -31,7 +31,7 @@ func TestAccResourcePamRemoteBrowser_create(t *testing.T) {
 
 	resourceName := fmt.Sprintf("secretsmanager_pam_remote_browser.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -66,7 +66,7 @@ func TestAccResourcePamRemoteBrowser_create_no_uid(t *testing.T) {
 
 	resourceName := fmt.Sprintf("secretsmanager_pam_remote_browser.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -102,7 +102,7 @@ func TestAccResourcePamRemoteBrowser_import(t *testing.T) {
 
 	resourceName := fmt.Sprintf("secretsmanager_pam_remote_browser.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{

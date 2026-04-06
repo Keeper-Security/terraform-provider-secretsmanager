@@ -56,7 +56,7 @@ func TestAccResourcePamUser_create(t *testing.T) {
 
 	resourceName := fmt.Sprintf("secretsmanager_pam_user.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -117,7 +117,7 @@ func TestAccResourcePamUser_update(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_pam_user.%v", secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -165,7 +165,7 @@ func TestAccResourcePamUser_deleteDetection(t *testing.T) {
 	`, secretTitle, secretFolderUid, secretUid, secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -174,7 +174,7 @@ func TestAccResourcePamUser_deleteDetection(t *testing.T) {
 			{
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
-					client := *testAccProvider.Meta().(providerMeta).client
+					client := *testAccClient()
 					if err := deleteRecord(secretUid, client); err != nil {
 						t.Fail()
 					}
@@ -211,7 +211,7 @@ func TestAccResourcePamUser_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -250,7 +250,7 @@ func TestAccResourcePamUser_generatePrivatePemKey(t *testing.T) {
 
 	resourceName := fmt.Sprintf("secretsmanager_pam_user.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -314,7 +314,7 @@ func TestAccResourcePamUser_generatePrivatePemKeyWithPassphrase(t *testing.T) {
 
 	resourceName := fmt.Sprintf("secretsmanager_pam_user.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
