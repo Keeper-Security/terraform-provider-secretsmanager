@@ -116,7 +116,7 @@ Optional:
 - **label** (String) Field label.
 - **privacy_screen** (Boolean) Privacy screen flag.
 - **required** (Boolean) Required flag.
-- **value** (String) Field value.
+- **value** (String, Sensitive) Field value.
 
 Read-Only:
 

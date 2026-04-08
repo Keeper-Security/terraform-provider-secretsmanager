@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add nil-check guard in all ephemeral resource `Open()` methods to prevent panics if provider configuration is missing
 - Surface warning diagnostics when referenced `addressRef` or `cardRef` records cannot be fetched, instead of silently returning empty fields
 - Mark `credential` provider attribute as sensitive to prevent credentials appearing in plan output
+- Mark sensitive fields across all record types to prevent secrets appearing in plan output: payment card numbers and security codes, bank account and routing numbers, PIN codes, TOTP seeds, license numbers, and secret field values
 
 ## [1.2.0]
 

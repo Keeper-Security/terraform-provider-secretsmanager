@@ -119,10 +119,10 @@ Read-Only:
 
 Optional:
 
-- **account_number** (String) Account number.
+- **account_number** (String, Sensitive) Account number.
 - **account_type** (String) Account type.
 - **other_type** (String) Other type info.
-- **routing_number** (String) Routing number.
+- **routing_number** (String, Sensitive) Routing number.
 
 <a id="nestedblock--card_ref"></a>
 ### Nested Schema for `card_ref`
@@ -240,7 +240,7 @@ Optional:
 - **label** (String) Field label.
 - **privacy_screen** (Boolean) Privacy screen flag.
 - **required** (Boolean) Required flag.
-- **value** (String) Field value.
+- **value** (String, Sensitive) Field value.
 
 Read-Only:
 

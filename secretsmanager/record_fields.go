@@ -120,6 +120,7 @@ func schemaAccountNumberField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -290,11 +291,13 @@ func schemaBankAccountField() *schema.Schema {
 							"routing_number": {
 								Type:        schema.TypeString,
 								Optional:    true,
+								Sensitive:   true,
 								Description: "Routing number.",
 							},
 							"account_number": {
 								Type:        schema.TypeString,
 								Optional:    true,
+								Sensitive:   true,
 								Description: "Account number.",
 							},
 							"other_type": {
@@ -822,6 +825,7 @@ func schemaLicenseNumberField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -1000,6 +1004,7 @@ func schemaOneTimeCodeField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -1156,6 +1161,7 @@ func schemaPaymentCardField() *schema.Schema {
 							"card_number": {
 								Type:        schema.TypeString,
 								Optional:    true,
+								Sensitive:   true,
 								Description: "Card number.",
 							},
 							"card_expiration_date": {
@@ -1166,6 +1172,7 @@ func schemaPaymentCardField() *schema.Schema {
 							"card_security_code": {
 								Type:        schema.TypeString,
 								Optional:    true,
+								Sensitive:   true,
 								Description: "Card security code.",
 							},
 						},
@@ -1293,6 +1300,7 @@ func schemaPinCodeField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -1332,6 +1340,7 @@ func schemaSecretField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},

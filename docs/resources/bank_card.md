@@ -140,8 +140,8 @@ Read-Only:
 Optional:
 
 - **card_expiration_date** (String) Card expiration date.
-- **card_number** (String) Card number.
-- **card_security_code** (String) Card security code.
+- **card_number** (String, Sensitive) Card number.
+- **card_security_code** (String, Sensitive) Card security code.
 
 <a id="nestedblock--pin_code"></a>
 ### Nested Schema for `pin_code`
@@ -151,7 +151,7 @@ Optional:
 - **label** (String) Field label.
 - **privacy_screen** (Boolean) Privacy screen flag.
 - **required** (Boolean) Required flag.
-- **value** (String) Field value.
+- **value** (String, Sensitive) Field value.
 
 Read-Only:
 
