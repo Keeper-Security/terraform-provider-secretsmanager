@@ -337,6 +337,142 @@ func getFieldItemsData(recordDict map[string]interface{}, section string) []inte
 	return fis
 }
 
+// customFieldsFromSchema converts the "custom" TypeList from schema into a slice of
+// Keeper SDK field objects suitable for RecordCreate.Custom or RecordUpdate.
+// Each item has type, label, value (string), required, privacy_screen.
+// For complex types (phone, name, address, paymentCard), value must be a JSON string
+// (use jsonencode() in HCL). For date, value must be RFC3339.
+func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
+	fields := []interface{}{}
+	for _, item := range items {
+		m, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		fieldType, _ := m["type"].(string)
+		label, _ := m["label"].(string)
+		value, _ := m["value"].(string)
+		required, _ := m["required"].(bool)
+		privacyScreen, _ := m["privacy_screen"].(bool)
+
+		base := core.KeeperRecordField{Type: fieldType, Label: label}
+
+		switch fieldType {
+		case "text", "multiline", "secret", "url", "email", "login", "password", "pinCode",
+			"accountNumber", "licenseNumber", "checkbox":
+			f := &core.Text{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			f.Type = fieldType
+			if value != "" {
+				f.Value = []string{value}
+			}
+			fields = append(fields, f)
+
+		case "date":
+			f := &core.Date{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				t, err := time.Parse(time.RFC3339, value)
+				if err != nil {
+					// fall back to date-only format
+					t, err = time.Parse("2006-01-02", value)
+					if err != nil {
+						return nil, fmt.Errorf("custom field %q: invalid date value %q — use RFC3339 or YYYY-MM-DD", label, value)
+					}
+				}
+				f.Value = []int64{t.UnixMilli()}
+			}
+			fields = append(fields, f)
+
+		case "phone":
+			f := &core.Phones{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				var v map[string]interface{}
+				if err := json.Unmarshal([]byte(value), &v); err != nil {
+					return nil, fmt.Errorf("custom field %q: invalid JSON for phone value: %w", label, err)
+				}
+				phone := core.Phone{}
+				if s, ok := v["region"].(string); ok { phone.Region = s }
+				if s, ok := v["number"].(string); ok { phone.Number = s }
+				if s, ok := v["ext"].(string); ok { phone.Ext = s }
+				if s, ok := v["type"].(string); ok { phone.Type = s }
+				f.Value = []core.Phone{phone}
+			}
+			fields = append(fields, f)
+
+		case "name":
+			f := &core.Names{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				var v map[string]interface{}
+				if err := json.Unmarshal([]byte(value), &v); err != nil {
+					return nil, fmt.Errorf("custom field %q: invalid JSON for name value: %w", label, err)
+				}
+				name := core.Name{}
+				if s, ok := v["first"].(string); ok { name.First = s }
+				if s, ok := v["middle"].(string); ok { name.Middle = s }
+				if s, ok := v["last"].(string); ok { name.Last = s }
+				f.Value = []core.Name{name}
+			}
+			fields = append(fields, f)
+
+		case "address":
+			f := &core.Addresses{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				var v map[string]interface{}
+				if err := json.Unmarshal([]byte(value), &v); err != nil {
+					return nil, fmt.Errorf("custom field %q: invalid JSON for address value: %w", label, err)
+				}
+				addr := core.Address{}
+				if s, ok := v["street1"].(string); ok { addr.Street1 = s }
+				if s, ok := v["street2"].(string); ok { addr.Street2 = s }
+				if s, ok := v["city"].(string); ok { addr.City = s }
+				if s, ok := v["state"].(string); ok { addr.State = s }
+				if s, ok := v["country"].(string); ok { addr.Country = s }
+				if s, ok := v["zip"].(string); ok { addr.Zip = s }
+				f.Value = []core.Address{addr}
+			}
+			fields = append(fields, f)
+
+		case "paymentCard":
+			f := &core.PaymentCards{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				var v map[string]interface{}
+				if err := json.Unmarshal([]byte(value), &v); err != nil {
+					return nil, fmt.Errorf("custom field %q: invalid JSON for paymentCard value: %w", label, err)
+				}
+				card := core.PaymentCard{}
+				if s, ok := v["card_number"].(string); ok { card.CardNumber = s }
+				if s, ok := v["card_expiration_date"].(string); ok { card.CardExpirationDate = s }
+				if s, ok := v["card_security_code"].(string); ok { card.CardSecurityCode = s }
+				f.Value = []core.PaymentCard{card}
+			}
+			fields = append(fields, f)
+
+		default:
+			// Unknown type: store as text so we don't silently drop it
+			f := &core.Text{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				f.Value = []string{value}
+			}
+			fields = append(fields, f)
+		}
+	}
+	return fields, nil
+}
+
+// customFieldsToDict converts SDK field objects back to the map slice that
+// RecordDict["custom"] expects, for use during updates.
+func customFieldsToDict(fields []interface{}) []interface{} {
+	result := []interface{}{}
+	for _, f := range fields {
+		if jsonBytes, err := json.Marshal(f); err == nil {
+			var m map[string]interface{}
+			if err := json.Unmarshal(jsonBytes, &m); err == nil {
+				result = append(result, m)
+			}
+		}
+	}
+	return result
+}
+
 func getTotpCode(totpUrl string) (code string, seconds int, err error) {
 	if totp, err := core.GetTotpCode(totpUrl); err == nil {
 		return totp.Code, totp.TimeLeft, nil

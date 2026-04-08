@@ -1522,3 +1522,47 @@ func schemaUrlField() *schema.Schema {
 		},
 	}
 }
+
+// schemaCustomField returns the schema for user-defined custom fields on a record.
+// Each field has a type, label, and value. The value is always a string:
+// - Simple types (text, multiline, secret, url, email): plain string value
+// - Complex types (phone, name, address, paymentCard): jsonencode() of the nested object
+// - Date: RFC3339 string (e.g. "2024-01-15T00:00:00Z")
+// The provider interprets the value based on the type field.
+func schemaCustomField() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeList,
+		Optional:    true,
+		Description: "Custom fields defined by the user in Keeper. Each field has a type, label, and value.",
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"type": {
+					Type:        schema.TypeString,
+					Required:    true,
+					Description: "Field type (e.g. text, secret, url, email, multiline, date, phone, name, address, paymentCard).",
+				},
+				"label": {
+					Type:        schema.TypeString,
+					Required:    true,
+					Description: "Field label. Used to identify the field within the record.",
+				},
+				"value": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+					Description: "Field value. Use a plain string for simple types. Use jsonencode() for complex types (phone, name, address, paymentCard).",
+				},
+				"required": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: "Whether this field is required.",
+				},
+				"privacy_screen": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: "Whether this field is hidden behind a privacy screen in the Keeper UI.",
+				},
+			},
+		},
+	}
+}
