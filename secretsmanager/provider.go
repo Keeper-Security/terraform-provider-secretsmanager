@@ -298,7 +298,7 @@ func getFieldItemsData(recordDict map[string]interface{}, section string) []inte
 				dates := []interface{}{}
 				for _, date := range sVals {
 					if d, success := date.(float64); success {
-						value := time.Unix(int64(d/1000), 0).Format("2006-01-02") // date only
+						value := time.Unix(int64(d/1000), 0).UTC().Format("2006-01-02") // date only, UTC
 						dates = append(dates, value)
 					}
 				}
@@ -341,7 +341,8 @@ func getFieldItemsData(recordDict map[string]interface{}, section string) []inte
 // Keeper SDK field objects suitable for RecordCreate.Custom or RecordUpdate.
 // Each item has type, label, value (string), required, privacy_screen.
 // For complex types (phone, name, address, paymentCard), value must be a JSON string
-// (use jsonencode() in HCL). For date, value must be RFC3339.
+// (use jsonencode() in HCL). For date, value accepts RFC3339 or YYYY-MM-DD; the
+// read path always returns YYYY-MM-DD so configs should use that format.
 func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 	fields := []interface{}{}
 	for _, item := range items {
