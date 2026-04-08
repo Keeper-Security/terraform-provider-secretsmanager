@@ -57,6 +57,8 @@ func resourceSshKeys() *schema.Resource {
 			"passphrase": schemaPasswordField("passphrase"),
 			"host":       schemaHostField(),
 			"file_ref":   schemaFileRefField(),
+			// custom[]
+			"custom": schemaCustomField(),
 		},
 	}
 }
@@ -160,6 +162,14 @@ func resourceSshKeysCreate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
+	if customData := d.Get("custom"); customData != nil {
+		if fields, err := customFieldsFromSchema(customData.([]interface{})); err != nil {
+			return diag.FromErr(err)
+		} else {
+			nrc.Custom = fields
+		}
+	}
+
 	if folderUid == "*" {
 		if fuid, err := getTemplateFolder(folderUid, client); err != nil {
 			return diag.FromErr(err)
@@ -259,6 +269,11 @@ func resourceSshKeysRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 	fileItems := getFileItemsResourceData(secret)
 	if err := d.Set("file_ref", fileItems); err != nil {
+		return diag.FromErr(err)
+	}
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	if err := d.Set("custom", customItems); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -368,6 +383,15 @@ func resourceSshKeysUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		if _, err := ApplyFieldChange("fields", "file_ref", d, secret); err != nil {
 			return diag.FromErr(err)
 		}
+	}
+
+	if d.HasChange("custom") {
+		customData := d.Get("custom").([]interface{})
+		fields, err := customFieldsFromSchema(customData)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		secret.RecordDict["custom"] = customFieldsToDict(fields)
 	}
 
 	secret.RawJson = core.DictToJson(secret.RecordDict)
