@@ -378,11 +378,18 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 
 		switch fieldType {
 		case "text", "multiline", "secret", "url", "email", "login", "password", "pinCode",
-			"accountNumber", "licenseNumber", "checkbox":
+			"accountNumber", "licenseNumber":
 			f := &core.Text{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
 			f.Type = fieldType
 			if value != "" {
 				f.Value = []string{value}
+			}
+			fields = append(fields, f)
+
+		case "checkbox":
+			f := &core.Checkbox{KeeperRecordField: base, Required: required}
+			if value != "" {
+				f.Value = []bool{strings.ToLower(value) == "true"}
 			}
 			fields = append(fields, f)
 
