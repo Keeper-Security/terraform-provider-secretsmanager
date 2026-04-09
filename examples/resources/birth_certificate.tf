@@ -39,6 +39,14 @@ resource "secretsmanager_birth_certificate" "my_birth_certificate" {
     # unix time in milliseconds
     # unix time seconds can be produced using time_static resource from hashicorp/time provider
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {

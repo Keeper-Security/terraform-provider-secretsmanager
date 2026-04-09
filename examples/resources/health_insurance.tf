@@ -64,6 +64,14 @@ resource "secretsmanager_health_insurance" "my_health_insurance" {
     privacy_screen = true
     value          = "https://192.168.1.1/"
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {

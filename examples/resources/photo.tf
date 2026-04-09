@@ -25,6 +25,14 @@ resource "secretsmanager_photo" "my_photos" {
     value { uid = "<file1 UID>" }
     value { uid = "<file2 UID>" }
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {

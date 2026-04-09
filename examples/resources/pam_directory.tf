@@ -50,6 +50,14 @@ resource "secretsmanager_pam_directory" "active_directory" {
     label = "Use SSL"
     value = true
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 # Example 2: OpenLDAP PAM Directory

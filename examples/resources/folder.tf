@@ -20,6 +20,14 @@ provider "secretsmanager" {
 resource "secretsmanager_folder" "my_folder" {
   parent_uid = "<Parent Folder UID>"
   name       = "<Folder Name>"
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {

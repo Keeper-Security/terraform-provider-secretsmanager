@@ -52,6 +52,14 @@ resource "secretsmanager_membership" "my_membership" {
     }
     #value = "to_be_generated"
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {
