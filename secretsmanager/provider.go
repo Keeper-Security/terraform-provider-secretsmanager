@@ -292,7 +292,8 @@ func getFieldItemsData(recordDict map[string]interface{}, section string) []inte
 		}
 
 		v, found := item["value"]
-		if found && strings.ToLower(fi["type"].(string)) == "date" {
+		ft := strings.ToLower(fi["type"].(string))
+		if found && (ft == "date" || ft == "birthdate" || ft == "expirationdate") {
 			// TF timestamp() uses RFC3339 we truncate to date parts only
 			if sVals, ok := v.([]interface{}); ok && len(sVals) > 0 {
 				dates := []interface{}{}
@@ -337,12 +338,29 @@ func getFieldItemsData(recordDict map[string]interface{}, section string) []inte
 	return fis
 }
 
+// parseJSONItems accepts either a single JSON object ({"key":"val"}) or a JSON array
+// ([{"key":"val"},{"key":"val2"}]) and returns a slice of raw JSON messages — one per
+// entry. This lets callers write value = jsonencode({...}) for one entry or
+// value = jsonencode([{...},{...}]) for multiple entries without changing the schema.
+func parseJSONItems(value string) ([]json.RawMessage, error) {
+	if strings.TrimSpace(value)[0] == '[' {
+		var items []json.RawMessage
+		return items, json.Unmarshal([]byte(value), &items)
+	}
+	return []json.RawMessage{json.RawMessage(value)}, nil
+}
+
 // customFieldsFromSchema converts the "custom" TypeList from schema into a slice of
 // Keeper SDK field objects suitable for RecordCreate.Custom or RecordUpdate.
 // Each item has type, label, value (string), required, privacy_screen.
-// For complex types (phone, name, address, paymentCard), value must be a JSON string
-// (use jsonencode() in HCL). For date, value accepts RFC3339 or YYYY-MM-DD; the
-// read path always returns YYYY-MM-DD so configs should use that format.
+//
+// Value encoding by type:
+//   - Simple strings (text, multiline, secret, url, email, login, password, etc.): plain string
+//   - Dates (date, birthDate, expirationDate): RFC3339 or YYYY-MM-DD; read always returns YYYY-MM-DD
+//   - Complex objects (phone, name, address, paymentCard, bankAccount, host,
+//     securityQuestion, keyPair, script): jsonencode({...}) for one entry,
+//     jsonencode([{...},{...}]) for multiple entries in the same field
+//   - Unknown types: stored as core.Text (no silent data loss)
 func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 	fields := []interface{}{}
 	for _, item := range items {
@@ -368,7 +386,7 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 			}
 			fields = append(fields, f)
 
-		case "date":
+		case "date", "birthDate", "expirationDate":
 			f := &core.Date{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
 			if value != "" {
 				t, err := time.Parse(time.RFC3339, value)
@@ -386,64 +404,197 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 		case "phone":
 			f := &core.Phones{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
 			if value != "" {
-				var v map[string]interface{}
-				if err := json.Unmarshal([]byte(value), &v); err != nil {
+				items, err := parseJSONItems(value)
+				if err != nil {
 					return nil, fmt.Errorf("custom field %q: invalid JSON for phone value: %w", label, err)
 				}
-				phone := core.Phone{}
-				if s, ok := v["region"].(string); ok { phone.Region = s }
-				if s, ok := v["number"].(string); ok { phone.Number = s }
-				if s, ok := v["ext"].(string); ok { phone.Ext = s }
-				if s, ok := v["type"].(string); ok { phone.Type = s }
-				f.Value = []core.Phone{phone}
+				for _, raw := range items {
+					var v map[string]interface{}
+					if err := json.Unmarshal(raw, &v); err != nil {
+						return nil, fmt.Errorf("custom field %q: invalid JSON for phone entry: %w", label, err)
+					}
+					phone := core.Phone{}
+					if s, ok := v["region"].(string); ok { phone.Region = s }
+					if s, ok := v["number"].(string); ok { phone.Number = s }
+					if s, ok := v["ext"].(string); ok { phone.Ext = s }
+					if s, ok := v["type"].(string); ok { phone.Type = s }
+					f.Value = append(f.Value, phone)
+				}
 			}
 			fields = append(fields, f)
 
 		case "name":
 			f := &core.Names{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
 			if value != "" {
-				var v map[string]interface{}
-				if err := json.Unmarshal([]byte(value), &v); err != nil {
+				items, err := parseJSONItems(value)
+				if err != nil {
 					return nil, fmt.Errorf("custom field %q: invalid JSON for name value: %w", label, err)
 				}
-				name := core.Name{}
-				if s, ok := v["first"].(string); ok { name.First = s }
-				if s, ok := v["middle"].(string); ok { name.Middle = s }
-				if s, ok := v["last"].(string); ok { name.Last = s }
-				f.Value = []core.Name{name}
+				for _, raw := range items {
+					var v map[string]interface{}
+					if err := json.Unmarshal(raw, &v); err != nil {
+						return nil, fmt.Errorf("custom field %q: invalid JSON for name entry: %w", label, err)
+					}
+					name := core.Name{}
+					if s, ok := v["first"].(string); ok { name.First = s }
+					if s, ok := v["middle"].(string); ok { name.Middle = s }
+					if s, ok := v["last"].(string); ok { name.Last = s }
+					f.Value = append(f.Value, name)
+				}
 			}
 			fields = append(fields, f)
 
 		case "address":
 			f := &core.Addresses{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
 			if value != "" {
-				var v map[string]interface{}
-				if err := json.Unmarshal([]byte(value), &v); err != nil {
+				items, err := parseJSONItems(value)
+				if err != nil {
 					return nil, fmt.Errorf("custom field %q: invalid JSON for address value: %w", label, err)
 				}
-				addr := core.Address{}
-				if s, ok := v["street1"].(string); ok { addr.Street1 = s }
-				if s, ok := v["street2"].(string); ok { addr.Street2 = s }
-				if s, ok := v["city"].(string); ok { addr.City = s }
-				if s, ok := v["state"].(string); ok { addr.State = s }
-				if s, ok := v["country"].(string); ok { addr.Country = s }
-				if s, ok := v["zip"].(string); ok { addr.Zip = s }
-				f.Value = []core.Address{addr}
+				for _, raw := range items {
+					var v map[string]interface{}
+					if err := json.Unmarshal(raw, &v); err != nil {
+						return nil, fmt.Errorf("custom field %q: invalid JSON for address entry: %w", label, err)
+					}
+					addr := core.Address{}
+					if s, ok := v["street1"].(string); ok { addr.Street1 = s }
+					if s, ok := v["street2"].(string); ok { addr.Street2 = s }
+					if s, ok := v["city"].(string); ok { addr.City = s }
+					if s, ok := v["state"].(string); ok { addr.State = s }
+					if s, ok := v["country"].(string); ok { addr.Country = s }
+					if s, ok := v["zip"].(string); ok { addr.Zip = s }
+					f.Value = append(f.Value, addr)
+				}
 			}
 			fields = append(fields, f)
 
 		case "paymentCard":
 			f := &core.PaymentCards{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
 			if value != "" {
-				var v map[string]interface{}
-				if err := json.Unmarshal([]byte(value), &v); err != nil {
+				items, err := parseJSONItems(value)
+				if err != nil {
 					return nil, fmt.Errorf("custom field %q: invalid JSON for paymentCard value: %w", label, err)
 				}
-				card := core.PaymentCard{}
-				if s, ok := v["card_number"].(string); ok { card.CardNumber = s }
-				if s, ok := v["card_expiration_date"].(string); ok { card.CardExpirationDate = s }
-				if s, ok := v["card_security_code"].(string); ok { card.CardSecurityCode = s }
-				f.Value = []core.PaymentCard{card}
+				for _, raw := range items {
+					var v map[string]interface{}
+					if err := json.Unmarshal(raw, &v); err != nil {
+						return nil, fmt.Errorf("custom field %q: invalid JSON for paymentCard entry: %w", label, err)
+					}
+					card := core.PaymentCard{}
+					if s, ok := v["card_number"].(string); ok { card.CardNumber = s }
+					if s, ok := v["card_expiration_date"].(string); ok { card.CardExpirationDate = s }
+					if s, ok := v["card_security_code"].(string); ok { card.CardSecurityCode = s }
+					f.Value = append(f.Value, card)
+				}
+			}
+			fields = append(fields, f)
+
+		case "bankAccount":
+			f := &core.BankAccounts{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				items, err := parseJSONItems(value)
+				if err != nil {
+					return nil, fmt.Errorf("custom field %q: invalid JSON for bankAccount value: %w", label, err)
+				}
+				for _, raw := range items {
+					var v map[string]interface{}
+					if err := json.Unmarshal(raw, &v); err != nil {
+						return nil, fmt.Errorf("custom field %q: invalid JSON for bankAccount entry: %w", label, err)
+					}
+					acct := core.BankAccount{}
+					if s, ok := v["accountType"].(string); ok { acct.AccountType = s }
+					if s, ok := v["routingNumber"].(string); ok { acct.RoutingNumber = s }
+					if s, ok := v["accountNumber"].(string); ok { acct.AccountNumber = s }
+					if s, ok := v["otherType"].(string); ok { acct.OtherType = s }
+					f.Value = append(f.Value, acct)
+				}
+			}
+			fields = append(fields, f)
+
+		case "host":
+			f := &core.Hosts{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				items, err := parseJSONItems(value)
+				if err != nil {
+					return nil, fmt.Errorf("custom field %q: invalid JSON for host value: %w", label, err)
+				}
+				for _, raw := range items {
+					var v map[string]interface{}
+					if err := json.Unmarshal(raw, &v); err != nil {
+						return nil, fmt.Errorf("custom field %q: invalid JSON for host entry: %w", label, err)
+					}
+					h := core.Host{}
+					if s, ok := v["hostName"].(string); ok { h.Hostname = s }
+					if s, ok := v["port"].(string); ok { h.Port = s }
+					f.Value = append(f.Value, h)
+				}
+			}
+			fields = append(fields, f)
+
+		case "securityQuestion":
+			f := &core.SecurityQuestions{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				items, err := parseJSONItems(value)
+				if err != nil {
+					return nil, fmt.Errorf("custom field %q: invalid JSON for securityQuestion value: %w", label, err)
+				}
+				for _, raw := range items {
+					var v map[string]interface{}
+					if err := json.Unmarshal(raw, &v); err != nil {
+						return nil, fmt.Errorf("custom field %q: invalid JSON for securityQuestion entry: %w", label, err)
+					}
+					q := core.SecurityQuestion{}
+					if s, ok := v["question"].(string); ok { q.Question = s }
+					if s, ok := v["answer"].(string); ok { q.Answer = s }
+					f.Value = append(f.Value, q)
+				}
+			}
+			fields = append(fields, f)
+
+		case "keyPair":
+			f := &core.KeyPairs{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				items, err := parseJSONItems(value)
+				if err != nil {
+					return nil, fmt.Errorf("custom field %q: invalid JSON for keyPair value: %w", label, err)
+				}
+				for _, raw := range items {
+					var v map[string]interface{}
+					if err := json.Unmarshal(raw, &v); err != nil {
+						return nil, fmt.Errorf("custom field %q: invalid JSON for keyPair entry: %w", label, err)
+					}
+					kp := core.KeyPair{}
+					if s, ok := v["publicKey"].(string); ok { kp.PublicKey = s }
+					if s, ok := v["privateKey"].(string); ok { kp.PrivateKey = s }
+					f.Value = append(f.Value, kp)
+				}
+			}
+			fields = append(fields, f)
+
+		case "script":
+			f := &core.Scripts{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				items, err := parseJSONItems(value)
+				if err != nil {
+					return nil, fmt.Errorf("custom field %q: invalid JSON for script value: %w", label, err)
+				}
+				for _, raw := range items {
+					var v map[string]interface{}
+					if err := json.Unmarshal(raw, &v); err != nil {
+						return nil, fmt.Errorf("custom field %q: invalid JSON for script entry: %w", label, err)
+					}
+					s := core.Script{}
+					if str, ok := v["fileRef"].(string); ok { s.FileRef = str }
+					if str, ok := v["command"].(string); ok { s.Command = str }
+					if arr, ok := v["recordRef"].([]interface{}); ok {
+						for _, r := range arr {
+							if str, ok := r.(string); ok {
+								s.RecordRef = append(s.RecordRef, str)
+							}
+						}
+					}
+					f.Value = append(f.Value, s)
+				}
 			}
 			fields = append(fields, f)
 
