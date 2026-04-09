@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Custom Fields** (KSM-388):
+  - Add `custom` block to all 22 resource types (`login`, `bank_account`, `bank_card`, `birth_certificate`, `contact`, `database_credentials`, `driver_license`, `encrypted_notes`, `file`, `health_insurance`, `membership`, `passport`, `photo`, `server_credentials`, `software_license`, `ssh_keys`, `ssn_card`, `address`, `pam_database`, `pam_directory`, `pam_machine`, `pam_remote_browser`, `pam_user`)
+  - Supports 43+ Keeper field types including `text`, `secret`, `url`, `email`, `phone`, `date`, `birthDate`, `expirationDate`, `name`, `address`, `paymentCard`, `bankAccount`, `host`, `keyPair`, `securityQuestion`, `checkbox`, `multiline`, and more
+  - Simple types use a plain string `value`; complex types use `value = jsonencode({...})` for a single entry or `value = jsonencode([{...},{...}])` for multiple entries in one field
+  - `pam_machine` and `pam_user` use merge-aware logic to preserve the vault-managed "Private Key Passphrase" custom field across create/update operations
+  - `required` and `privacy_screen` attributes round-trip correctly from vault state (no perpetual diff on import)
+
 ## [1.3.0]
 
 ### Security

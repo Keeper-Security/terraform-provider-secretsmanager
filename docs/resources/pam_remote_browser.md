@@ -48,6 +48,7 @@ resource "secretsmanager_pam_remote_browser" "with_settings" {
 * `traffic_encryption_seed` - (Optional) Base64-encoded 256-bit encryption seed. Block with `value` attribute.
 * `file_ref` - (Optional) File references.
 * `totp` - (Optional) One-time code (otpauth:// URI).
+* `custom` - (Optional) User-defined custom fields. Each block requires `type` (Keeper field type) and `label` (display name), with optional `value` (plain string or `jsonencode()` for complex types), `required`, and `privacy_screen`. See [Nested Schema for `custom`](#nestedblock--custom) below.
 
 ## Attributes Reference
 
@@ -62,3 +63,17 @@ PAM Remote Browser records can be imported using their UID:
 ```
 $ terraform import secretsmanager_pam_remote_browser.example <record_UID>
 ```
+
+<a id="nestedblock--custom"></a>
+### Nested Schema for `custom`
+
+Required:
+
+- **label** (String) Display name for the field in Keeper UI.
+- **type** (String) Keeper field type. Common values: `text`, `secret`, `url`, `email`, `phone`, `date`, `birthDate`, `expirationDate`, `name`, `address`, `paymentCard`, `bankAccount`, `host`, `keyPair`, `securityQuestion`, `checkbox`, `multiline`.
+
+Optional:
+
+- **privacy_screen** (Boolean) Whether this field is hidden behind a privacy screen in the Keeper UI.
+- **required** (Boolean) Whether this field is required.
+- **value** (String, Sensitive) Field value. Plain string for simple types. Use `jsonencode({...})` for structured types or `jsonencode([{...},{...}])` for multiple entries in one field.

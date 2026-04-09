@@ -54,6 +54,34 @@ resource "secretsmanager_login" "my_login" {
     privacy_screen = true
     value          = "otpauth://totp/Acme:Buster?secret=6I4PI5EUKS66GPRY5TMLJJP25MAYWAVL&issuer=Acme&algorithm=SHA1&digits=6&period=30"
   }
+
+  # Simple custom field — plain string value
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
+  # Secret custom field — treated as sensitive
+  custom {
+    type  = "secret"
+    label = "ApiKey"
+    value = "sk-prod-..."
+  }
+
+  # Complex custom field — use jsonencode() for structured types
+  custom {
+    type  = "phone"
+    label = "SupportLine"
+    value = jsonencode({ region = "US", number = "555-867-5309", type = "Work" })
+  }
+
+  # Date custom field — YYYY-MM-DD format
+  custom {
+    type  = "date"
+    label = "CertExpiry"
+    value = "2027-06-01"
+  }
 }
 
 resource "local_file" "out" {
