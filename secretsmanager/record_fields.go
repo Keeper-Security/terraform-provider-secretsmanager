@@ -1555,11 +1555,13 @@ func schemaCustomField() *schema.Schema {
 				"required": {
 					Type:        schema.TypeBool,
 					Optional:    true,
+					Computed:    true,
 					Description: "Whether this field is required.",
 				},
 				"privacy_screen": {
 					Type:        schema.TypeBool,
 					Optional:    true,
+					Computed:    true,
 					Description: "Whether this field is hidden behind a privacy screen in the Keeper UI.",
 				},
 			},
