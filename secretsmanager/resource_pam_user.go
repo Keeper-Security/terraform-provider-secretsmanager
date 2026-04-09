@@ -62,6 +62,8 @@ func resourcePamUser() *schema.Resource {
 			"managed":                schemaCheckboxField(),
 			"file_ref":               schemaFileRefField(),
 			"totp":                   schemaOneTimeCodeField(),
+			// custom[]
+			"custom": schemaCustomField(),
 		},
 	}
 }
@@ -243,6 +245,16 @@ func resourcePamUserCreate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
+	// User-defined custom fields — appended after the platform-managed
+	// "Private Key Passphrase" entry already placed in nrc.Custom above.
+	if customData := d.Get("custom"); customData != nil {
+		if fields, err := customFieldsFromSchema(customData.([]interface{})); err != nil {
+			return diag.FromErr(err)
+		} else {
+			nrc.Custom = append(nrc.Custom, fields...)
+		}
+	}
+
 	if folderUid == "*" {
 		if fuid, err := getTemplateFolder(folderUid, client); err != nil {
 			return diag.FromErr(err)
@@ -371,6 +383,22 @@ func resourcePamUserRead(ctx context.Context, d *schema.ResourceData, m interfac
 		return diag.FromErr(err)
 	}
 
+	// "Private Key Passphrase" is a platform-managed entry in the custom section.
+	// Exclude it from user-visible state to prevent a perpetual diff.
+	allCustom := getFieldItemsData(secret.RecordDict, "custom")
+	userCustom := make([]interface{}, 0, len(allCustom))
+	for _, item := range allCustom {
+		if m, ok := item.(map[string]interface{}); ok {
+			if label, _ := m["label"].(string); label == "Private Key Passphrase" {
+				continue
+			}
+		}
+		userCustom = append(userCustom, item)
+	}
+	if err := d.Set("custom", userCustom); err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.SetId(uid)
 	return diags
 }
@@ -496,6 +524,28 @@ func resourcePamUserUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
+	if d.HasChange("custom") {
+		customData := d.Get("custom").([]interface{})
+		userFields, err := customFieldsFromSchema(customData)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		// Preserve "Private Key Passphrase" from the current vault state;
+		// replace all other custom entries with the user-defined fields.
+		var preserved []interface{}
+		if current, ok := secret.RecordDict["custom"].([]interface{}); ok {
+			for _, item := range current {
+				if m, ok := item.(map[string]interface{}); ok {
+					if label, _ := m["label"].(string); label == "Private Key Passphrase" {
+						preserved = append(preserved, item)
+					}
+				}
+			}
+		}
+		secret.RecordDict["custom"] = append(preserved, customFieldsToDict(userFields)...)
+	}
+
+	secret.RawJson = core.DictToJson(secret.RecordDict)
 	if err := saveRecord(secret, client); err != nil {
 		return diag.FromErr(err)
 	}

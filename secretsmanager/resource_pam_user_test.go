@@ -342,3 +342,93 @@ func TestAccResourcePamUser_generatePrivatePemKeyWithPassphrase(t *testing.T) {
 		},
 	})
 }
+
+// TestAccResourcePamUser_customField verifies that:
+//  1. A user-defined custom field can be set alongside private_key_passphrase
+//  2. The passphrase does NOT appear in the user-visible custom list (filtered from state)
+//  3. Updating the custom field does not wipe the passphrase from the vault
+func TestAccResourcePamUser_customField(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_test_pam_user_custom"
+	if secretFolderUid == "" {
+		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
+	}
+
+	configCreate := fmt.Sprintf(`
+		resource "secretsmanager_pam_user" "custom" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			login { value = "svcaccount" }
+
+			private_key_passphrase {
+				value = "s3cr3tpassphrase"
+			}
+
+			custom {
+				type  = "text"
+				label = "Team"
+				value = "backend"
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	configUpdate := fmt.Sprintf(`
+		resource "secretsmanager_pam_user" "custom" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			login { value = "svcaccount" }
+
+			private_key_passphrase {
+				value = "s3cr3tpassphrase"
+			}
+
+			custom {
+				type  = "text"
+				label = "Team"
+				value = "platform"
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: configCreate,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr("secretsmanager_pam_user.custom", "custom.#", "1"),
+					resource.TestCheckResourceAttr("secretsmanager_pam_user.custom", "custom.0.label", "Team"),
+					resource.TestCheckResourceAttr("secretsmanager_pam_user.custom", "custom.0.value", "backend"),
+					checkSecretResourceState("secretsmanager_pam_user.custom", func(s *terraform.InstanceState) error {
+						for k, v := range s.Attributes {
+							if v == "Private Key Passphrase" && k != "private_key_passphrase.0.type" {
+								return fmt.Errorf("passphrase label leaked into custom list at key %s", k)
+							}
+						}
+						return nil
+					}),
+				),
+			},
+			{
+				Config: configUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("secretsmanager_pam_user.custom", "custom.0.value", "platform"),
+					checkSecretResourceState("secretsmanager_pam_user.custom", func(s *terraform.InstanceState) error {
+						passphrase := s.Attributes["private_key_passphrase.0.value"]
+						if passphrase == "" {
+							return fmt.Errorf("private_key_passphrase was wiped by custom field update")
+						}
+						return nil
+					}),
+				),
+			},
+		},
+	})
+}
