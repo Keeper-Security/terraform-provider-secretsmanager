@@ -49,5 +49,11 @@ signs:
       - "--detach-sign"
       - "${artifact}"
 release:
+  footer: |
+    ## Platform Compatibility
+
+    All Linux binaries are statically compiled (`CGO_ENABLED=0`) and have no C library dependencies.
+    The `linux_amd64`, `linux_arm64`, and `linux_arm` builds run on Alpine Linux and other musl-based
+    systems without modification — no special version required.
 # If you want to manually examine the release before its live, uncomment this line:
 # draft: true
