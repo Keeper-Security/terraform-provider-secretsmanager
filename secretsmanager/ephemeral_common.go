@@ -860,7 +860,7 @@ func pamHostnameToListValue(ctx context.Context, secret *core.Record) (types.Lis
 	port := ""
 	if values, ok := fields[0]["value"].([]interface{}); ok && len(values) > 0 {
 		if vmap, ok := values[0].(map[string]interface{}); ok {
-			if val, ok := vmap["hostname"].(string); ok {
+			if val, ok := vmap["hostName"].(string); ok {
 				hostName = val
 			}
 			if val, ok := vmap["port"].(string); ok {
