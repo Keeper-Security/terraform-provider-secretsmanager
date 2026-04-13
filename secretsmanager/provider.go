@@ -397,22 +397,22 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 		case "checkbox":
 			f := &core.Checkbox{KeeperRecordField: base, Required: required}
 			if value != "" {
-				f.Value = []bool{strings.ToLower(value) == "true"}
+				lower := strings.ToLower(value)
+				if lower != "true" && lower != "false" {
+					return nil, fmt.Errorf("custom field %q: invalid checkbox value %q — use \"true\" or \"false\"", label, value)
+				}
+				f.Value = []bool{lower == "true"}
 			}
 			fields = append(fields, f)
 
 		case "date", "birthDate", "expirationDate":
 			f := &core.Date{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
 			if value != "" {
-				t, err := time.Parse(time.RFC3339, value)
+				t, err := time.Parse("2006-01-02", value)
 				if err != nil {
-					// fall back to date-only format
-					t, err = time.Parse("2006-01-02", value)
-					if err != nil {
-						return nil, fmt.Errorf("custom field %q: invalid date value %q — use RFC3339 or YYYY-MM-DD", label, value)
-					}
+					return nil, fmt.Errorf("custom field %q: invalid date value %q — use YYYY-MM-DD format (e.g. \"2026-03-20\")", label, value)
 				}
-				f.Value = []int64{t.UnixMilli()}
+				f.Value = []int64{t.UTC().UnixMilli()}
 			}
 			fields = append(fields, f)
 
