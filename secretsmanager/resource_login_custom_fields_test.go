@@ -525,14 +525,22 @@ func TestAccResourceLogin_customFieldAddress(t *testing.T) {
 	})
 }
 
-// TestAccResourceLogin_customFieldPaymentCard tests the paymentCard complex type.
-func TestAccResourceLogin_customFieldPaymentCard(t *testing.T) {
+// TestAccResourceLogin_customFieldPaymentCardRoundTrip is the regression test for KSM-888:
+// paymentCard keys must use camelCase (cardNumber, cardExpirationDate, cardSecurityCode)
+// to match what the read path serializes via toJsonDefault() / json.Marshal on the SDK
+// struct. The original write path read snake_case keys (card_number, card_expiration_date,
+// card_security_code), which never matched any real key in the user's jsonencode output,
+// causing the card to be written empty and a perpetual plan diff on every apply.
+//
+// Failure mode before fix: PlanOnly step detects diff (state "{}"; config has card data).
+// Passing mode after fix: both write and read use camelCase; round-trip is stable.
+func TestAccResourceLogin_customFieldPaymentCardRoundTrip(t *testing.T) {
 	secretFolderUid := testAcc.getTestFolder()
 	secretUid := core.GenerateUid()
-	secretTitle := "tf_acc_custom_payment_card"
+	secretTitle := "tf_acc_custom_payment_card_rt"
 
 	config := fmt.Sprintf(`
-		resource "secretsmanager_login" "custom_payment_card" {
+		resource "secretsmanager_login" "custom_payment_card_rt" {
 			folder_uid = "%v"
 			uid        = "%v"
 			title      = "%v"
@@ -541,9 +549,9 @@ func TestAccResourceLogin_customFieldPaymentCard(t *testing.T) {
 				type  = "paymentCard"
 				label = "Corporate Card"
 				value = jsonencode({
-					card_number          = "4111111111111111"
-					card_expiration_date = "12/2027"
-					card_security_code   = "123"
+					cardNumber         = "4111111111111111"
+					cardExpirationDate = "12/2027"
+					cardSecurityCode   = "123"
 				})
 			}
 		}
@@ -557,13 +565,16 @@ func TestAccResourceLogin_customFieldPaymentCard(t *testing.T) {
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					checkSecretExistsRemotely(secretUid),
-					resource.TestCheckResourceAttr("secretsmanager_login.custom_payment_card", "custom.#", "1"),
-					resource.TestCheckResourceAttr("secretsmanager_login.custom_payment_card", "custom.0.type", "paymentCard"),
-					resource.TestCheckResourceAttr("secretsmanager_login.custom_payment_card", "custom.0.label", "Corporate Card"),
-					resource.TestCheckResourceAttrSet("secretsmanager_login.custom_payment_card", "custom.0.value"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_payment_card_rt", "custom.#", "1"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_payment_card_rt", "custom.0.type", "paymentCard"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_payment_card_rt", "custom.0.label", "Corporate Card"),
+					resource.TestCheckResourceAttrSet("secretsmanager_login.custom_payment_card_rt", "custom.0.value"),
 				),
 			},
 			{
+				// Regression guard: state must equal config — no perpetual diff.
+				// Before fix: write path read card_number (snake_case, not found) →
+				// wrote empty card → read back "{}" → diff on every plan.
 				Config:   config,
 				PlanOnly: true,
 			},

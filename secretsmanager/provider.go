@@ -496,9 +496,9 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 						return nil, fmt.Errorf("custom field %q: invalid JSON for paymentCard entry: %w", label, err)
 					}
 					card := core.PaymentCard{}
-					if s, ok := v["card_number"].(string); ok { card.CardNumber = s }
-					if s, ok := v["card_expiration_date"].(string); ok { card.CardExpirationDate = s }
-					if s, ok := v["card_security_code"].(string); ok { card.CardSecurityCode = s }
+					if s, ok := v["cardNumber"].(string); ok { card.CardNumber = s }
+					if s, ok := v["cardExpirationDate"].(string); ok { card.CardExpirationDate = s }
+					if s, ok := v["cardSecurityCode"].(string); ok { card.CardSecurityCode = s }
 					f.Value = append(f.Value, card)
 				}
 			}
