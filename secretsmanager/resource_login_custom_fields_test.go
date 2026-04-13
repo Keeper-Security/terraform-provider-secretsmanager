@@ -609,6 +609,95 @@ func TestAccResourceLogin_customFieldDate(t *testing.T) {
 	})
 }
 
+// TestAccResourceLogin_customFieldImportAndComputedMetadata tests two related things:
+//
+//  1. Import: a login resource with custom fields that have required=true and
+//     privacy_screen=true can be imported and all fields round-trip correctly.
+//
+//  2. No perpetual diff: after import (or create), a config that OMITS required
+//     and privacy_screen produces no plan diff. This is the regression guard for
+//     the Computed: true fix — without it, every plan would show a diff because
+//     Terraform would treat the omitted field as "set to false" vs vault's "true".
+func TestAccResourceLogin_customFieldImportAndComputedMetadata(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_custom_import"
+	resourceName := "secretsmanager_login.custom_import"
+
+	// configExplicit sets required and privacy_screen explicitly.
+	// This is what creates the vault record with those flags set.
+	configExplicit := fmt.Sprintf(`
+		resource "secretsmanager_login" "custom_import" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type           = "text"
+				label          = "Environment"
+				value          = "production"
+				required       = true
+				privacy_screen = true
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	// configOmitted is identical but omits required and privacy_screen entirely.
+	// With Computed: true, Terraform should accept the vault values and show no diff.
+	configOmitted := fmt.Sprintf(`
+		resource "secretsmanager_login" "custom_import" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "text"
+				label = "Environment"
+				value = "production"
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				// Step 1: create with explicit required/privacy_screen
+				Config: configExplicit,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr(resourceName, "custom.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.type", "text"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.label", "Environment"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.required", "true"),
+					resource.TestCheckResourceAttr(resourceName, "custom.0.privacy_screen", "true"),
+				),
+			},
+			{
+				// Step 2: import by UID — verify all fields including required and
+				// privacy_screen round-trip correctly from the vault.
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				// value is Sensitive: true — Terraform stores it in state but masks
+				// it in output. ImportStateVerify compares raw state values, so it
+				// should still match. If the vault returns the value in a different
+				// format after import, add it to ImportStateVerifyIgnore.
+			},
+			{
+				// Step 3: PlanOnly with config that OMITS required and privacy_screen.
+				// This is the perpetual-diff regression guard: if Computed: true is
+				// working correctly, omitting these fields in HCL should produce no
+				// diff (vault values are authoritative). If Computed were missing,
+				// Terraform would want to set them to false on every plan.
+				Config:   configOmitted,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 // TestAccResourceLogin_customFieldKeyPair tests the keyPair complex type.
 // A real ed25519 key pair is generated in-process and injected into the config
 // so we verify actual key material round-trips correctly through the vault.
