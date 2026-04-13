@@ -76,11 +76,29 @@ resource "secretsmanager_login" "my_login" {
     value = jsonencode({ region = "US", number = "555-867-5309", type = "Work" })
   }
 
-  # Date custom field — YYYY-MM-DD format
+  # Date custom field — YYYY-MM-DD only (RFC3339 is not accepted)
   custom {
     type  = "date"
     label = "CertExpiry"
     value = "2027-06-01"
+  }
+
+  # Checkbox custom field — must be "true" or "false" (not "yes", "1", etc.)
+  custom {
+    type  = "checkbox"
+    label = "MFAEnabled"
+    value = "true"
+  }
+
+  # Payment card custom field — jsonencode keys must be camelCase
+  custom {
+    type  = "paymentCard"
+    label = "Corporate Card"
+    value = jsonencode({
+      cardNumber         = "4111111111111111"
+      cardExpirationDate = "12/2027"
+      cardSecurityCode   = "123"
+    })
   }
 }
 

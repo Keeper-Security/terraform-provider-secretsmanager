@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `pam_machine` and `pam_user` use merge-aware logic to preserve the vault-managed "Private Key Passphrase" custom field across create/update operations
   - `required` and `privacy_screen` attributes round-trip correctly from vault state (no perpetual diff on import)
 
+### Fixed
+- **Custom fields — `paymentCard` perpetual diff** (KSM-888): `jsonencode()` values must use camelCase keys — `cardNumber`, `cardExpirationDate`, `cardSecurityCode` — matching Keeper's API format. Snake_case keys (`card_number`, etc.) were previously silently ignored, causing the field to be written empty and producing a perpetual plan diff.
+- **Custom fields — non-canonical `checkbox` values** (KSM-889): only `"true"` or `"false"` are accepted. Other strings like `"yes"` or `"1"` now return a clear error instead of being silently coerced to `false`.
+- **Custom fields — non-canonical date values** (KSM-889): `date`, `birthDate`, and `expirationDate` only accept YYYY-MM-DD format. RFC3339 input (e.g. `"2026-03-20T14:30:00Z"`) now returns a clear error instead of causing a perpetual plan diff (config kept RFC3339; state returned YYYY-MM-DD).
+
 ## [1.3.0]
 
 ### Security
