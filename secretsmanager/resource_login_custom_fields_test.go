@@ -1,6 +1,7 @@
 package secretsmanager
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -373,6 +374,203 @@ func TestAccResourceLogin_customFieldHostAndBankAccount(t *testing.T) {
 	})
 }
 
+// TestAccResourceLogin_customFieldSimpleVariants tests simple string types that share
+// the core.Text write path: url, email, and multiline.
+func TestAccResourceLogin_customFieldSimpleVariants(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_custom_simple_variants"
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_login" "custom_simple_variants" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "url"
+				label = "Dashboard"
+				value = "https://example.com/dashboard"
+			}
+			custom {
+				type  = "email"
+				label = "Alerts"
+				value = "alerts@example.com"
+			}
+			custom {
+				type  = "multiline"
+				label = "Notes"
+				value = "line one\nline two"
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_simple_variants", "custom.#", "3"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_simple_variants", "custom.0.type", "url"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_simple_variants", "custom.0.value", "https://example.com/dashboard"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_simple_variants", "custom.1.type", "email"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_simple_variants", "custom.1.value", "alerts@example.com"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_simple_variants", "custom.2.type", "multiline"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_simple_variants", "custom.2.value", "line one\nline two"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+// TestAccResourceLogin_customFieldName tests the name complex type (first/middle/last).
+func TestAccResourceLogin_customFieldName(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_custom_name"
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_login" "custom_name" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "name"
+				label = "Owner"
+				value = jsonencode({
+					first  = "Jane"
+					middle = "Q"
+					last   = "Doe"
+				})
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_name", "custom.#", "1"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_name", "custom.0.type", "name"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_name", "custom.0.label", "Owner"),
+					resource.TestCheckResourceAttrSet("secretsmanager_login.custom_name", "custom.0.value"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+// TestAccResourceLogin_customFieldAddress tests the address complex type.
+func TestAccResourceLogin_customFieldAddress(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_custom_address"
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_login" "custom_address" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "address"
+				label = "HQ"
+				value = jsonencode({
+					street1 = "123 Main St"
+					street2 = "Suite 400"
+					city    = "San Francisco"
+					state   = "CA"
+					country = "US"
+					zip     = "94105"
+				})
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_address", "custom.#", "1"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_address", "custom.0.type", "address"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_address", "custom.0.label", "HQ"),
+					resource.TestCheckResourceAttrSet("secretsmanager_login.custom_address", "custom.0.value"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+// TestAccResourceLogin_customFieldPaymentCard tests the paymentCard complex type.
+func TestAccResourceLogin_customFieldPaymentCard(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_custom_payment_card"
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_login" "custom_payment_card" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "paymentCard"
+				label = "Corporate Card"
+				value = jsonencode({
+					card_number          = "4111111111111111"
+					card_expiration_date = "12/2027"
+					card_security_code   = "123"
+				})
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_payment_card", "custom.#", "1"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_payment_card", "custom.0.type", "paymentCard"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_payment_card", "custom.0.label", "Corporate Card"),
+					resource.TestCheckResourceAttrSet("secretsmanager_login.custom_payment_card", "custom.0.value"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 // TestAccResourceLogin_customFieldDate tests a date custom field using YYYY-MM-DD format.
 // RFC3339 is also accepted on write but the read path always returns YYYY-MM-DD.
 func TestAccResourceLogin_customFieldDate(t *testing.T) {
@@ -406,6 +604,65 @@ func TestAccResourceLogin_customFieldDate(t *testing.T) {
 					resource.TestCheckResourceAttr("secretsmanager_login.custom_date", "custom.0.label", "ExpiresAt"),
 					resource.TestCheckResourceAttr("secretsmanager_login.custom_date", "custom.0.type", "date"),
 				),
+			},
+		},
+	})
+}
+
+// TestAccResourceLogin_customFieldKeyPair tests the keyPair complex type.
+// A real ed25519 key pair is generated in-process and injected into the config
+// so we verify actual key material round-trips correctly through the vault.
+func TestAccResourceLogin_customFieldKeyPair(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_custom_keypair"
+
+	kp, err := GenerateSSHKeyPair(SSHKeyTypeED25519, 0, "")
+	if err != nil {
+		t.Fatalf("failed to generate key pair for test: %v", err)
+	}
+
+	// Marshal to JSON so newlines and special chars are properly escaped
+	// for embedding as an HCL string literal.
+	valueJSON, err := json.Marshal(map[string]string{
+		"publicKey":  kp.PublicKey,
+		"privateKey": kp.PrivateKey,
+	})
+	if err != nil {
+		t.Fatalf("failed to marshal key pair to JSON: %v", err)
+	}
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_login" "custom_keypair" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "keyPair"
+				label = "DeployKey"
+				value = %q
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle, string(valueJSON))
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_keypair", "custom.#", "1"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_keypair", "custom.0.type", "keyPair"),
+					resource.TestCheckResourceAttr("secretsmanager_login.custom_keypair", "custom.0.label", "DeployKey"),
+					resource.TestCheckResourceAttrSet("secretsmanager_login.custom_keypair", "custom.0.value"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
 			},
 		},
 	})

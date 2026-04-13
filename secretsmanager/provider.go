@@ -240,6 +240,14 @@ func toJsonDefault(v interface{}, defaultValue string) string {
 	return string(content)
 }
 
+// epochMsToDateUTC converts Keeper's epoch-millisecond date values to a YYYY-MM-DD
+// string in UTC. Using UTC is critical: without it, machines in negative-offset
+// timezones (e.g. US/Pacific, UTC-8) shift midnight-UTC dates back by one day,
+// causing a perpetual Terraform diff on every plan.
+func epochMsToDateUTC(ms float64) string {
+	return time.Unix(int64(ms/1000), 0).UTC().Format("2006-01-02")
+}
+
 func getFieldItemsData(recordDict map[string]interface{}, section string) []interface{} {
 	sections := []string{"fields", "custom"}
 	if len(recordDict) == 0 || !slices.Contains(sections, section) {
@@ -299,7 +307,7 @@ func getFieldItemsData(recordDict map[string]interface{}, section string) []inte
 				dates := []interface{}{}
 				for _, date := range sVals {
 					if d, success := date.(float64); success {
-						value := time.Unix(int64(d/1000), 0).UTC().Format("2006-01-02") // date only, UTC
+						value := epochMsToDateUTC(d)
 						dates = append(dates, value)
 					}
 				}
@@ -602,6 +610,35 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 					}
 					f.Value = append(f.Value, s)
 				}
+			}
+			fields = append(fields, f)
+
+		case "addressRef":
+			f := &core.AddressRef{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				f.Value = []string{value}
+			}
+			fields = append(fields, f)
+
+		case "cardRef":
+			f := &core.CardRef{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				f.Value = []string{value}
+			}
+			fields = append(fields, f)
+
+		case "fileRef":
+			// fileRef has no PrivacyScreen in the SDK struct.
+			f := &core.FileRef{KeeperRecordField: base, Required: required}
+			if value != "" {
+				f.Value = []string{value}
+			}
+			fields = append(fields, f)
+
+		case "oneTimeCode":
+			f := &core.OneTimeCode{KeeperRecordField: base, Required: required, PrivacyScreen: privacyScreen}
+			if value != "" {
+				f.Value = []string{value}
 			}
 			fields = append(fields, f)
 
