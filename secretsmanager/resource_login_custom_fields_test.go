@@ -3,6 +3,7 @@ package secretsmanager
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -583,7 +584,7 @@ func TestAccResourceLogin_customFieldPaymentCardRoundTrip(t *testing.T) {
 }
 
 // TestAccResourceLogin_customFieldDate tests a date custom field using YYYY-MM-DD format.
-// RFC3339 is also accepted on write but the read path always returns YYYY-MM-DD.
+// Only YYYY-MM-DD is accepted — RFC3339 is rejected with a clear error (KSM-889).
 func TestAccResourceLogin_customFieldDate(t *testing.T) {
 	secretFolderUid := testAcc.getTestFolder()
 	secretUid := core.GenerateUid()
@@ -763,6 +764,86 @@ func TestAccResourceLogin_customFieldKeyPair(t *testing.T) {
 			{
 				Config:   config,
 				PlanOnly: true,
+			},
+		},
+	})
+}
+
+// TestAccResourceLogin_customFieldCheckboxInvalidInput is the regression test for KSM-889
+// (checkbox). Values like "yes", "1", "on" were silently treated as false — because
+// strings.ToLower(value) == "true" is false for them — then read back as "false", causing
+// a perpetual diff between config and state.
+//
+// After KSM-889: apply returns an error immediately, directing the user to use "true" or "false".
+// Failure mode before fix: no error raised → ExpectError step fails (expected error, got none).
+// Passing mode after fix: error raised → ExpectError step passes.
+func TestAccResourceLogin_customFieldCheckboxInvalidInput(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_custom_checkbox_invalid"
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_login" "custom_checkbox_invalid" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "checkbox"
+				label = "Feature"
+				value = "yes"
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config:      config,
+				ExpectError: regexp.MustCompile(`invalid checkbox value`),
+			},
+		},
+	})
+}
+
+// TestAccResourceLogin_customFieldDateInvalidFormat is the regression test for KSM-889
+// (date). RFC3339 values like "2026-03-20T14:30:00Z" were silently accepted, stored as
+// epoch ms, but the read path always returned "2026-03-20" (YYYY-MM-DD only, time
+// component discarded). This caused a perpetual diff: config kept the RFC3339 string
+// while state showed YYYY-MM-DD.
+//
+// After KSM-889: apply returns an error immediately, directing the user to use YYYY-MM-DD.
+// Applies equally to date, birthDate, and expirationDate — all share the same write path.
+// Failure mode before fix: no error raised → ExpectError step fails (expected error, got none).
+// Passing mode after fix: error raised → ExpectError step passes.
+func TestAccResourceLogin_customFieldDateInvalidFormat(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_custom_date_invalid"
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_login" "custom_date_invalid" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "date"
+				label = "Review"
+				value = "2026-03-20T14:30:00Z"
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config:      config,
+				ExpectError: regexp.MustCompile(`invalid date value`),
 			},
 		},
 	})
