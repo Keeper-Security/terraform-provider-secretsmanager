@@ -301,6 +301,9 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 	// User-defined custom fields — appended after the platform-managed
 	// "Private Key Passphrase" entry already placed in nrc.Custom above.
 	if customData := d.Get("custom"); customData != nil {
+		if err := validatePamCustomFieldLabels(customData.([]interface{}), "pam_machine"); err != nil {
+			return diag.FromErr(err)
+		}
 		if fields, err := customFieldsFromSchema(customData.([]interface{})); err != nil {
 			return diag.FromErr(err)
 		} else {
@@ -655,6 +658,9 @@ func resourcePamMachineUpdate(ctx context.Context, d *schema.ResourceData, m int
 
 	if d.HasChange("custom") {
 		customData := d.Get("custom").([]interface{})
+		if err := validatePamCustomFieldLabels(customData, "pam_machine"); err != nil {
+			return diag.FromErr(err)
+		}
 		userFields, err := customFieldsFromSchema(customData)
 		if err != nil {
 			return diag.FromErr(err)
