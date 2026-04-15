@@ -1527,7 +1527,7 @@ func schemaUrlField() *schema.Schema {
 // Each field has a type, label, and value. The value is always a string:
 // - Simple types (text, multiline, secret, url, email): plain string value
 // - Complex types (phone, name, address, paymentCard): jsonencode() of the nested object
-// - Date: RFC3339 string (e.g. "2024-01-15T00:00:00Z")
+// - Date: YYYY-MM-DD format (e.g. "2024-01-15")
 // The provider interprets the value based on the type field.
 func schemaCustomField() *schema.Schema {
 	return &schema.Schema{

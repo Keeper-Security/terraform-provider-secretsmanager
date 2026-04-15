@@ -351,7 +351,11 @@ func getFieldItemsData(recordDict map[string]interface{}, section string) []inte
 // entry. This lets callers write value = jsonencode({...}) for one entry or
 // value = jsonencode([{...},{...}]) for multiple entries without changing the schema.
 func parseJSONItems(value string) ([]json.RawMessage, error) {
-	if strings.TrimSpace(value)[0] == '[' {
+	trimmed := strings.TrimSpace(value)
+	if len(trimmed) == 0 {
+		return nil, fmt.Errorf("cannot parse empty or whitespace-only JSON value")
+	}
+	if trimmed[0] == '[' {
 		var items []json.RawMessage
 		return items, json.Unmarshal([]byte(value), &items)
 	}
@@ -364,7 +368,7 @@ func parseJSONItems(value string) ([]json.RawMessage, error) {
 //
 // Value encoding by type:
 //   - Simple strings (text, multiline, secret, url, email, login, password, etc.): plain string
-//   - Dates (date, birthDate, expirationDate): RFC3339 or YYYY-MM-DD; read always returns YYYY-MM-DD
+//   - Dates (date, birthDate, expirationDate): YYYY-MM-DD format only (e.g. "2024-01-15")
 //   - Complex objects (phone, name, address, paymentCard, bankAccount, host,
 //     securityQuestion, keyPair, script): jsonencode({...}) for one entry,
 //     jsonencode([{...},{...}]) for multiple entries in the same field
