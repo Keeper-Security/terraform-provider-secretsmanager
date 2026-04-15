@@ -30,12 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Full CRUD lifecycle with import support
 
 - **Custom Fields** (KSM-388):
-  - Add `custom` block to all 22 resource types (`login`, `bank_account`, `bank_card`, `birth_certificate`, `contact`, `database_credentials`, `driver_license`, `encrypted_notes`, `file`, `health_insurance`, `membership`, `passport`, `photo`, `server_credentials`, `software_license`, `ssh_keys`, `ssn_card`, `address`, `pam_database`, `pam_directory`, `pam_machine`, `pam_remote_browser`, `pam_user`)
+  - Add `custom` block to all 23 record resource types (`login`, `bank_account`, `bank_card`, `birth_certificate`, `contact`, `database_credentials`, `driver_license`, `encrypted_notes`, `file`, `health_insurance`, `membership`, `passport`, `photo`, `server_credentials`, `software_license`, `ssh_keys`, `ssn_card`, `address`, `pam_database`, `pam_directory`, `pam_machine`, `pam_remote_browser`, `pam_user`)
   - Supports 43+ Keeper field types including `text`, `secret`, `url`, `email`, `phone`, `date`, `birthDate`, `expirationDate`, `name`, `address`, `paymentCard`, `bankAccount`, `host`, `keyPair`, `securityQuestion`, `checkbox`, `multiline`, and more
   - Simple types use a plain string `value`; complex types use `value = jsonencode({...})` for a single entry or `value = jsonencode([{...},{...}])` for multiple entries in one field
   - `pam_machine` and `pam_user` use merge-aware logic to preserve the vault-managed "Private Key Passphrase" custom field across create/update operations
   - `required` and `privacy_screen` attributes round-trip correctly from vault state (no perpetual diff on import)
-  - Custom field schema verified across all 24 resource types via unit test; reference type SDK structs fixed (`addressRef`, `cardRef`, `fileRef`, `oneTimeCode`)
+  - Custom field schema verified across all 23 record resource types via unit test (`folder` excluded — it is a container with no custom fields); reference type SDK structs fixed (`addressRef`, `cardRef`, `fileRef`, `oneTimeCode`)
 
 ### Fixed
 - **Custom fields — `paymentCard` perpetual diff** (KSM-888):
@@ -60,8 +60,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - KSM folders are containers and do not support custom fields
 
 - **Missing test coverage** (Code Review):
-  - Added `resourceFile()` to `TestCustomFieldSchemaPresence` — now covers all 24 resource types
-  - Verified all resource types have `custom` TypeList with correct 5-key structure (type, label, value, required, privacy_screen)
+  - Added `resourceFile()` to `TestCustomFieldSchemaPresence` — now covers all 23 record resource types (all except `folder`, which has no custom fields)
+  - Verified all record resource types have `custom` TypeList with correct 5-key structure (type, label, value, required, privacy_screen)
 
 - **parseJSONItems panic guard** (Code Review):
   - Added length check after `strings.TrimSpace()` to prevent index-out-of-range panic on empty or whitespace-only input

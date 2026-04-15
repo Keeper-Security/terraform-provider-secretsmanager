@@ -25,6 +25,7 @@ func TestCustomFieldSchemaPresence(t *testing.T) {
 		"database_credentials": resourceDatabaseCredentials(),
 		"driver_license":       resourceDriverLicense(),
 		"encrypted_notes":      resourceEncryptedNotes(),
+		"file":                 resourceFile(),
 		"health_insurance":     resourceHealthInsurance(),
 		"login":                resourceLogin(),
 		"membership":           resourceMembership(),

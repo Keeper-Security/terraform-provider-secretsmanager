@@ -95,6 +95,16 @@ func TestParseJSONItems(t *testing.T) {
 			input:   `[not valid json]`,
 			wantErr: true,
 		},
+		{
+			name:    "empty_string",
+			input:   ``,
+			wantErr: true,
+		},
+		{
+			name:    "whitespace_only",
+			input:   `   `,
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
