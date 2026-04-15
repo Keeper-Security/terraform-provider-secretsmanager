@@ -7,19 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **Custom Fields** (KSM-388):
-  - Add `custom` block to all 22 resource types (`login`, `bank_account`, `bank_card`, `birth_certificate`, `contact`, `database_credentials`, `driver_license`, `encrypted_notes`, `file`, `health_insurance`, `membership`, `passport`, `photo`, `server_credentials`, `software_license`, `ssh_keys`, `ssn_card`, `address`, `pam_database`, `pam_directory`, `pam_machine`, `pam_remote_browser`, `pam_user`)
-  - Supports 43+ Keeper field types including `text`, `secret`, `url`, `email`, `phone`, `date`, `birthDate`, `expirationDate`, `name`, `address`, `paymentCard`, `bankAccount`, `host`, `keyPair`, `securityQuestion`, `checkbox`, `multiline`, and more
-  - Simple types use a plain string `value`; complex types use `value = jsonencode({...})` for a single entry or `value = jsonencode([{...},{...}])` for multiple entries in one field
-  - `pam_machine` and `pam_user` use merge-aware logic to preserve the vault-managed "Private Key Passphrase" custom field across create/update operations
-  - `required` and `privacy_screen` attributes round-trip correctly from vault state (no perpetual diff on import)
-
-### Fixed
-- **Custom fields — `paymentCard` perpetual diff** (KSM-888): `jsonencode()` values must use camelCase keys — `cardNumber`, `cardExpirationDate`, `cardSecurityCode` — matching Keeper's API format. Snake_case keys (`card_number`, etc.) were previously silently ignored, causing the field to be written empty and producing a perpetual plan diff.
-- **Custom fields — non-canonical `checkbox` values** (KSM-889): only `"true"` or `"false"` are accepted. Other strings like `"yes"` or `"1"` now return a clear error instead of being silently coerced to `false`.
-- **Custom fields — non-canonical date values** (KSM-889): `date`, `birthDate`, and `expirationDate` only accept YYYY-MM-DD format. RFC3339 input (e.g. `"2026-03-20T14:30:00Z"`) now returns a clear error instead of causing a perpetual plan diff (config kept RFC3339; state returned YYYY-MM-DD).
-
 ## [1.3.0]
 
 ### Security
@@ -42,8 +29,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Support for Remote Browser Isolation (RBI) URL, browser settings (JSON), traffic encryption seed, file references, and TOTP
   - Full CRUD lifecycle with import support
 
+- **Custom Fields** (KSM-388):
+  - Add `custom` block to all 22 resource types (`login`, `bank_account`, `bank_card`, `birth_certificate`, `contact`, `database_credentials`, `driver_license`, `encrypted_notes`, `file`, `health_insurance`, `membership`, `passport`, `photo`, `server_credentials`, `software_license`, `ssh_keys`, `ssn_card`, `address`, `pam_database`, `pam_directory`, `pam_machine`, `pam_remote_browser`, `pam_user`)
+  - Supports 43+ Keeper field types including `text`, `secret`, `url`, `email`, `phone`, `date`, `birthDate`, `expirationDate`, `name`, `address`, `paymentCard`, `bankAccount`, `host`, `keyPair`, `securityQuestion`, `checkbox`, `multiline`, and more
+  - Simple types use a plain string `value`; complex types use `value = jsonencode({...})` for a single entry or `value = jsonencode([{...},{...}])` for multiple entries in one field
+  - `pam_machine` and `pam_user` use merge-aware logic to preserve the vault-managed "Private Key Passphrase" custom field across create/update operations
+  - `required` and `privacy_screen` attributes round-trip correctly from vault state (no perpetual diff on import)
+  - Custom field schema verified across all 24 resource types via unit test; reference type SDK structs fixed (`addressRef`, `cardRef`, `fileRef`, `oneTimeCode`)
+
 ### Fixed
-- Fix wrong JSON key in `pamHostnameToListValue` causing incorrect PAM hostname field mapping (KSM-884)
+- **Custom fields — `paymentCard` perpetual diff** (KSM-888):
+  - `jsonencode()` values must use camelCase keys — `cardNumber`, `cardExpirationDate`, `cardSecurityCode` — matching Keeper's API format
+  - Snake_case keys (`card_number`, etc.) are now rejected with a clear error instead of being silently ignored and written as empty objects
+
+- **Custom fields — non-canonical `checkbox` values** (KSM-889):
+  - Only `"true"` or `"false"` are accepted for checkbox fields
+  - Other strings like `"yes"`, `"1"`, or `"on"` now return a clear error instead of being silently coerced to `false`, which caused perpetual plan diffs
+
+- **Custom fields — non-canonical date values** (KSM-889):
+  - `date`, `birthDate`, and `expirationDate` only accept YYYY-MM-DD format
+  - RFC3339 input (e.g., `"2026-03-20T14:30:00Z"`) now returns a clear error instead of causing a perpetual plan diff (config kept RFC3339; state returned YYYY-MM-DD)
+  - Updated documentation comments in `record_fields.go` and `provider.go` to correctly specify YYYY-MM-DD format
+
+- **PAM ephemeral `host_name` always empty** (KSM-884):
+  - `pamHostnameToListValue` was reading the wrong field key (`hostname` lowercase instead of `hostName` camelCase)
+  - Fixes silent empty returns for `pam_machine`, `pam_database`, and `pam_directory` ephemeral resources
+
+- **Folder custom fields documentation** (Code Review):
+  - Removed spurious `custom` block from `examples/resources/folder.tf` and `docs/resources/folder.md`
+  - KSM folders are containers and do not support custom fields
+
+- **Missing test coverage** (Code Review):
+  - Added `resourceFile()` to `TestCustomFieldSchemaPresence` — now covers all 24 resource types
+  - Verified all resource types have `custom` TypeList with correct 5-key structure (type, label, value, required, privacy_screen)
+
+- **parseJSONItems panic guard** (Code Review):
+  - Added length check after `strings.TrimSpace()` to prevent index-out-of-range panic on empty or whitespace-only input
+  - Affects custom field value parsing for complex types (phone, name, address, paymentCard, etc.)
+
+- **PAM Remote Browser example file** (Code Review):
+  - Created `examples/resources/pam_remote_browser.tf` demonstrating managed resource with `custom` block support
 - Remove invalid `DiffSuppressFunc` and `ValidateFunc` from computed-only `pam_remote_browser_settings` field in the `pam_remote_browser` data source
 - Add nil-check guard in all ephemeral resource `Open()` methods to prevent panics if provider configuration is missing
 - Surface warning diagnostics when referenced `addressRef` or `cardRef` records cannot be fetched, instead of silently returning empty fields
