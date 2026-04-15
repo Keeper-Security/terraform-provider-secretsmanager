@@ -34,6 +34,14 @@ resource "secretsmanager_encrypted_notes" "my_encrypted_notes" {
     value          = 1651186276
     # unix time in milliseconds
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {

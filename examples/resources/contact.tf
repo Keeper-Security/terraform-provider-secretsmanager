@@ -60,6 +60,14 @@ resource "secretsmanager_contact" "my_contact" {
     privacy_screen = true
     value          = "<address ref UID>"
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {

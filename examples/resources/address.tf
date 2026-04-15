@@ -34,6 +34,14 @@ resource "secretsmanager_address" "my_address" {
       zip     = "90003-2334"
     }
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {

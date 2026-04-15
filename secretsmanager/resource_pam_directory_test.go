@@ -281,3 +281,42 @@ func TestAccResourcePamDirectory_import(t *testing.T) {
 		},
 	})
 }
+
+func TestAccResourcePamDirectory_customField(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_test_pam_directory_custom"
+	if secretFolderUid == "" {
+		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
+	}
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_pam_directory" "custom" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "text"
+				label = "Department"
+				value = "engineering"
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr("secretsmanager_pam_directory.custom", "custom.#", "1"),
+					resource.TestCheckResourceAttr("secretsmanager_pam_directory.custom", "custom.0.label", "Department"),
+					resource.TestCheckResourceAttr("secretsmanager_pam_directory.custom", "custom.0.value", "engineering"),
+				),
+			},
+		},
+	})
+}

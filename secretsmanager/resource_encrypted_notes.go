@@ -55,6 +55,8 @@ func resourceEncryptedNotes() *schema.Resource {
 			"note":     schemaSecureNoteField(),
 			"date":     schemaDateField(),
 			"file_ref": schemaFileRefField(),
+			// custom[]
+			"custom": schemaCustomField(),
 		},
 	}
 }
@@ -114,6 +116,14 @@ func resourceEncryptedNotesCreate(ctx context.Context, d *schema.ResourceData, m
 			if err := SetFieldTypeInSchema(d, "file_ref", "fileRef"); err != nil {
 				return diag.FromErr(err)
 			}
+		}
+	}
+
+	if customData := d.Get("custom"); customData != nil {
+		if fields, err := customFieldsFromSchema(customData.([]interface{})); err != nil {
+			return diag.FromErr(err)
+		} else {
+			nrc.Custom = fields
 		}
 	}
 
@@ -209,6 +219,11 @@ func resourceEncryptedNotesRead(ctx context.Context, d *schema.ResourceData, m i
 		return diag.FromErr(err)
 	}
 
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	if err := d.Set("custom", customItems); err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.SetId(uid)
 	return diags
 }
@@ -257,6 +272,15 @@ func resourceEncryptedNotesUpdate(ctx context.Context, d *schema.ResourceData, m
 		if _, err := ApplyFieldChange("fields", "file_ref", d, secret); err != nil {
 			return diag.FromErr(err)
 		}
+	}
+
+	if d.HasChange("custom") {
+		customData := d.Get("custom").([]interface{})
+		fields, err := customFieldsFromSchema(customData)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		secret.RecordDict["custom"] = customFieldsToDict(fields)
 	}
 
 	secret.RawJson = core.DictToJson(secret.RecordDict)

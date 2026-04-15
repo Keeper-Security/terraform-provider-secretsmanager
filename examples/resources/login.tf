@@ -54,6 +54,52 @@ resource "secretsmanager_login" "my_login" {
     privacy_screen = true
     value          = "otpauth://totp/Acme:Buster?secret=6I4PI5EUKS66GPRY5TMLJJP25MAYWAVL&issuer=Acme&algorithm=SHA1&digits=6&period=30"
   }
+
+  # Simple custom field — plain string value
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
+  # Secret custom field — treated as sensitive
+  custom {
+    type  = "secret"
+    label = "ApiKey"
+    value = "sk-prod-..."
+  }
+
+  # Complex custom field — use jsonencode() for structured types
+  custom {
+    type  = "phone"
+    label = "SupportLine"
+    value = jsonencode({ region = "US", number = "555-867-5309", type = "Work" })
+  }
+
+  # Date custom field — YYYY-MM-DD only (RFC3339 is not accepted)
+  custom {
+    type  = "date"
+    label = "CertExpiry"
+    value = "2027-06-01"
+  }
+
+  # Checkbox custom field — must be "true" or "false" (not "yes", "1", etc.)
+  custom {
+    type  = "checkbox"
+    label = "MFAEnabled"
+    value = "true"
+  }
+
+  # Payment card custom field — jsonencode keys must be camelCase
+  custom {
+    type  = "paymentCard"
+    label = "Corporate Card"
+    value = jsonencode({
+      cardNumber         = "4111111111111111"
+      cardExpirationDate = "12/2027"
+      cardSecurityCode   = "123"
+    })
+  }
 }
 
 resource "local_file" "out" {

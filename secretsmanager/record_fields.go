@@ -120,6 +120,7 @@ func schemaAccountNumberField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -290,11 +291,13 @@ func schemaBankAccountField() *schema.Schema {
 							"routing_number": {
 								Type:        schema.TypeString,
 								Optional:    true,
+								Sensitive:   true,
 								Description: "Routing number.",
 							},
 							"account_number": {
 								Type:        schema.TypeString,
 								Optional:    true,
+								Sensitive:   true,
 								Description: "Account number.",
 							},
 							"other_type": {
@@ -822,6 +825,7 @@ func schemaLicenseNumberField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -1000,6 +1004,7 @@ func schemaOneTimeCodeField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -1156,6 +1161,7 @@ func schemaPaymentCardField() *schema.Schema {
 							"card_number": {
 								Type:        schema.TypeString,
 								Optional:    true,
+								Sensitive:   true,
 								Description: "Card number.",
 							},
 							"card_expiration_date": {
@@ -1166,6 +1172,7 @@ func schemaPaymentCardField() *schema.Schema {
 							"card_security_code": {
 								Type:        schema.TypeString,
 								Optional:    true,
+								Sensitive:   true,
 								Description: "Card security code.",
 							},
 						},
@@ -1293,6 +1300,7 @@ func schemaPinCodeField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -1332,6 +1340,7 @@ func schemaSecretField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -1508,6 +1517,52 @@ func schemaUrlField() *schema.Schema {
 					Type:        schema.TypeString,
 					Optional:    true,
 					Description: "Field value.",
+				},
+			},
+		},
+	}
+}
+
+// schemaCustomField returns the schema for user-defined custom fields on a record.
+// Each field has a type, label, and value. The value is always a string:
+// - Simple types (text, multiline, secret, url, email): plain string value
+// - Complex types (phone, name, address, paymentCard): jsonencode() of the nested object
+// - Date: RFC3339 string (e.g. "2024-01-15T00:00:00Z")
+// The provider interprets the value based on the type field.
+func schemaCustomField() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeList,
+		Optional:    true,
+		Description: "Custom fields defined by the user in Keeper. Each field has a type, label, and value.",
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"type": {
+					Type:        schema.TypeString,
+					Required:    true,
+					Description: "Field type (e.g. text, secret, url, email, multiline, date, phone, name, address, paymentCard).",
+				},
+				"label": {
+					Type:        schema.TypeString,
+					Required:    true,
+					Description: "Field label. Used to identify the field within the record.",
+				},
+				"value": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+					Description: "Field value. Use a plain string for simple types. Use jsonencode() for complex types (phone, name, address, paymentCard).",
+				},
+				"required": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Computed:    true,
+					Description: "Whether this field is required.",
+				},
+				"privacy_screen": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Computed:    true,
+					Description: "Whether this field is hidden behind a privacy screen in the Keeper UI.",
 				},
 			},
 		},

@@ -58,6 +58,14 @@ resource "secretsmanager_pam_user" "db_admin" {
     label = "Managed"
     value = true
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 # Example 2: PAM User with rotation scripts

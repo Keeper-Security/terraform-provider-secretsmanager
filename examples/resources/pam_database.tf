@@ -54,6 +54,14 @@ resource "secretsmanager_pam_database" "postgres_prod" {
     label = "Default Database"
     value = "production"
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 # Example 2: MySQL Database

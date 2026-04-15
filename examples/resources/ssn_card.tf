@@ -37,6 +37,14 @@ resource "secretsmanager_ssn_card" "my_ssn_card" {
       last   = "Doe"
     }
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {

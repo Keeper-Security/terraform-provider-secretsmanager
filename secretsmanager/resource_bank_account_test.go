@@ -246,3 +246,76 @@ func TestAccResourceBankAccount_import(t *testing.T) {
 		},
 	})
 }
+
+func TestAccResourceBankAccount_customField(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_bank_account_custom"
+
+	configCreate := fmt.Sprintf(`
+		resource "secretsmanager_bank_account" "custom" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "text"
+				label = "Branch"
+				value = "Downtown"
+			}
+			custom {
+				type  = "text"
+				label = "AccountTier"
+				value = "Premium"
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	configUpdate := fmt.Sprintf(`
+		resource "secretsmanager_bank_account" "custom" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "text"
+				label = "Branch"
+				value = "Uptown"
+			}
+			custom {
+				type  = "text"
+				label = "AccountTier"
+				value = "Premium"
+			}
+			custom {
+				type  = "text"
+				label = "CurrencyCode"
+				value = "USD"
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: configCreate,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr("secretsmanager_bank_account.custom", "custom.#", "2"),
+					resource.TestCheckResourceAttr("secretsmanager_bank_account.custom", "custom.0.label", "Branch"),
+					resource.TestCheckResourceAttr("secretsmanager_bank_account.custom", "custom.0.value", "Downtown"),
+				),
+			},
+			{
+				Config: configUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("secretsmanager_bank_account.custom", "custom.#", "3"),
+					resource.TestCheckResourceAttr("secretsmanager_bank_account.custom", "custom.0.value", "Uptown"),
+					resource.TestCheckResourceAttr("secretsmanager_bank_account.custom", "custom.2.label", "CurrencyCode"),
+				),
+			},
+		},
+	})
+}

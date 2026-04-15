@@ -46,6 +46,14 @@ resource "secretsmanager_pam_machine" "ssh_server" {
       reusePort = true
     }]
   }])
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 # Example 2: PAM Machine with RDP protocol

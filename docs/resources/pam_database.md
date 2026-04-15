@@ -1,39 +1,61 @@
-# secretsmanager_pam_remote_browser Resource
+# secretsmanager_pam_database Resource
 
-Use this resource to create and manage PAM Remote Browser records in Keeper Vault. Supports remote browser isolation (RBI) for secure web access through privileged access management.
+Use this resource to create and manage PAM Database records in Keeper Vault. Supports PostgreSQL, MySQL, MongoDB, and other database types for privileged access management.
 
 ## Example Usage
 
-### Basic PAM Remote Browser
+### PostgreSQL Database
 
 ```terraform
-resource "secretsmanager_pam_remote_browser" "basic" {
+resource "secretsmanager_pam_database" "postgres" {
   folder_uid = "<folder UID>"
-  title      = "Internal Web App"
+  title      = "Production PostgreSQL"
 
-  rbi_url {
-    value = "https://internal-app.example.com"
+  pam_hostname {
+    value {
+      hostname = "postgres.prod.example.com"
+      port     = "5432"
+    }
   }
+
+  database_type = "postgresql"
+
+  pam_settings = jsonencode([{
+    connection = [{
+      protocol = "postgresql"
+      port     = "5432"
+    }]
+  }])
 }
 ```
 
-### PAM Remote Browser with Settings
+### Database with Custom Fields
 
 ```terraform
-resource "secretsmanager_pam_remote_browser" "with_settings" {
+resource "secretsmanager_pam_database" "mysql_staging" {
   folder_uid = "<folder UID>"
-  title      = "Secure Browser Session"
+  title      = "Staging MySQL"
 
-  rbi_url {
-    value = "https://admin.example.com"
+  pam_hostname {
+    value {
+      hostname = "mysql.staging.example.com"
+      port     = "3306"
+    }
   }
 
-  pam_remote_browser_settings = jsonencode({
-    "connection" = {
-      "protocol"            = "http"
-      "allowUrlManipulation" = false
-    }
-  })
+  database_type = "mysql"
+
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "staging"
+  }
+
+  custom {
+    type  = "text"
+    label = "Team"
+    value = "platform"
+  }
 }
 ```
 
@@ -43,9 +65,14 @@ resource "secretsmanager_pam_remote_browser" "with_settings" {
 * `uid` - (Optional) The UID for the new record (RFC 4648 URL-safe base64). Auto-generated if not set. At least one of `folder_uid` or `uid` must be set.
 * `title` - (Optional) The record title.
 * `notes` - (Optional) The record notes.
-* `rbi_url` - (Optional) The Remote Browser Interface URL. Block with `value` attribute.
-* `pam_remote_browser_settings` - (Optional) Connection settings as a JSON string.
-* `traffic_encryption_seed` - (Optional) Base64-encoded 256-bit encryption seed. Block with `value` attribute.
+* `pam_hostname` - (Optional) Database hostname and port.
+* `database_type` - (Optional) Database type string (e.g. `postgresql`, `mysql`, `mongodb`).
+* `database_id` - (Optional) Database identifier (e.g. RDS instance ID). Block with `value` attribute.
+* `use_ssl` - (Optional) SSL enabled flag. Block with `value` (boolean) attribute.
+* `pam_settings` - (Optional) Connection and port-forward settings as a JSON string. Use `jsonencode()`.
+* `rotation_scripts` - (Optional) Rotation script references.
+* `provider_group` - (Optional) Cloud provider group. Block with `value` attribute.
+* `provider_region` - (Optional) Cloud provider region. Block with `value` attribute.
 * `file_ref` - (Optional) File references.
 * `totp` - (Optional) One-time code (otpauth:// URI).
 * `custom` - (Optional) User-defined custom fields. Each block requires `type` (Keeper field type) and `label` (display name), with optional `value` (plain string or `jsonencode()` for complex types), `required`, and `privacy_screen`. See [Nested Schema for `custom`](#nestedblock--custom) below.
@@ -54,14 +81,14 @@ resource "secretsmanager_pam_remote_browser" "with_settings" {
 
 In addition to all arguments above, the following attributes are exported:
 
-* `type` - The record type (`pamRemoteBrowser`).
+* `type` - The record type (`pamDatabase`).
 
 ## Import
 
-PAM Remote Browser records can be imported using their UID:
+PAM Database records can be imported using their UID:
 
 ```
-$ terraform import secretsmanager_pam_remote_browser.example <record_UID>
+$ terraform import secretsmanager_pam_database.example <record_UID>
 ```
 
 <a id="nestedblock--custom"></a>

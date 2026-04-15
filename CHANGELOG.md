@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Custom Fields** (KSM-388):
+  - Add `custom` block to all 22 resource types (`login`, `bank_account`, `bank_card`, `birth_certificate`, `contact`, `database_credentials`, `driver_license`, `encrypted_notes`, `file`, `health_insurance`, `membership`, `passport`, `photo`, `server_credentials`, `software_license`, `ssh_keys`, `ssn_card`, `address`, `pam_database`, `pam_directory`, `pam_machine`, `pam_remote_browser`, `pam_user`)
+  - Supports 43+ Keeper field types including `text`, `secret`, `url`, `email`, `phone`, `date`, `birthDate`, `expirationDate`, `name`, `address`, `paymentCard`, `bankAccount`, `host`, `keyPair`, `securityQuestion`, `checkbox`, `multiline`, and more
+  - Simple types use a plain string `value`; complex types use `value = jsonencode({...})` for a single entry or `value = jsonencode([{...},{...}])` for multiple entries in one field
+  - `pam_machine` and `pam_user` use merge-aware logic to preserve the vault-managed "Private Key Passphrase" custom field across create/update operations
+  - `required` and `privacy_screen` attributes round-trip correctly from vault state (no perpetual diff on import)
+
+### Fixed
+- **Custom fields — `paymentCard` perpetual diff** (KSM-888): `jsonencode()` values must use camelCase keys — `cardNumber`, `cardExpirationDate`, `cardSecurityCode` — matching Keeper's API format. Snake_case keys (`card_number`, etc.) were previously silently ignored, causing the field to be written empty and producing a perpetual plan diff.
+- **Custom fields — non-canonical `checkbox` values** (KSM-889): only `"true"` or `"false"` are accepted. Other strings like `"yes"` or `"1"` now return a clear error instead of being silently coerced to `false`.
+- **Custom fields — non-canonical date values** (KSM-889): `date`, `birthDate`, and `expirationDate` only accept YYYY-MM-DD format. RFC3339 input (e.g. `"2026-03-20T14:30:00Z"`) now returns a clear error instead of causing a perpetual plan diff (config kept RFC3339; state returned YYYY-MM-DD).
+
 ## [1.3.0]
 
 ### Security
@@ -35,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add nil-check guard in all ephemeral resource `Open()` methods to prevent panics if provider configuration is missing
 - Surface warning diagnostics when referenced `addressRef` or `cardRef` records cannot be fetched, instead of silently returning empty fields
 - Mark `credential` provider attribute as sensitive to prevent credentials appearing in plan output
+- Mark sensitive fields across all record types to prevent secrets appearing in plan output: payment card numbers and security codes, bank account and routing numbers, PIN codes, TOTP seeds, license numbers, and secret field values
 
 ## [1.2.0]
 

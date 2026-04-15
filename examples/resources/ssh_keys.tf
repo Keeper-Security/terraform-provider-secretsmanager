@@ -60,6 +60,14 @@ resource "secretsmanager_ssh_keys" "my_ssh_keys" {
       private_key = "<PRIVATE KEY>"
     }
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {
