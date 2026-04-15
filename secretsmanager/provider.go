@@ -673,6 +673,31 @@ func customFieldsToDict(fields []interface{}) []interface{} {
 	return result
 }
 
+// pamReservedCustomLabels contains labels that pam_machine and pam_user inject
+// as platform-managed custom fields. User config must not reuse these labels.
+var pamReservedCustomLabels = map[string]bool{
+	"Private Key Passphrase": true,
+}
+
+// validatePamCustomFieldLabels returns an error if any item in a custom field
+// schema list uses a platform-reserved label.
+func validatePamCustomFieldLabels(items []interface{}, resourceType string) error {
+	for _, raw := range items {
+		m, ok := raw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		label, _ := m["label"].(string)
+		if pamReservedCustomLabels[label] {
+			return fmt.Errorf(
+				"custom field label %q is reserved for platform use on %s and cannot be used for user-defined custom fields",
+				label, resourceType,
+			)
+		}
+	}
+	return nil
+}
+
 func getTotpCode(totpUrl string) (code string, seconds int, err error) {
 	if totp, err := core.GetTotpCode(totpUrl); err == nil {
 		return totp.Code, totp.TimeLeft, nil

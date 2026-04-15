@@ -2,6 +2,7 @@ package secretsmanager
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -428,6 +429,35 @@ func TestAccResourcePamUser_customField(t *testing.T) {
 						return nil
 					}),
 				),
+			},
+		},
+	})
+}
+
+func TestAccResourcePamUser_customFieldReservedLabel(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_pam_user" "reserved_label" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "test-reserved-label"
+			custom {
+				type  = "secret"
+				label = "Private Key Passphrase"
+				value = "user-value"
+			}
+		}
+	`, secretFolderUid, secretUid)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config:      config,
+				ExpectError: regexp.MustCompile(`Private Key Passphrase`),
 			},
 		},
 	})
