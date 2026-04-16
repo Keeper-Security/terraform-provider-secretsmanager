@@ -392,7 +392,7 @@ func resourcePamUserRead(ctx context.Context, d *schema.ResourceData, m interfac
 	userCustom := make([]interface{}, 0, len(allCustom))
 	for _, item := range allCustom {
 		if m, ok := item.(map[string]interface{}); ok {
-			if label, _ := m["label"].(string); label == "Private Key Passphrase" {
+			if label, _ := m["label"].(string); strings.EqualFold(label, "Private Key Passphrase") {
 				continue
 			}
 		}
@@ -542,7 +542,7 @@ func resourcePamUserUpdate(ctx context.Context, d *schema.ResourceData, m interf
 		if current, ok := secret.RecordDict["custom"].([]interface{}); ok {
 			for _, item := range current {
 				if m, ok := item.(map[string]interface{}); ok {
-					if label, _ := m["label"].(string); label == "Private Key Passphrase" {
+					if label, _ := m["label"].(string); strings.EqualFold(label, "Private Key Passphrase") {
 						preserved = append(preserved, item)
 					}
 				}

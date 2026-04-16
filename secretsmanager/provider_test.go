@@ -154,6 +154,29 @@ func TestProvider(t *testing.T) {
 	}
 }
 
+func TestValidatePamCustomFieldLabels(t *testing.T) {
+	cases := []struct {
+		label   string
+		wantErr bool
+	}{
+		{"Private Key Passphrase", true},  // exact canonical — blocked
+		{"private key passphrase", true},  // all lowercase — now blocked
+		{"PRIVATE KEY PASSPHRASE", true},  // all uppercase — now blocked
+		{"Private Key PASSPHRASE", true},  // mixed case — now blocked
+		{"Owner", false},                  // non-reserved — allowed
+		{"", false},                       // empty — allowed
+	}
+	for _, tc := range cases {
+		items := []interface{}{
+			map[string]interface{}{"label": tc.label, "type": "secret", "value": []interface{}{"x"}},
+		}
+		err := validatePamCustomFieldLabels(items, "secretsmanager_pam_machine")
+		if (err != nil) != tc.wantErr {
+			t.Errorf("label=%q: wantErr=%v got err=%v", tc.label, tc.wantErr, err)
+		}
+	}
+}
+
 func checkSecretExistsRemotely(uid string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		client := testAccClient()
