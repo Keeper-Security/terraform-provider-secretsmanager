@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Custom fields — `paymentCard` perpetual diff** (KSM-888):
   - `jsonencode()` values must use camelCase keys — `cardNumber`, `cardExpirationDate`, `cardSecurityCode` — matching Keeper's API format
-  - Snake_case keys (`card_number`, etc.) are now rejected with a clear error instead of being silently ignored and written as empty objects
+  - Documentation now specifies camelCase requirement; snake_case keys silently produce empty objects, causing a perpetual plan diff (the old behavior)
 
 - **Custom fields — non-canonical `checkbox` values** (KSM-889):
   - Only `"true"` or `"false"` are accepted for checkbox fields
