@@ -680,7 +680,7 @@ var pamReservedCustomLabels = map[string]bool{
 }
 
 // validatePamCustomFieldLabels returns an error if any item in a custom field
-// schema list uses a platform-reserved label.
+// schema list uses a platform-reserved label (case-insensitive comparison).
 func validatePamCustomFieldLabels(items []interface{}, resourceType string) error {
 	for _, raw := range items {
 		m, ok := raw.(map[string]interface{})
@@ -688,11 +688,13 @@ func validatePamCustomFieldLabels(items []interface{}, resourceType string) erro
 			continue
 		}
 		label, _ := m["label"].(string)
-		if pamReservedCustomLabels[label] {
-			return fmt.Errorf(
-				"custom field label %q is reserved for platform use on %s and cannot be used for user-defined custom fields",
-				label, resourceType,
-			)
+		for reserved := range pamReservedCustomLabels {
+			if strings.EqualFold(label, reserved) {
+				return fmt.Errorf(
+					"custom field label %q is reserved for platform use on %s and cannot be used for user-defined custom fields",
+					label, resourceType,
+				)
+			}
 		}
 	}
 	return nil
