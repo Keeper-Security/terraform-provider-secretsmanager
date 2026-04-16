@@ -2,7 +2,10 @@ package secretsmanager
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
+
+	"github.com/keeper-security/secrets-manager-go/core"
 )
 
 // TestEpochMsToDateUTC verifies that date conversion always uses UTC.
@@ -126,6 +129,138 @@ func TestParseJSONItems(t *testing.T) {
 			for i, item := range items {
 				if !json.Valid(item) {
 					t.Errorf("item[%d] is not valid JSON: %s", i, item)
+				}
+			}
+		})
+	}
+}
+
+// TestCustomFieldsFromSchemaTypeNormalization verifies that custom field types
+// are matched case-insensitively to the canonical vault API type strings.
+//
+// Bug: case-sensitive switch caused type="paymentcard" to fall through to default
+// handler and be stored as core.Text instead of core.PaymentCards — silent data
+// corruption. Also, type="" was silently stored instead of erroring.
+//
+// Fix: normalize user input to lowercase, look up canonical type string in a map,
+// and return error for empty types.
+func TestCustomFieldsFromSchemaTypeNormalization(t *testing.T) {
+	tests := []struct {
+		name             string
+		fieldType        string
+		fieldValue       string
+		expectError      bool
+		expectStructType string // "Text", "PaymentCards", "BankAccounts", etc.
+	}{
+		// Canonical cases (should work before and after fix)
+		{
+			name:             "canonical_text",
+			fieldType:        "text",
+			fieldValue:       "test_value",
+			expectError:      false,
+			expectStructType: "*core.Text",
+		},
+		{
+			name:             "canonical_paymentCard",
+			fieldType:        "paymentCard",
+			fieldValue:       `{"cardNumber":"4111","cardExpirationDate":"12/25","cardSecurityCode":"123"}`,
+			expectError:      false,
+			expectStructType: "*core.PaymentCards",
+		},
+		{
+			name:             "canonical_bankAccount",
+			fieldType:        "bankAccount",
+			fieldValue:       `{"accountType":"Checking","routingNumber":"123","accountNumber":"456"}`,
+			expectError:      false,
+			expectStructType: "*core.BankAccounts",
+		},
+
+		// Case variants (should work after fix)
+		{
+			name:             "uppercase_Text",
+			fieldType:        "Text",
+			fieldValue:       "test_value",
+			expectError:      false,
+			expectStructType: "*core.Text",
+		},
+		{
+			name:             "lowercase_paymentcard",
+			fieldType:        "paymentcard",
+			fieldValue:       `{"cardNumber":"4111","cardExpirationDate":"12/25","cardSecurityCode":"123"}`,
+			expectError:      false,
+			expectStructType: "*core.PaymentCards",
+		},
+		{
+			name:             "lowercase_bankaccount",
+			fieldType:        "bankaccount",
+			fieldValue:       `{"accountType":"Checking","routingNumber":"123","accountNumber":"456"}`,
+			expectError:      false,
+			expectStructType: "*core.BankAccounts",
+		},
+		{
+			name:             "uppercase_PaymentCard",
+			fieldType:        "PaymentCard",
+			fieldValue:       `{"cardNumber":"4111","cardExpirationDate":"12/25","cardSecurityCode":"123"}`,
+			expectError:      false,
+			expectStructType: "*core.PaymentCards",
+		},
+
+		// Edge cases (should error after fix)
+		{
+			name:             "empty_type",
+			fieldType:        "",
+			fieldValue:       "test_value",
+			expectError:      true,
+			expectStructType: "",
+		},
+		{
+			name:             "whitespace_only",
+			fieldType:        "   ",
+			fieldValue:       "test_value",
+			expectError:      true,
+			expectStructType: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			items := []interface{}{
+				map[string]interface{}{
+					"type":     tt.fieldType,
+					"label":    "TestField",
+					"value":    tt.fieldValue,
+					"required": false,
+				},
+			}
+			result, err := customFieldsFromSchema(items)
+
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("expected error for type=%q, got nil", tt.fieldType)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error for type=%q: %v", tt.fieldType, err)
+			}
+
+			if len(result) == 0 {
+				t.Errorf("expected result to contain field, got empty")
+				return
+			}
+
+			// Type-assert to check the struct type
+			field := result[0]
+			actualType := fmt.Sprintf("%T", field)
+			if actualType != tt.expectStructType {
+				t.Errorf("type=%q: expected struct type %s, got %s", tt.fieldType, tt.expectStructType, actualType)
+			}
+
+			// For known types, verify base.Type is canonical
+			if f, ok := field.(*core.Text); ok {
+				if f.Type == "" {
+					t.Errorf("type=%q: expected base.Type to be set (not empty)", tt.fieldType)
 				}
 			}
 		})

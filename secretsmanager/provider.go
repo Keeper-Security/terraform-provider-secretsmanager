@@ -362,6 +362,40 @@ func parseJSONItems(value string) ([]json.RawMessage, error) {
 	return []json.RawMessage{json.RawMessage(value)}, nil
 }
 
+// customFieldTypeCanonical maps lowercase type strings to the canonical
+// vault API type strings used in the switch statement. This allows
+// case-insensitive user input while preserving the casing the KSM vault
+// expects when storing fields.
+var customFieldTypeCanonical = map[string]string{
+	"text":                "text",
+	"multiline":           "multiline",
+	"secret":              "secret",
+	"url":                 "url",
+	"email":               "email",
+	"login":               "login",
+	"password":            "password",
+	"pincode":             "pinCode",
+	"accountnumber":       "accountNumber",
+	"licensenumber":       "licenseNumber",
+	"checkbox":            "checkbox",
+	"date":                "date",
+	"birthdate":           "birthDate",
+	"expirationdate":      "expirationDate",
+	"phone":               "phone",
+	"name":                "name",
+	"address":             "address",
+	"paymentcard":         "paymentCard",
+	"bankaccount":         "bankAccount",
+	"host":                "host",
+	"securityquestion":    "securityQuestion",
+	"keypair":             "keyPair",
+	"script":              "script",
+	"addressref":          "addressRef",
+	"cardref":             "cardRef",
+	"fileref":             "fileRef",
+	"onetimecode":         "oneTimeCode",
+}
+
 // customFieldsFromSchema converts the "custom" TypeList from schema into a slice of
 // Keeper SDK field objects suitable for RecordCreate.Custom or RecordUpdate.
 // Each item has type, label, value (string), required, privacy_screen.
@@ -385,6 +419,16 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 		value, _ := m["value"].(string)
 		required, _ := m["required"].(bool)
 		privacyScreen, _ := m["privacy_screen"].(bool)
+
+		// Validate that type is not empty or whitespace
+		if strings.TrimSpace(fieldType) == "" {
+			return nil, fmt.Errorf("custom field %q: type is required and cannot be empty", label)
+		}
+
+		// Normalize case-insensitive input to canonical vault API type string
+		if canonical, ok := customFieldTypeCanonical[strings.ToLower(strings.TrimSpace(fieldType))]; ok {
+			fieldType = canonical
+		}
 
 		base := core.KeeperRecordField{Type: fieldType, Label: label}
 
