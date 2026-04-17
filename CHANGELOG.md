@@ -70,10 +70,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **PAM Remote Browser example file** (Code Review):
   - Created `examples/resources/pam_remote_browser.tf` demonstrating managed resource with `custom` block support
 
-- **Custom fields — type case normalization** (KSM-908):
-  - Custom field `type` input is now case-insensitive and normalized to canonical vault API casing before switch statement
-  - Fixes lowercase variants (e.g., `type = "paymentcard"`) being silently stored as `core.Text` instead of correct SDK types (e.g., `core.PaymentCards`)
-  - Also rejects empty or whitespace-only type strings with a clear error instead of silent storage as `core.Text`
+- **Custom fields — type case normalization and validation** (KSM-908):
+  - Custom field `type` input is now case-insensitive; any casing (e.g., `"paymentcard"`, `"PaymentCard"`, `"PAYMENTCARD"`) is accepted and normalized to canonical vault API casing — no perpetual diff
+  - Unknown type strings are now rejected at plan time with a clear error listing all valid types
+  - Fixes lowercase variants (e.g., `type = "paymentcard"`) being silently stored as `core.Text` instead of the correct SDK type (e.g., `core.PaymentCards`)
 
 - Remove invalid `DiffSuppressFunc` and `ValidateFunc` from computed-only `pam_remote_browser_settings` field in the `pam_remote_browser` data source
 - Add nil-check guard in all ephemeral resource `Open()` methods to prevent panics if provider configuration is missing

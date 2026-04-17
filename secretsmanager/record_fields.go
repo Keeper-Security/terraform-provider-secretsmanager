@@ -1540,7 +1540,7 @@ func schemaCustomField() *schema.Schema {
 				"type": {
 					Type:        schema.TypeString,
 					Required:    true,
-					Description: "Field type (e.g. text, secret, url, email, multiline, date, phone, name, address, paymentCard).",
+					Description: "Field type. Input is case-insensitive and normalized to canonical casing (e.g. paymentcard → paymentCard). Unknown types are rejected at plan time. Common values: text, secret, url, email, multiline, date, phone, name, address, paymentCard, bankAccount, host, keyPair, securityQuestion, checkbox.",
 					StateFunc: func(val interface{}) string {
 						v := strings.ToLower(strings.TrimSpace(val.(string)))
 						if canonical, ok := customFieldTypeCanonical[v]; ok {
