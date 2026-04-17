@@ -325,7 +325,7 @@ func getFieldItemsData(recordDict map[string]interface{}, section string) []inte
 			if sVals, ok := v.([]interface{}); ok {
 				if len(sVals) == 0 {
 					processed = true // empty value is OK
-				} else if len(sVals) == 1 {
+				} else if len(sVals) == 1 && sVals[0] != nil {
 					switch reflect.TypeOf(sVals[0]).Kind() {
 					case reflect.Slice, reflect.Array: // no-op: processed == false already
 					case reflect.Struct, reflect.Map:
