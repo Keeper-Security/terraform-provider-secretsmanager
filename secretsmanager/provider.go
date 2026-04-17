@@ -300,7 +300,10 @@ func getFieldItemsData(recordDict map[string]interface{}, section string) []inte
 		}
 
 		v, found := item["value"]
-		ft := strings.ToLower(fi["type"].(string))
+		ft := ""
+		if typeVal, ok := fi["type"].(string); ok {
+			ft = strings.ToLower(typeVal)
+		}
 		if found && (ft == "date" || ft == "birthdate" || ft == "expirationdate") {
 			// TF timestamp() uses RFC3339 we truncate to date parts only
 			if sVals, ok := v.([]interface{}); ok && len(sVals) > 0 {

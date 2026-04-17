@@ -185,9 +185,16 @@ func genericFieldItemsToListValue(ctx context.Context, items []interface{}) (typ
 		}
 
 		var valueElems []attr.Value
-		if vals, ok := m["value"].([]interface{}); ok {
-			for _, v := range vals {
-				if s, ok := v.(string); ok {
+		// getFieldItemsData serialises value to a string; handle both that and the
+		// raw []interface{} case defensively.
+		switch v := m["value"].(type) {
+		case string:
+			if v != "" {
+				valueElems = []attr.Value{types.StringValue(v)}
+			}
+		case []interface{}:
+			for _, elem := range v {
+				if s, ok := elem.(string); ok {
 					valueElems = append(valueElems, types.StringValue(s))
 				}
 			}

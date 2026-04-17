@@ -50,6 +50,7 @@ func dataSourcePamUser() *schema.Resource {
 			"managed":                schemaCheckboxField(),
 			"file_ref":               schemaFileRefField(),
 			"totp":                   schemaOneTimeCodeField(),
+			"custom":                 schemaCustomFieldData(),
 		},
 	}
 }
@@ -130,6 +131,11 @@ func dataSourcePamUserRead(ctx context.Context, d *schema.ResourceData, m interf
 
 	fileItems := getFileItemsData(secret.Files)
 	if err := d.Set("file_ref", fileItems); err != nil {
+		return diag.FromErr(err)
+	}
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	if err := d.Set("custom", customItems); err != nil {
 		return diag.FromErr(err)
 	}
 
