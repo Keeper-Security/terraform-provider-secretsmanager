@@ -31,6 +31,7 @@ type ephemeralBankAccountModel struct {
 	CardRef     types.List   `tfsdk:"card_ref"`
 	FileRef     types.List   `tfsdk:"file_ref"`
 	TOTP        types.List   `tfsdk:"totp"`
+	Custom  types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralBankAccount() ephemeral.EphemeralResource {
@@ -100,6 +101,7 @@ func (e *ephemeralBankAccount) Schema(_ context.Context, _ ephemeral.SchemaReque
 					},
 				},
 			},
+			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -175,6 +177,12 @@ func (e *ephemeralBankAccount) Open(ctx context.Context, req ephemeral.OpenReque
 	totpList, diags := totpToListValue(ctx, totpUrl)
 	resp.Diagnostics.Append(diags...)
 	data.TOTP = totpList
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	customList, diags := genericFieldItemsToListValue(ctx, customItems)
+	resp.Diagnostics.Append(diags...)
+	data.Custom = customList
+
 
 	if resp.Diagnostics.HasError() {
 		return

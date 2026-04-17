@@ -31,6 +31,7 @@ type ephemeralPassportModel struct {
 	Password       types.String `tfsdk:"password"`
 	AddressRef     types.List   `tfsdk:"address_ref"`
 	FileRef        types.List   `tfsdk:"file_ref"`
+	Custom  types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralPassport() ephemeral.EphemeralResource {
@@ -86,6 +87,7 @@ func (e *ephemeralPassport) Schema(_ context.Context, _ ephemeral.SchemaRequest,
 			},
 			"address_ref": addressRefEphemeralAttribute(),
 			"file_ref":    fileRefEphemeralAttribute(),
+			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -154,6 +156,12 @@ func (e *ephemeralPassport) Open(ctx context.Context, req ephemeral.OpenRequest,
 	fileRefList, diags := fileItemsToListValue(ctx, secret.Files)
 	resp.Diagnostics.Append(diags...)
 	data.FileRef = fileRefList
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	customList, diags := genericFieldItemsToListValue(ctx, customItems)
+	resp.Diagnostics.Append(diags...)
+	data.Custom = customList
+
 
 	if resp.Diagnostics.HasError() {
 		return

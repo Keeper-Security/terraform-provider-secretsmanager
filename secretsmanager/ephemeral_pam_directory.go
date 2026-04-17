@@ -37,6 +37,7 @@ type ephemeralPamDirectoryModel struct {
 	AlternativeIPs    types.String `tfsdk:"alternative_ips"`
 	FileRef           types.List   `tfsdk:"file_ref"`
 	TOTP              types.List   `tfsdk:"totp"`
+	Custom  types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralPamDirectory() ephemeral.EphemeralResource {
@@ -135,6 +136,7 @@ func (e *ephemeralPamDirectory) Schema(_ context.Context, _ ephemeral.SchemaRequ
 					},
 				},
 			},
+			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -216,6 +218,12 @@ func (e *ephemeralPamDirectory) Open(ctx context.Context, req ephemeral.OpenRequ
 	fileRefList, diags := fileItemsToListValue(ctx, secret.Files)
 	resp.Diagnostics.Append(diags...)
 	data.FileRef = fileRefList
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	customList, diags := genericFieldItemsToListValue(ctx, customItems)
+	resp.Diagnostics.Append(diags...)
+	data.Custom = customList
+
 
 	if resp.Diagnostics.HasError() {
 		return

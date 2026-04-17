@@ -49,6 +49,7 @@ func dataSourcePamRemoteBrowser() *schema.Resource {
 			"traffic_encryption_seed": schemaTextField(),
 			"file_ref":                schemaFileRefField(),
 			"totp":                    schemaOneTimeCodeField(),
+			"custom": schemaCustomFieldData(),
 		},
 	}
 }
@@ -148,6 +149,11 @@ func dataSourcePamRemoteBrowserRead(ctx context.Context, d *schema.ResourceData,
 	}
 	fileItems := getFileItemsData(secret.Files)
 	if err := d.Set("file_ref", fileItems); err != nil {
+		return diag.FromErr(err)
+	}
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	if err := d.Set("custom", customItems); err != nil {
 		return diag.FromErr(err)
 	}
 

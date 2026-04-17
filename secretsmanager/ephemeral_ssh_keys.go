@@ -28,6 +28,7 @@ type ephemeralSshKeysModel struct {
 	Passphrase types.String `tfsdk:"passphrase"`
 	Host       types.List   `tfsdk:"host"`
 	FileRef    types.List   `tfsdk:"file_ref"`
+	Custom  types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralSshKeys() ephemeral.EphemeralResource {
@@ -87,6 +88,7 @@ func (e *ephemeralSshKeys) Schema(_ context.Context, _ ephemeral.SchemaRequest, 
 			},
 			"host":     hostEphemeralAttribute(),
 			"file_ref": fileRefEphemeralAttribute(),
+			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -152,6 +154,12 @@ func (e *ephemeralSshKeys) Open(ctx context.Context, req ephemeral.OpenRequest, 
 	fileRefList, diags := fileItemsToListValue(ctx, secret.Files)
 	resp.Diagnostics.Append(diags...)
 	data.FileRef = fileRefList
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	customList, diags := genericFieldItemsToListValue(ctx, customItems)
+	resp.Diagnostics.Append(diags...)
+	data.Custom = customList
+
 
 	if resp.Diagnostics.HasError() {
 		return

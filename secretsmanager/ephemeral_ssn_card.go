@@ -26,6 +26,7 @@ type ephemeralSsnCardModel struct {
 	IdentityNumber types.String `tfsdk:"identity_number"`
 	Name           types.List   `tfsdk:"name"`
 	FileRef        types.List   `tfsdk:"file_ref"`
+	Custom  types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralSsnCard() ephemeral.EphemeralResource {
@@ -63,6 +64,7 @@ func (e *ephemeralSsnCard) Schema(_ context.Context, _ ephemeral.SchemaRequest, 
 			},
 			"name":     nameEphemeralAttribute(),
 			"file_ref": fileRefEphemeralAttribute(),
+			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -123,6 +125,12 @@ func (e *ephemeralSsnCard) Open(ctx context.Context, req ephemeral.OpenRequest, 
 	fileRefList, diags := fileItemsToListValue(ctx, secret.Files)
 	resp.Diagnostics.Append(diags...)
 	data.FileRef = fileRefList
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	customList, diags := genericFieldItemsToListValue(ctx, customItems)
+	resp.Diagnostics.Append(diags...)
+	data.Custom = customList
+
 
 	if resp.Diagnostics.HasError() {
 		return

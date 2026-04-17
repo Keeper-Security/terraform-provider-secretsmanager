@@ -28,6 +28,7 @@ type ephemeralDatabaseCredentialsModel struct {
 	Password types.String `tfsdk:"password"`
 	Host     types.List   `tfsdk:"host"`
 	FileRef  types.List   `tfsdk:"file_ref"`
+	Custom  types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralDatabaseCredentials() ephemeral.EphemeralResource {
@@ -74,6 +75,7 @@ func (e *ephemeralDatabaseCredentials) Schema(_ context.Context, _ ephemeral.Sch
 			},
 			"host":     hostEphemeralAttribute(),
 			"file_ref": fileRefEphemeralAttribute(),
+			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -136,6 +138,12 @@ func (e *ephemeralDatabaseCredentials) Open(ctx context.Context, req ephemeral.O
 	fileRefList, diags := fileItemsToListValue(ctx, secret.Files)
 	resp.Diagnostics.Append(diags...)
 	data.FileRef = fileRefList
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	customList, diags := genericFieldItemsToListValue(ctx, customItems)
+	resp.Diagnostics.Append(diags...)
+	data.Custom = customList
+
 
 	if resp.Diagnostics.HasError() {
 		return

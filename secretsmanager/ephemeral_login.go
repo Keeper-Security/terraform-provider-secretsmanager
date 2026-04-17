@@ -28,6 +28,7 @@ type ephemeralLoginModel struct {
 	URL      types.String `tfsdk:"url"`
 	FileRef  types.List   `tfsdk:"file_ref"`
 	TOTP     types.List   `tfsdk:"totp"`
+	Custom  types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralLogin() ephemeral.EphemeralResource {
@@ -94,6 +95,7 @@ func (e *ephemeralLogin) Schema(_ context.Context, _ ephemeral.SchemaRequest, re
 					},
 				},
 			},
+			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -157,6 +159,12 @@ func (e *ephemeralLogin) Open(ctx context.Context, req ephemeral.OpenRequest, re
 	totpList, diags := totpToListValue(ctx, totpUrl)
 	resp.Diagnostics.Append(diags...)
 	data.TOTP = totpList
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	customList, diags := genericFieldItemsToListValue(ctx, customItems)
+	resp.Diagnostics.Append(diags...)
+	data.Custom = customList
+
 
 	if resp.Diagnostics.HasError() {
 		return

@@ -33,6 +33,7 @@ type ephemeralPamDatabaseModel struct {
 	ProviderRegion types.String `tfsdk:"provider_region"`
 	FileRef        types.List   `tfsdk:"file_ref"`
 	TOTP           types.List   `tfsdk:"totp"`
+	Custom  types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralPamDatabase() ephemeral.EphemeralResource {
@@ -115,6 +116,7 @@ func (e *ephemeralPamDatabase) Schema(_ context.Context, _ ephemeral.SchemaReque
 					},
 				},
 			},
+			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -192,6 +194,12 @@ func (e *ephemeralPamDatabase) Open(ctx context.Context, req ephemeral.OpenReque
 	fileRefList, diags := fileItemsToListValue(ctx, secret.Files)
 	resp.Diagnostics.Append(diags...)
 	data.FileRef = fileRefList
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	customList, diags := genericFieldItemsToListValue(ctx, customItems)
+	resp.Diagnostics.Append(diags...)
+	data.Custom = customList
+
 
 	if resp.Diagnostics.HasError() {
 		return
