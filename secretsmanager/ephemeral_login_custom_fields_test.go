@@ -53,8 +53,12 @@ func TestAccEphemeralLogin_customFields(t *testing.T) {
 				error_message = "expected custom[0].label == \"Environment\""
 			}
 			assert {
-				condition     = ephemeral.secretsmanager_login.custom_eph.custom[0].value == "production"
-				error_message = "expected custom[0].value == \"production\""
+				condition     = length(ephemeral.secretsmanager_login.custom_eph.custom[0].value) == 1
+				error_message = "expected custom[0].value to have 1 element"
+			}
+			assert {
+				condition     = ephemeral.secretsmanager_login.custom_eph.custom[0].value[0] == "production"
+				error_message = "expected custom[0].value[0] == \"production\""
 			}
 		}
 	`, secretUid)
