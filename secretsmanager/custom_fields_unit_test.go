@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/keeper-security/secrets-manager-go/core"
 )
@@ -268,40 +269,72 @@ func TestCustomFieldsFromSchemaTypeNormalization(t *testing.T) {
 	}
 }
 
-// TestCustomFieldTypeDiffSuppressFunc verifies that the DiffSuppressFunc on the
-// custom field type attribute suppresses case-only differences, preventing
-// perpetual diffs when users write non-canonical casing (e.g. "paymentcard").
-//
-// KSM-908 follow-up: the write path normalizes type to canonical casing before
-// writing to vault, so the vault stores "paymentCard". The Read path returns the
-// canonical form into state. Without DiffSuppressFunc, a config that still has
-// "paymentcard" mismatches state on every subsequent plan.
-func TestCustomFieldTypeDiffSuppressFunc(t *testing.T) {
+// TestCustomFieldTypeStateFunc verifies that the StateFunc normalizes user input
+// to canonical vault casing before storing in state, preventing perpetual diffs
+// on non-canonical input like "paymentcard".
+func TestCustomFieldTypeStateFunc(t *testing.T) {
 	customSchema := schemaCustomField()
 	typeElem := customSchema.Elem.(*schema.Resource).Schema["type"]
 
-	if typeElem.DiffSuppressFunc == nil {
-		t.Fatal("DiffSuppressFunc is nil — type attribute does not suppress case-only diffs")
+	if typeElem.StateFunc == nil {
+		t.Fatal("StateFunc is nil — type attribute does not normalize to canonical casing")
 	}
 
-	fn := typeElem.DiffSuppressFunc
+	fn := typeElem.StateFunc
 	tests := []struct {
-		old  string
-		new  string
-		want bool
+		input string
+		want  string
 	}{
-		{"paymentCard", "paymentcard", true},
-		{"paymentCard", "PAYMENTCARD", true},
-		{"text", "Text", true},
-		{"text", "text", true},
-		{"text", "secret", false},
-		{"paymentCard", "bankAccount", false},
+		{"paymentcard", "paymentCard"},
+		{"PAYMENTCARD", "paymentCard"},
+		{"PaymentCard", "paymentCard"},
+		{"text", "text"},
+		{"Text", "text"},
+		{"bankaccount", "bankAccount"},
+		{"BANKACCOUNT", "bankAccount"},
+		{"pincode", "pinCode"},
+		{"onetimecode", "oneTimeCode"},
 	}
 
 	for _, tt := range tests {
-		got := fn("custom.0.type", tt.old, tt.new, nil)
+		got := fn(tt.input)
 		if got != tt.want {
-			t.Errorf("DiffSuppressFunc(%q, %q) = %v, want %v", tt.old, tt.new, got, tt.want)
+			t.Errorf("StateFunc(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
+// TestCustomFieldTypeValidateDiagFunc verifies that the ValidateDiagFunc accepts
+// any casing of a known type and rejects unknown types with a clear error.
+func TestCustomFieldTypeValidateDiagFunc(t *testing.T) {
+	customSchema := schemaCustomField()
+	typeElem := customSchema.Elem.(*schema.Resource).Schema["type"]
+
+	if typeElem.ValidateDiagFunc == nil {
+		t.Fatal("ValidateDiagFunc is nil — type attribute does not validate against known types")
+	}
+
+	fn := typeElem.ValidateDiagFunc
+	tests := []struct {
+		input   string
+		wantErr bool
+	}{
+		{"text", false},
+		{"Text", false},
+		{"paymentcard", false},
+		{"paymentCard", false},
+		{"PAYMENTCARD", false},
+		{"bankAccount", false},
+		{"onetimecode", false},
+		{"notatype", true},
+		{"", true},
+		{"   ", true},
+	}
+
+	for _, tt := range tests {
+		diags := fn(tt.input, cty.Path{})
+		if diags.HasError() != tt.wantErr {
+			t.Errorf("ValidateDiagFunc(%q): hasError=%v, want %v", tt.input, diags.HasError(), tt.wantErr)
 		}
 	}
 }

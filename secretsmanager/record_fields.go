@@ -2,6 +2,7 @@ package secretsmanager
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -1540,8 +1541,29 @@ func schemaCustomField() *schema.Schema {
 					Type:        schema.TypeString,
 					Required:    true,
 					Description: "Field type (e.g. text, secret, url, email, multiline, date, phone, name, address, paymentCard).",
-					DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-						return strings.EqualFold(old, new)
+					StateFunc: func(val interface{}) string {
+						v := strings.ToLower(strings.TrimSpace(val.(string)))
+						if canonical, ok := customFieldTypeCanonical[v]; ok {
+							return canonical
+						}
+						return val.(string)
+					},
+					ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
+						v := strings.ToLower(strings.TrimSpace(i.(string)))
+						if _, ok := customFieldTypeCanonical[v]; ok {
+							return nil
+						}
+						valid := make([]string, 0, len(customFieldTypeCanonical))
+						for _, canonical := range customFieldTypeCanonical {
+							valid = append(valid, canonical)
+						}
+						sort.Strings(valid)
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity:      diag.Error,
+							Summary:       fmt.Sprintf("invalid custom field type %q", i.(string)),
+							Detail:        fmt.Sprintf("valid types: %s", strings.Join(valid, ", ")),
+							AttributePath: p,
+						}}
 					},
 				},
 				"label": {
