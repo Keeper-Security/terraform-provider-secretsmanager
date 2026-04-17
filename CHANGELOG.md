@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Custom fields in data sources and ephemeral resources** (KSM-910):
   - Expose the `custom` block on all 20 record-type data sources (`data "secretsmanager_<type>"`) — allows reading custom field values from existing vault records
-  - Expose the `custom` block on all 20 record-type ephemeral resources (`ephemeral "secretsmanager_<type>"`) — custom field values are returned without being stored in state
+  - Expose the `custom` block on all 22 record-type ephemeral resources (`ephemeral "secretsmanager_<type>"`) — custom field values are returned without being stored in state
   - Each `custom` entry is a read-only block with `type`, `label`, `value`, `required`, and `privacy_screen` attributes
   - Completes KSM-388 custom field support across all three resource layers: managed resources (write), data sources (read), and ephemeral resources (read, no state)
 

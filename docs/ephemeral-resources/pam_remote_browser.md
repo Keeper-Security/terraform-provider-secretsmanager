@@ -35,3 +35,10 @@ ephemeral "secretsmanager_pam_remote_browser" "browser" {
   - `url` - TOTP URL.
   - `token` - Generated TOTP token (sensitive).
   - `ttl` - Time to live in seconds.
+
+* `custom` - A list of custom fields defined on the record. Each entry contains:
+  - `type` - Field type (e.g. `text`, `secret`, `url`, `email`, `phone`, `multiline`, `checkbox`, `date`, `birthDate`, `expirationDate`, `name`, `address`, `paymentCard`, `bankAccount`, `host`, `keyPair`, `securityQuestion`).
+  - `label` - Display name for the field in Keeper UI.
+  - `value` - Field value. Complex types (e.g. `name`, `address`, `paymentCard`) are returned as a JSON-encoded string.
+  - `required` - Whether this field is required.
+  - `privacy_screen` - Whether this field is hidden behind a privacy screen in Keeper UI.
