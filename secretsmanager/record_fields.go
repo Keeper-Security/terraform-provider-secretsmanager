@@ -1540,6 +1540,9 @@ func schemaCustomField() *schema.Schema {
 					Type:        schema.TypeString,
 					Required:    true,
 					Description: "Field type (e.g. text, secret, url, email, multiline, date, phone, name, address, paymentCard).",
+					DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+						return strings.EqualFold(old, new)
+					},
 				},
 				"label": {
 					Type:        schema.TypeString,

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/keeper-security/secrets-manager-go/core"
 )
 
@@ -264,5 +265,43 @@ func TestCustomFieldsFromSchemaTypeNormalization(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestCustomFieldTypeDiffSuppressFunc verifies that the DiffSuppressFunc on the
+// custom field type attribute suppresses case-only differences, preventing
+// perpetual diffs when users write non-canonical casing (e.g. "paymentcard").
+//
+// KSM-908 follow-up: the write path normalizes type to canonical casing before
+// writing to vault, so the vault stores "paymentCard". The Read path returns the
+// canonical form into state. Without DiffSuppressFunc, a config that still has
+// "paymentcard" mismatches state on every subsequent plan.
+func TestCustomFieldTypeDiffSuppressFunc(t *testing.T) {
+	customSchema := schemaCustomField()
+	typeElem := customSchema.Elem.(*schema.Resource).Schema["type"]
+
+	if typeElem.DiffSuppressFunc == nil {
+		t.Fatal("DiffSuppressFunc is nil — type attribute does not suppress case-only diffs")
+	}
+
+	fn := typeElem.DiffSuppressFunc
+	tests := []struct {
+		old  string
+		new  string
+		want bool
+	}{
+		{"paymentCard", "paymentcard", true},
+		{"paymentCard", "PAYMENTCARD", true},
+		{"text", "Text", true},
+		{"text", "text", true},
+		{"text", "secret", false},
+		{"paymentCard", "bankAccount", false},
+	}
+
+	for _, tt := range tests {
+		got := fn("custom.0.type", tt.old, tt.new, nil)
+		if got != tt.want {
+			t.Errorf("DiffSuppressFunc(%q, %q) = %v, want %v", tt.old, tt.new, got, tt.want)
+		}
 	}
 }
