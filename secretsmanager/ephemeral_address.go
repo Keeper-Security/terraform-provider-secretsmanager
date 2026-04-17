@@ -25,6 +25,7 @@ type ephemeralAddressModel struct {
 	Notes   types.String `tfsdk:"notes"`
 	Address types.List   `tfsdk:"address"`
 	FileRef types.List   `tfsdk:"file_ref"`
+	Custom  types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralAddress() ephemeral.EphemeralResource {
@@ -58,6 +59,7 @@ func (e *ephemeralAddress) Schema(_ context.Context, _ ephemeral.SchemaRequest, 
 			},
 			"address":  addressEphemeralAttribute(),
 			"file_ref": fileRefEphemeralAttribute(),
+			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -117,6 +119,12 @@ func (e *ephemeralAddress) Open(ctx context.Context, req ephemeral.OpenRequest, 
 	fileRefList, diags := fileItemsToListValue(ctx, secret.Files)
 	resp.Diagnostics.Append(diags...)
 	data.FileRef = fileRefList
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	customList, diags := genericFieldItemsToListValue(ctx, customItems)
+	resp.Diagnostics.Append(diags...)
+	data.Custom = customList
+
 
 	if resp.Diagnostics.HasError() {
 		return

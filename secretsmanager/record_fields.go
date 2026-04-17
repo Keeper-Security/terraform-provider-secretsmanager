@@ -1527,6 +1527,47 @@ func schemaUrlField() *schema.Schema {
 // schemaCustomField returns the schema for user-defined custom fields on a record.
 // Each field has a type, label, and value. The value is always a string:
 // - Simple types (text, multiline, secret, url, email): plain string value
+// schemaCustomFieldData returns the read-only schema for the custom block used in data sources and
+// ephemeral resources. Unlike schemaCustomField(), all sub-fields are Computed because the data
+// originates from the vault and is never written by Terraform.
+func schemaCustomFieldData() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeList,
+		Computed:    true,
+		Description: "Custom fields defined by the user in Keeper. Each field has a type, label, and value.",
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"type": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Description: "Field type (e.g. text, secret, url, email, phone, paymentCard).",
+				},
+				"label": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Description: "Field label.",
+				},
+				"value": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Sensitive:   true,
+					Description: "Field value. Complex types (phone, name, address, paymentCard) are returned as JSON.",
+				},
+				"required": {
+					Type:        schema.TypeBool,
+					Computed:    true,
+					Description: "Whether this field is required.",
+				},
+				"privacy_screen": {
+					Type:        schema.TypeBool,
+					Computed:    true,
+					Description: "Whether this field is hidden behind a privacy screen in the Keeper UI.",
+				},
+			},
+		},
+	}
+}
+
 // - Complex types (phone, name, address, paymentCard): jsonencode() of the nested object
 // - Date: YYYY-MM-DD format (e.g. "2024-01-15")
 // The provider interprets the value based on the type field.

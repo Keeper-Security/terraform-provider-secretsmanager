@@ -26,6 +26,7 @@ type ephemeralEncryptedNotesModel struct {
 	Note    types.String `tfsdk:"note"`
 	Date    types.String `tfsdk:"date"`
 	FileRef types.List   `tfsdk:"file_ref"`
+	Custom  types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralEncryptedNotes() ephemeral.EphemeralResource {
@@ -67,6 +68,7 @@ func (e *ephemeralEncryptedNotes) Schema(_ context.Context, _ ephemeral.SchemaRe
 				Description: "Date.",
 			},
 			"file_ref": fileRefEphemeralAttribute(),
+			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -124,6 +126,12 @@ func (e *ephemeralEncryptedNotes) Open(ctx context.Context, req ephemeral.OpenRe
 	fileRefList, diags := fileItemsToListValue(ctx, secret.Files)
 	resp.Diagnostics.Append(diags...)
 	data.FileRef = fileRefList
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	customList, diags := genericFieldItemsToListValue(ctx, customItems)
+	resp.Diagnostics.Append(diags...)
+	data.Custom = customList
+
 
 	if resp.Diagnostics.HasError() {
 		return

@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Document Alpine Linux and musl-based container compatibility — all Linux binaries are statically compiled (`CGO_ENABLED=0`) with no C library dependencies and run on Alpine and other musl-based systems without modification (KSM-885)
 
+- **Custom fields in data sources and ephemeral resources** (KSM-910):
+  - Expose the `custom` block on all 20 record-type data sources (`data "secretsmanager_<type>"`) — allows reading custom field values from existing vault records
+  - Expose the `custom` block on all 20 record-type ephemeral resources (`ephemeral "secretsmanager_<type>"`) — custom field values are returned without being stored in state
+  - Each `custom` entry is a read-only block with `type`, `label`, `value`, `required`, and `privacy_screen` attributes
+  - Completes KSM-388 custom field support across all three resource layers: managed resources (write), data sources (read), and ephemeral resources (read, no state)
+
 - **Ephemeral Resources** (KSM-871):
   - Add ephemeral resource support for Terraform 1.10+, ensuring secrets are never stored in `terraform.tfstate`
   - Ephemeral resources available for all 25 record types: `login`, `field`, `record`, `database_credentials`, `server_credentials`, `ssh_keys`, `encrypted_notes`, `address`, `bank_account`, `bank_card`, `birth_certificate`, `contact`, `driver_license`, `health_insurance`, `membership`, `passport`, `photo`, `software_license`, `ssn_card`, `file`, `pam_user`, `pam_machine`, `pam_database`, `pam_directory`, `pam_remote_browser`

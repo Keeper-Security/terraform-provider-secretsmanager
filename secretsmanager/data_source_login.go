@@ -119,6 +119,7 @@ func dataSourceLogin() *schema.Resource {
 					},
 				},
 			},
+			"custom": schemaCustomFieldData(),
 		},
 	}
 }
@@ -179,6 +180,11 @@ func dataSourceLoginRead(ctx context.Context, d *schema.ResourceData, m interfac
 		}
 	}
 	if err := d.Set("totp", totpItems); err != nil {
+		return diag.FromErr(err)
+	}
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	if err := d.Set("custom", customItems); err != nil {
 		return diag.FromErr(err)
 	}
 
