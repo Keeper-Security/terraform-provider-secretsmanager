@@ -36,6 +36,27 @@ func TestAccEphemeralLogin_customFields(t *testing.T) {
 		ephemeral "secretsmanager_login" "custom_eph" {
 			path = "%v"
 		}
+
+		# check blocks can reference ephemeral values; a failed assertion surfaces
+		# as an apply-time warning and causes terraform test (.tftest.hcl) to fail.
+		check "ephemeral_custom_fields" {
+			assert {
+				condition     = length(ephemeral.secretsmanager_login.custom_eph.custom) == 1
+				error_message = "expected 1 custom field, got ${length(ephemeral.secretsmanager_login.custom_eph.custom)}"
+			}
+			assert {
+				condition     = ephemeral.secretsmanager_login.custom_eph.custom[0].type == "text"
+				error_message = "expected custom[0].type == \"text\""
+			}
+			assert {
+				condition     = ephemeral.secretsmanager_login.custom_eph.custom[0].label == "Environment"
+				error_message = "expected custom[0].label == \"Environment\""
+			}
+			assert {
+				condition     = ephemeral.secretsmanager_login.custom_eph.custom[0].value == "production"
+				error_message = "expected custom[0].value == \"production\""
+			}
+		}
 	`, secretUid)
 
 	resource.Test(t, resource.TestCase{
