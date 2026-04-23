@@ -119,7 +119,6 @@ func (e *ephemeralField) Open(ctx context.Context, req ephemeral.OpenRequest, re
 		strValue = fmt.Sprintf("%v", value)
 	}
 
-	data.Path = types.StringValue(path)
 	data.Value = types.StringValue(strValue)
 
 	resp.Diagnostics.Append(resp.Result.Set(ctx, &data)...)

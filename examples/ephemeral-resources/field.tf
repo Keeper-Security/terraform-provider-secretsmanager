@@ -23,3 +23,14 @@ output "field_value" {
   value     = ephemeral.secretsmanager_field.my_field.value
   ephemeral = true
 }
+
+# Look up by record title instead of UID — use * as a placeholder
+ephemeral "secretsmanager_field" "by_title" {
+  path  = "*/field/login"
+  title = "My Record Title"
+}
+
+output "field_value_by_title" {
+  value     = ephemeral.secretsmanager_field.by_title.value
+  ephemeral = true
+}
