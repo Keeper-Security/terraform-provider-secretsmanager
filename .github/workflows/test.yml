@@ -10,7 +10,7 @@ jobs:
   test-terraform-provider:
     strategy:
       matrix:
-        go-version: [ '1.24.13' ]
+        go-version: [ '1.26.2' ]
         os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     name: Test with Go ${{ matrix.go-version }}
