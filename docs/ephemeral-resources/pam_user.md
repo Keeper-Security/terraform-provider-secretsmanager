@@ -12,12 +12,12 @@ ephemeral "secretsmanager_pam_user" "admin" {
 }
 
 output "db_login" {
-  value     = ephemeral.secretsmanager_pam_user.admin.login[0].value
+  value     = ephemeral.secretsmanager_pam_user.admin.login
   ephemeral = true
 }
 
 output "db_password" {
-  value     = ephemeral.secretsmanager_pam_user.admin.password[0].value
+  value     = ephemeral.secretsmanager_pam_user.admin.password
   ephemeral = true
 }
 ```

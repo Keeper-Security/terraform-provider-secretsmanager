@@ -12,12 +12,12 @@ ephemeral "secretsmanager_pam_machine" "server" {
 }
 
 output "ssh_hostname" {
-  value     = ephemeral.secretsmanager_pam_machine.server.pam_hostname[0].value[0].hostname
+  value     = ephemeral.secretsmanager_pam_machine.server.pam_hostname[0].host_name
   ephemeral = true
 }
 
 output "machine_login" {
-  value     = try(ephemeral.secretsmanager_pam_machine.server.login[0].value, "")
+  value     = ephemeral.secretsmanager_pam_machine.server.login
   ephemeral = true
 }
 ```
@@ -35,8 +35,8 @@ In addition to all arguments above, the following attributes are exported:
 * `title` - Record title.
 * `notes` - Record notes.
 * `folder_uid` - The UID of the folder where the record is stored.
-* `pam_hostname` - PAM Hostname field. Contains a `value` block with:
-  - `hostname` - Hostname or IP address.
+* `pam_hostname` - PAM Hostname field. Each entry contains:
+  - `host_name` - Hostname or IP address.
   - `port` - Port number.
 * `pam_settings` - PAM connection settings as a JSON string.
 * `login` - Login field containing the username.

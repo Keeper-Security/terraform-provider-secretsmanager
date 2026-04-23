@@ -143,11 +143,18 @@ func genericFieldEphemeralAttribute(description string) schema.ListNestedAttribu
 					Computed:    true,
 					Description: "The field label.",
 				},
-				"value": schema.ListAttribute{
+				"value": schema.StringAttribute{
 					Computed:    true,
 					Sensitive:   true,
-					ElementType: types.StringType,
-					Description: "The field value.",
+					Description: "The field value. Complex types (phone, name, address, paymentCard) are returned as JSON.",
+				},
+				"required": schema.BoolAttribute{
+					Computed:    true,
+					Description: "Whether this field is required.",
+				},
+				"privacy_screen": schema.BoolAttribute{
+					Computed:    true,
+					Description: "Whether this field is hidden behind a privacy screen in the Keeper UI.",
 				},
 			},
 		},
@@ -156,9 +163,11 @@ func genericFieldEphemeralAttribute(description string) schema.ListNestedAttribu
 
 var genericFieldObjectType = types.ObjectType{
 	AttrTypes: map[string]attr.Type{
-		"type":  types.StringType,
-		"label": types.StringType,
-		"value": types.ListType{ElemType: types.StringType},
+		"type":           types.StringType,
+		"label":          types.StringType,
+		"value":          types.StringType,
+		"required":       types.BoolType,
+		"privacy_screen": types.BoolType,
 	},
 }
 
@@ -184,34 +193,17 @@ func genericFieldItemsToListValue(ctx context.Context, items []interface{}) (typ
 			label = v
 		}
 
-		var valueElems []attr.Value
-		// getFieldItemsData serialises value to a string; handle both that and the
-		// raw []interface{} case defensively.
-		switch v := m["value"].(type) {
-		case string:
-			if v != "" {
-				valueElems = []attr.Value{types.StringValue(v)}
-			}
-		case []interface{}:
-			for _, elem := range v {
-				if s, ok := elem.(string); ok {
-					valueElems = append(valueElems, types.StringValue(s))
-				}
-			}
-		}
-		if valueElems == nil {
-			valueElems = []attr.Value{}
-		}
+		value, _ := m["value"].(string)
 
-		valueList, d := types.ListValue(types.StringType, valueElems)
-		if d.HasError() {
-			return types.ListNull(genericFieldObjectType), d
-		}
+		required, _ := m["required"].(bool)
+		privacyScreen, _ := m["privacy_screen"].(bool)
 
 		obj, d := types.ObjectValue(genericFieldObjectType.AttrTypes, map[string]attr.Value{
-			"type":  types.StringValue(fieldType),
-			"label": types.StringValue(label),
-			"value": valueList,
+			"type":           types.StringValue(fieldType),
+			"label":          types.StringValue(label),
+			"value":          types.StringValue(value),
+			"required":       types.BoolValue(required),
+			"privacy_screen": types.BoolValue(privacyScreen),
 		})
 		if d.HasError() {
 			return types.ListNull(genericFieldObjectType), d

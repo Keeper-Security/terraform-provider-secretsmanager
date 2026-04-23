@@ -27,12 +27,12 @@ ephemeral "secretsmanager_pam_directory" "ad_by_title" {
 
 # Output the PAM Directory data
 output "ad_hostname" {
-  value     = ephemeral.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].value[0].hostname
+  value     = ephemeral.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].host_name
   ephemeral = true
 }
 
 output "ad_port" {
-  value     = ephemeral.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].value[0].port
+  value     = ephemeral.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].port
   ephemeral = true
 }
 
@@ -42,7 +42,7 @@ output "ad_directory_type" {
 }
 
 output "ad_distinguished_name" {
-  value     = try(ephemeral.secretsmanager_pam_directory.ad_by_uid.distinguished_name[0].value, "")
+  value     = ephemeral.secretsmanager_pam_directory.ad_by_uid.distinguished_name
   ephemeral = true
 }
 
@@ -52,7 +52,7 @@ output "ad_folder_uid" {
 }
 
 output "ad_use_ssl" {
-  value     = try(ephemeral.secretsmanager_pam_directory.ad_by_uid.use_ssl[0].value, false)
+  value     = ephemeral.secretsmanager_pam_directory.ad_by_uid.use_ssl
   ephemeral = true
 }
 
@@ -60,10 +60,10 @@ output "ad_use_ssl" {
 output "ad_connection_info" {
   value = {
     type    = ephemeral.secretsmanager_pam_directory.ad_by_uid.directory_type
-    host    = ephemeral.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].value[0].hostname
-    port    = ephemeral.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].value[0].port
-    ssl     = try(ephemeral.secretsmanager_pam_directory.ad_by_uid.use_ssl[0].value, false)
-    base_dn = try(ephemeral.secretsmanager_pam_directory.ad_by_uid.distinguished_name[0].value, "")
+    host    = ephemeral.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].host_name
+    port    = ephemeral.secretsmanager_pam_directory.ad_by_uid.pam_hostname[0].port
+    ssl     = ephemeral.secretsmanager_pam_directory.ad_by_uid.use_ssl
+    base_dn = ephemeral.secretsmanager_pam_directory.ad_by_uid.distinguished_name
   }
   ephemeral = true
 }

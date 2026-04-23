@@ -63,7 +63,7 @@ func resourcePamRemoteBrowser() *schema.Resource {
 				DiffSuppressFunc: suppressEquivalentJSON,
 				Description:      "PAM Remote Browser connection settings as JSON string.",
 			},
-			"traffic_encryption_seed": schemaTextField(),
+			"traffic_encryption_seed": schemaTextSensitiveField(),
 			"file_ref":                schemaFileRefField(),
 			"totp":                    schemaOneTimeCodeField(),
 			// custom[]

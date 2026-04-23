@@ -27,12 +27,12 @@ ephemeral "secretsmanager_pam_database" "mysql_by_title" {
 
 # Output the PAM Database data
 output "db_hostname" {
-  value     = ephemeral.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].value[0].hostname
+  value     = ephemeral.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].host_name
   ephemeral = true
 }
 
 output "db_port" {
-  value     = ephemeral.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].value[0].port
+  value     = ephemeral.secretsmanager_pam_database.mysql_by_uid.pam_hostname[0].port
   ephemeral = true
 }
 
@@ -42,7 +42,7 @@ output "db_type" {
 }
 
 output "db_use_ssl" {
-  value     = try(ephemeral.secretsmanager_pam_database.mysql_by_uid.use_ssl[0].value, false)
+  value     = ephemeral.secretsmanager_pam_database.mysql_by_uid.use_ssl
   ephemeral = true
 }
 
@@ -54,9 +54,9 @@ output "db_folder_uid" {
 # Example: Access cloud database metadata
 output "cloud_db_info" {
   value = {
-    database_id = try(ephemeral.secretsmanager_pam_database.mysql_by_uid.database_id[0].value, "")
-    provider    = try(ephemeral.secretsmanager_pam_database.mysql_by_uid.provider_group[0].value, "")
-    region      = try(ephemeral.secretsmanager_pam_database.mysql_by_uid.provider_region[0].value, "")
+    database_id = ephemeral.secretsmanager_pam_database.mysql_by_uid.database_id
+    provider    = ephemeral.secretsmanager_pam_database.mysql_by_uid.provider_group
+    region      = ephemeral.secretsmanager_pam_database.mysql_by_uid.provider_region
   }
   ephemeral = true
 }

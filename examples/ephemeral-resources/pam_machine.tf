@@ -27,12 +27,12 @@ ephemeral "secretsmanager_pam_machine" "ssh_server_by_title" {
 
 # Output the PAM Machine data
 output "ssh_hostname" {
-  value     = ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].value[0].hostname
+  value     = ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].host_name
   ephemeral = true
 }
 
 output "ssh_port" {
-  value     = ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].value[0].port
+  value     = ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.pam_hostname[0].port
   ephemeral = true
 }
 
@@ -42,27 +42,27 @@ output "machine_folder_uid" {
 }
 
 output "machine_login" {
-  value     = try(ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.login[0].value, "")
+  value     = ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.login
   ephemeral = true
 }
 
 output "machine_ssl_verification" {
-  value     = try(ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.ssl_verification[0].value, false)
+  value     = ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.ssl_verification
   ephemeral = true
 }
 
 output "machine_private_pem_key" {
-  value     = try(ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.private_pem_key[0].value, "")
+  value     = ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.private_pem_key
   ephemeral = true
 }
 
 # Example: Access cloud instance metadata
 output "instance_info" {
   value = {
-    name     = try(ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.instance_name[0].value, "")
-    id       = try(ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.instance_id[0].value, "")
-    provider = try(ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.provider_group[0].value, "")
-    region   = try(ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.provider_region[0].value, "")
+    name     = ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.instance_name
+    id       = ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.instance_id
+    provider = ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.provider_group
+    region   = ephemeral.secretsmanager_pam_machine.ssh_server_by_uid.provider_region
   }
   ephemeral = true
 }

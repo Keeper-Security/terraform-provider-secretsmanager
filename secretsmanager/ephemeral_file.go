@@ -97,7 +97,14 @@ func (e *ephemeralFile) Open(ctx context.Context, req ephemeral.OpenRequest, res
 		return
 	}
 
-	data.Type = types.StringValue(secret.Type())
+	recordType := secret.Type()
+	if recordType != "file" {
+		resp.Diagnostics.AddError("Record Type Mismatch",
+			"record type '"+recordType+"' is not the expected type 'file' for this ephemeral resource")
+		return
+	}
+
+	data.Type = types.StringValue(recordType)
 	data.Title = types.StringValue(secret.Title())
 	data.Notes = types.StringValue(secret.Notes())
 

@@ -123,7 +123,7 @@ func fileItemsToListValue(ctx context.Context, files []*core.KeeperFile) (types.
 		}
 		lastModified := ""
 		if f.LastModified > 0 {
-			lastModified = time.Unix(int64(f.LastModified), 0).Format(time.RFC3339)
+			lastModified = time.Unix(int64(f.LastModified/1000), 0).Format(time.RFC3339)
 		}
 
 		obj, diags := types.ObjectValue(fileRefObjectType.AttrTypes, map[string]attr.Value{
@@ -231,14 +231,14 @@ func totpToListValue(ctx context.Context, totpUrl string) (types.List, diag.Diag
 	return types.ListValue(totpObjectType, []attr.Value{obj})
 }
 
-// dateFieldToString converts a KSM date field value (unix millis) to RFC3339 string.
+// dateFieldToString converts a KSM date field value (unix millis) to YYYY-MM-DD string.
 func dateFieldToString(dateValue string) string {
 	dateValue = strings.TrimSpace(dateValue)
 	if dateValue == "" {
 		return ""
 	}
-	if unixTime, err := strconv.Atoi(dateValue); err == nil {
-		return time.Unix(int64(unixTime/1000), 0).Format(time.RFC3339)
+	if unixTime, err := strconv.ParseInt(dateValue, 10, 64); err == nil {
+		return time.Unix(unixTime/1000, 0).UTC().Format("2006-01-02")
 	}
 	return dateValue
 }
@@ -446,6 +446,7 @@ func cardRefEphemeralAttribute() schema.ListNestedAttribute {
 				},
 				"pin_code": schema.StringAttribute{
 					Computed:    true,
+					Sensitive:   true,
 					Description: "The PIN code.",
 				},
 			},

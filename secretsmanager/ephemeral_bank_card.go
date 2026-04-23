@@ -67,6 +67,7 @@ func (e *ephemeralBankCard) Schema(_ context.Context, _ ephemeral.SchemaRequest,
 			},
 			"pin_code": schema.StringAttribute{
 				Computed:    true,
+				Sensitive:   true,
 				Description: "The PIN code.",
 			},
 			"address_ref": addressRefEphemeralAttribute(),

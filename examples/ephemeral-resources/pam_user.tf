@@ -27,12 +27,12 @@ ephemeral "secretsmanager_pam_user" "db_admin_by_title" {
 
 # Output the PAM User data
 output "db_login" {
-  value     = ephemeral.secretsmanager_pam_user.db_admin_by_uid.login[0].value
+  value     = ephemeral.secretsmanager_pam_user.db_admin_by_uid.login
   ephemeral = true
 }
 
 output "db_password" {
-  value     = ephemeral.secretsmanager_pam_user.db_admin_by_uid.password[0].value
+  value     = ephemeral.secretsmanager_pam_user.db_admin_by_uid.password
   ephemeral = true
 }
 
@@ -42,17 +42,17 @@ output "db_folder_uid" {
 }
 
 output "db_distinguished_name" {
-  value     = try(ephemeral.secretsmanager_pam_user.db_admin_by_uid.distinguished_name[0].value, "")
+  value     = ephemeral.secretsmanager_pam_user.db_admin_by_uid.distinguished_name
   ephemeral = true
 }
 
 output "db_connect_database" {
-  value     = try(ephemeral.secretsmanager_pam_user.db_admin_by_uid.connect_database[0].value, "")
+  value     = ephemeral.secretsmanager_pam_user.db_admin_by_uid.connect_database
   ephemeral = true
 }
 
 output "db_managed" {
-  value     = try(ephemeral.secretsmanager_pam_user.db_admin_by_uid.managed[0].value, false)
+  value     = ephemeral.secretsmanager_pam_user.db_admin_by_uid.managed
   ephemeral = true
 }
 
@@ -66,9 +66,9 @@ output "has_2fa" {
 locals {
   db_user = ephemeral.secretsmanager_pam_user.db_admin_by_uid
   connection_info = {
-    username = try(local.db_user.login[0].value, "")
-    password = try(local.db_user.password[0].value, "")
-    database = try(local.db_user.connect_database[0].value, "")
-    managed  = try(local.db_user.managed[0].value, false)
+    username = local.db_user.login
+    password = local.db_user.password
+    database = local.db_user.connect_database
+    managed  = local.db_user.managed
   }
 }

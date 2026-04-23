@@ -1485,6 +1485,47 @@ func schemaTextField() *schema.Schema {
 	}
 }
 
+func schemaTextSensitiveField() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeList,
+		Optional:    true,
+		Computed:    true,
+		MaxItems:    1,
+		Description: "Text field data (sensitive).",
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"type": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Description: "Field type.",
+				},
+				"label": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Computed:    true,
+					Description: "Field label.",
+				},
+				"required": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: "Required flag.",
+				},
+				"privacy_screen": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: "Privacy screen flag.",
+				},
+				"value": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+					Description: "Field value.",
+				},
+			},
+		},
+	}
+}
+
 func schemaUrlField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
