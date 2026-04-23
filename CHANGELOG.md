@@ -76,6 +76,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **PAM Remote Browser example file** (Code Review):
   - Created `examples/resources/pam_remote_browser.tf` demonstrating managed resource with `custom` block support
 
+- **`secretsmanager_field` ephemeral resource — wildcard path crash** (KSM-915):
+  - Using `path = "*/field/login"` with `title` caused apply to fail with "Provider produced invalid ephemeral resource instance — planned value does not match config value"
+  - Terraform Plugin Framework enforces that `Required` (non-`Computed`) attributes cannot be mutated by the provider; the resolved UID was being written back to `path` in violation of this rule
+  - Fix: remove the internal path write-back; `value` is the only attribute that needs to be set in the result
+
 - **Custom fields — type case normalization and validation** (KSM-908):
   - Custom field `type` input is now case-insensitive; any casing (e.g., `"paymentcard"`, `"PaymentCard"`, `"PAYMENTCARD"`) is accepted and normalized to canonical vault API casing — no perpetual diff
   - Unknown type strings are now rejected at plan time with a clear error listing all valid types
