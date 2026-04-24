@@ -13,7 +13,7 @@ func TestAccDataSourceFolders(t *testing.T) {
 	config := `data "secretsmanager_folders" "folders" { }`
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{

@@ -90,7 +90,7 @@ func TestAccResourceBankAccount_create(t *testing.T) {
 
 	resourceName := fmt.Sprintf("secretsmanager_bank_account.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -138,7 +138,7 @@ func TestAccResourceBankAccount_update(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_bank_account.%v", secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -188,7 +188,7 @@ func TestAccResourceBankAccount_deleteDetection(t *testing.T) {
 	`, secretTitle, secretFolderUid, secretUid, secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -197,7 +197,7 @@ func TestAccResourceBankAccount_deleteDetection(t *testing.T) {
 			{
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
-					client := *testAccProvider.Meta().(providerMeta).client
+					client := *testAccClient()
 					if err := deleteRecord(secretUid, client); err != nil {
 						t.Fail()
 					}
@@ -233,7 +233,7 @@ func TestAccResourceBankAccount_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -242,6 +242,79 @@ func TestAccResourceBankAccount_import(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccResourceBankAccount_customField(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_bank_account_custom"
+
+	configCreate := fmt.Sprintf(`
+		resource "secretsmanager_bank_account" "custom" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "text"
+				label = "Branch"
+				value = "Downtown"
+			}
+			custom {
+				type  = "text"
+				label = "AccountTier"
+				value = "Premium"
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	configUpdate := fmt.Sprintf(`
+		resource "secretsmanager_bank_account" "custom" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "text"
+				label = "Branch"
+				value = "Uptown"
+			}
+			custom {
+				type  = "text"
+				label = "AccountTier"
+				value = "Premium"
+			}
+			custom {
+				type  = "text"
+				label = "CurrencyCode"
+				value = "USD"
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: configCreate,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr("secretsmanager_bank_account.custom", "custom.#", "2"),
+					resource.TestCheckResourceAttr("secretsmanager_bank_account.custom", "custom.0.label", "Branch"),
+					resource.TestCheckResourceAttr("secretsmanager_bank_account.custom", "custom.0.value", "Downtown"),
+				),
+			},
+			{
+				Config: configUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("secretsmanager_bank_account.custom", "custom.#", "3"),
+					resource.TestCheckResourceAttr("secretsmanager_bank_account.custom", "custom.0.value", "Uptown"),
+					resource.TestCheckResourceAttr("secretsmanager_bank_account.custom", "custom.2.label", "CurrencyCode"),
+				),
 			},
 		},
 	})

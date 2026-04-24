@@ -2,7 +2,7 @@ terraform {
   required_providers {
     secretsmanager = {
       source  = "keeper-security/secretsmanager"
-      version = ">= 1.2.0"
+      version = ">= 1.3.0"
     }
     local = {
       source  = "hashicorp/local"
@@ -54,6 +54,14 @@ resource "secretsmanager_pam_database" "postgres_prod" {
     label = "Default Database"
     value = "production"
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 # Example 2: MySQL Database

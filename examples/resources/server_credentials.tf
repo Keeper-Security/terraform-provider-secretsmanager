@@ -2,7 +2,7 @@ terraform {
   required_providers {
     secretsmanager = {
       source  = "keeper-security/secretsmanager"
-      version = ">= 1.2.0"
+      version = ">= 1.3.0"
     }
     local = {
       source  = "hashicorp/local"
@@ -51,6 +51,14 @@ resource "secretsmanager_server_credentials" "my_server_credentials" {
     }
     #value = "to_be_generated"
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {

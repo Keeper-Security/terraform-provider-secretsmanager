@@ -63,6 +63,8 @@ func resourcePamDatabase() *schema.Resource {
 			"provider_region":  schemaTextField(),
 			"file_ref":         schemaFileRefField(),
 			"totp":             schemaOneTimeCodeField(),
+			// custom[]
+			"custom": schemaCustomField(),
 		},
 	}
 }
@@ -195,6 +197,14 @@ func resourcePamDatabaseCreate(ctx context.Context, d *schema.ResourceData, m in
 			if err := SetFieldTypeInSchema(d, "file_ref", "fileRef"); err != nil {
 				return diag.FromErr(err)
 			}
+		}
+	}
+
+	if customData := d.Get("custom"); customData != nil {
+		if fields, err := customFieldsFromSchema(customData.([]interface{})); err != nil {
+			return diag.FromErr(err)
+		} else {
+			nrc.Custom = fields
 		}
 	}
 
@@ -332,6 +342,11 @@ func resourcePamDatabaseRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	if err := d.Set("custom", customItems); err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.SetId(uid)
 	return diags
 }
@@ -452,6 +467,16 @@ func resourcePamDatabaseUpdate(ctx context.Context, d *schema.ResourceData, m in
 		}
 	}
 
+	if d.HasChange("custom") {
+		customData := d.Get("custom").([]interface{})
+		fields, err := customFieldsFromSchema(customData)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		secret.RecordDict["custom"] = customFieldsToDict(fields)
+	}
+
+	secret.RawJson = core.DictToJson(secret.RecordDict)
 	if err := saveRecord(secret, client); err != nil {
 		return diag.FromErr(err)
 	}

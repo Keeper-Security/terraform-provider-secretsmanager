@@ -41,3 +41,10 @@ In addition to all arguments above, the following attributes are exported:
   - `content_base64` - File content base64 encoded.
 * `totp` - One-time code field represented as a block list with:
   - `value` - TOTP URI/secret value (e.g. `otpauth://...`).
+
+* `custom` - A list of custom fields defined on the record. Each entry contains:
+  - `type` - Field type (e.g. `text`, `secret`, `url`, `email`, `phone`, `multiline`, `checkbox`, `date`, `birthDate`, `expirationDate`, `name`, `address`, `paymentCard`, `bankAccount`, `host`, `keyPair`, `securityQuestion`).
+  - `label` - Display name for the field in Keeper UI.
+  - `value` - Field value. Complex types (e.g. `name`, `address`, `paymentCard`) are returned as a JSON-encoded string.
+  - `required` - Whether this field is required.
+  - `privacy_screen` - Whether this field is hidden behind a privacy screen in Keeper UI.

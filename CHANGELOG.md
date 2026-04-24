@@ -7,6 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0]
+
+### Security
+- Bump `cloudflare/circl` to v1.6.3 and `grpc` to v1.79.3 to address known vulnerabilities
+
+### Added
+- Document Alpine Linux and musl-based container compatibility — all Linux binaries are statically compiled (`CGO_ENABLED=0`) with no C library dependencies and run on Alpine and other musl-based systems without modification (KSM-885)
+
+- **Custom fields in data sources and ephemeral resources** (KSM-910):
+  - Expose the `custom` block on all 22 record-type data sources (`data "secretsmanager_<type>"`) — allows reading custom field values from existing vault records
+  - Expose the `custom` block on all 22 record-type ephemeral resources (`ephemeral "secretsmanager_<type>"`) — custom field values are returned without being stored in state
+  - Each `custom` entry is a read-only block with `type`, `label`, `value`, `required`, and `privacy_screen` attributes
+  - Completes KSM-388 custom field support across all three resource layers: managed resources (write), data sources (read), and ephemeral resources (read, no state)
+
+- **Ephemeral Resources** (KSM-871):
+  - Add ephemeral resource support for Terraform 1.10+, ensuring secrets are never stored in `terraform.tfstate`
+  - Ephemeral resources available for all 25 record types: `login`, `field`, `record`, `database_credentials`, `server_credentials`, `ssh_keys`, `encrypted_notes`, `address`, `bank_account`, `bank_card`, `birth_certificate`, `contact`, `driver_license`, `health_insurance`, `membership`, `passport`, `photo`, `software_license`, `ssn_card`, `file`, `pam_user`, `pam_machine`, `pam_database`, `pam_directory`, `pam_remote_browser`
+  - Use `ephemeral "secretsmanager_<type>" "name" { ... }` instead of `data` blocks to keep secrets out of state
+  - Introduce Terraform Plugin Framework alongside existing SDKv2 via protocol v6 mux server
+  - Add `terraform-plugin-framework` v1.18.0 and `terraform-plugin-mux` v0.22.0 dependencies
+  - All existing resources and data sources remain fully backward compatible
+  - Add documentation and examples for all ephemeral resources
+
+- **PAM Remote Browser** (KSM-871):
+  - Add `secretsmanager_pam_remote_browser` resource, data source, and ephemeral resource
+  - Support for Remote Browser Isolation (RBI) URL, browser settings (JSON), traffic encryption seed, file references, and TOTP
+  - Full CRUD lifecycle with import support
+
+- **Custom Fields** (KSM-388):
+  - Add `custom` block to all 23 record resource types (`login`, `bank_account`, `bank_card`, `birth_certificate`, `contact`, `database_credentials`, `driver_license`, `encrypted_notes`, `file`, `health_insurance`, `membership`, `passport`, `photo`, `server_credentials`, `software_license`, `ssh_keys`, `ssn_card`, `address`, `pam_database`, `pam_directory`, `pam_machine`, `pam_remote_browser`, `pam_user`)
+  - Supports 43+ Keeper field types including `text`, `secret`, `url`, `email`, `phone`, `date`, `birthDate`, `expirationDate`, `name`, `address`, `paymentCard`, `bankAccount`, `host`, `keyPair`, `securityQuestion`, `checkbox`, `multiline`, and more
+  - Simple types use a plain string `value`; complex types use `value = jsonencode({...})` for a single entry or `value = jsonencode([{...},{...}])` for multiple entries in one field
+  - `pam_machine` and `pam_user` use merge-aware logic to preserve the vault-managed "Private Key Passphrase" custom field across create/update operations
+  - `required` and `privacy_screen` attributes round-trip correctly from vault state (no perpetual diff on import)
+  - Custom field schema verified across all 23 record resource types via unit test (`folder` excluded — it is a container with no custom fields); reference type SDK structs fixed (`addressRef`, `cardRef`, `fileRef`, `oneTimeCode`)
+
+### Fixed
+- **Custom fields — `paymentCard` perpetual diff** (KSM-888):
+  - `jsonencode()` values must use camelCase keys — `cardNumber`, `cardExpirationDate`, `cardSecurityCode` — matching Keeper's API format
+  - Documentation now specifies camelCase requirement; snake_case keys silently produce empty objects, causing a perpetual plan diff (the old behavior)
+
+- **Custom fields — non-canonical `checkbox` values** (KSM-889):
+  - Only `"true"` or `"false"` are accepted for checkbox fields
+  - Other strings like `"yes"`, `"1"`, or `"on"` now return a clear error instead of being silently coerced to `false`, which caused perpetual plan diffs
+
+- **Custom fields — non-canonical date values** (KSM-889):
+  - `date`, `birthDate`, and `expirationDate` only accept YYYY-MM-DD format
+  - RFC3339 input (e.g., `"2026-03-20T14:30:00Z"`) now returns a clear error instead of causing a perpetual plan diff (config kept RFC3339; state returned YYYY-MM-DD)
+  - Updated documentation comments in `record_fields.go` and `provider.go` to correctly specify YYYY-MM-DD format
+
+- **PAM ephemeral `host_name` always empty** (KSM-884):
+  - `pamHostnameToListValue` was reading the wrong field key (`hostname` lowercase instead of `hostName` camelCase)
+  - Fixes silent empty returns for `pam_machine`, `pam_database`, and `pam_directory` ephemeral resources
+
+- **Folder custom fields documentation** (Code Review):
+  - Removed spurious `custom` block from `examples/resources/folder.tf` and `docs/resources/folder.md`
+  - KSM folders are containers and do not support custom fields
+
+- **Missing test coverage** (Code Review):
+  - Added `resourceFile()` to `TestCustomFieldSchemaPresence` — now covers all 23 record resource types (all except `folder`, which has no custom fields)
+  - Verified all record resource types have `custom` TypeList with correct 5-key structure (type, label, value, required, privacy_screen)
+
+- **parseJSONItems panic guard** (Code Review):
+  - Added length check after `strings.TrimSpace()` to prevent index-out-of-range panic on empty or whitespace-only input
+  - Affects custom field value parsing for complex types (phone, name, address, paymentCard, etc.)
+
+- **PAM Remote Browser example file** (Code Review):
+  - Created `examples/resources/pam_remote_browser.tf` demonstrating managed resource with `custom` block support
+
+- **`secretsmanager_field` ephemeral resource — wildcard path crash** (KSM-915):
+  - Using `path = "*/field/login"` with `title` caused apply to fail with "Provider produced invalid ephemeral resource instance — planned value does not match config value"
+  - Terraform Plugin Framework enforces that `Required` (non-`Computed`) attributes cannot be mutated by the provider; the resolved UID was being written back to `path` in violation of this rule
+  - Fix: remove the internal path write-back; `value` is the only attribute that needs to be set in the result
+
+- **Custom fields — type case normalization and validation** (KSM-908):
+  - Custom field `type` input is now case-insensitive; any casing (e.g., `"paymentcard"`, `"PaymentCard"`, `"PAYMENTCARD"`) is accepted and normalized to canonical vault API casing — no perpetual diff
+  - Unknown type strings are now rejected at plan time with a clear error listing all valid types
+  - Fixes lowercase variants (e.g., `type = "paymentcard"`) being silently stored as `core.Text` instead of the correct SDK type (e.g., `core.PaymentCards`)
+
+- Remove invalid `DiffSuppressFunc` and `ValidateFunc` from computed-only `pam_remote_browser_settings` field in the `pam_remote_browser` data source
+- Add nil-check guard in all ephemeral resource `Open()` methods to prevent panics if provider configuration is missing
+- Surface warning diagnostics when referenced `addressRef` or `cardRef` records cannot be fetched, instead of silently returning empty fields
+- Mark `credential` provider attribute as sensitive to prevent credentials appearing in plan output
+- Mark sensitive fields across all record types to prevent secrets appearing in plan output: payment card numbers and security codes, bank account and routing numbers, PIN codes, TOTP seeds, license numbers, and secret field values
+
 ## [1.2.0]
 
 ### Security
@@ -83,7 +168,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix folder UID validation and empty folder restriction in resource schema descriptions
 
-[Unreleased]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.1.7...v1.2.0
 [1.1.7]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.1.6...v1.1.7
 [1.1.6]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/releases/tag/v1.1.6

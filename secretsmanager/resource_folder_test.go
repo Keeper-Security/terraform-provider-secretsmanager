@@ -22,7 +22,7 @@ func TestAccResourceFolder_create(t *testing.T) {
 		force_delete = true
 	}`, secretTitle, testFolderUid, secretTitle)
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -57,7 +57,7 @@ func TestAccResourceFolder_update(t *testing.T) {
 	}`, secretTitle, testFolderUid, secretTitle2)
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -101,7 +101,7 @@ func TestAccResourceFolder_deleteDetection(t *testing.T) {
 	}`, secretTitle, testFolderUid, secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -110,7 +110,7 @@ func TestAccResourceFolder_deleteDetection(t *testing.T) {
 			{
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
-					client := *testAccProvider.Meta().(providerMeta).client
+					client := *testAccClient()
 					folders, err := findFolder("", "", secretTitle, client)
 					if err != nil || len(folders) == 0 {
 						t.Skip("Skipping test - TF_ACC not set or test folder not configured")
@@ -141,7 +141,7 @@ func TestAccResourceFolder_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// No need to create/delete - Import step takes care of these
@@ -155,7 +155,7 @@ func TestAccResourceFolder_import(t *testing.T) {
 			// {
 			// 	PreConfig: func() {
 			// 		// Delete folder outside of Terraform workspace
-			// 		client := *testAccProvider.Meta().(providerMeta).client
+			// 		client := *testAccClient()
 			// 		folders, err := findFolder(testFolderUid, "", secretTitle, client)
 			// 		if err != nil || len(folders) == 0 {
 			// 			t.Skip("Skipping test - TF_ACC not set or test folder not configured")

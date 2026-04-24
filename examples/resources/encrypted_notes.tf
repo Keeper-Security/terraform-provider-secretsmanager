@@ -2,7 +2,7 @@ terraform {
   required_providers {
     secretsmanager = {
       source  = "keeper-security/secretsmanager"
-      version = ">= 1.2.0"
+      version = ">= 1.3.0"
     }
     local = {
       source  = "hashicorp/local"
@@ -34,6 +34,14 @@ resource "secretsmanager_encrypted_notes" "my_encrypted_notes" {
     value          = 1651186276
     # unix time in milliseconds
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {

@@ -60,6 +60,8 @@ func resourcePassport() *schema.Resource {
 			"password":        schemaPasswordField(""),
 			"address_ref":     schemaAddressRefField(),
 			"file_ref":        schemaFileRefField(),
+			// custom[]
+			"custom": schemaCustomField(),
 		},
 	}
 }
@@ -179,6 +181,14 @@ func resourcePassportCreate(ctx context.Context, d *schema.ResourceData, m inter
 		}
 	}
 
+	if customData := d.Get("custom"); customData != nil {
+		if fields, err := customFieldsFromSchema(customData.([]interface{})); err != nil {
+			return diag.FromErr(err)
+		} else {
+			nrc.Custom = fields
+		}
+	}
+
 	if folderUid == "*" {
 		if fuid, err := getTemplateFolder(folderUid, client); err != nil {
 			return diag.FromErr(err)
@@ -292,6 +302,11 @@ func resourcePassportRead(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	if err := d.Set("custom", customItems); err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.SetId(uid)
 	return diags
 }
@@ -365,6 +380,15 @@ func resourcePassportUpdate(ctx context.Context, d *schema.ResourceData, m inter
 		if _, err := ApplyFieldChange("fields", "file_ref", d, secret); err != nil {
 			return diag.FromErr(err)
 		}
+	}
+
+	if d.HasChange("custom") {
+		customData := d.Get("custom").([]interface{})
+		fields, err := customFieldsFromSchema(customData)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		secret.RecordDict["custom"] = customFieldsToDict(fields)
 	}
 
 	secret.RawJson = core.DictToJson(secret.RecordDict)

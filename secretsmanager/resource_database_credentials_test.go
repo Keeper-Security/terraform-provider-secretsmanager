@@ -66,7 +66,7 @@ func TestAccResourceDatabaseCredentials_create(t *testing.T) {
 
 	resourceName := fmt.Sprintf("secretsmanager_database_credentials.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -114,7 +114,7 @@ func TestAccResourceDatabaseCredentials_update(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_database_credentials.%v", secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -164,7 +164,7 @@ func TestAccResourceDatabaseCredentials_deleteDetection(t *testing.T) {
 	`, secretTitle, secretFolderUid, secretUid, secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -173,7 +173,7 @@ func TestAccResourceDatabaseCredentials_deleteDetection(t *testing.T) {
 			{
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
-					client := *testAccProvider.Meta().(providerMeta).client
+					client := *testAccClient()
 					if err := deleteRecord(secretUid, client); err != nil {
 						t.Fail()
 					}
@@ -209,7 +209,7 @@ func TestAccResourceDatabaseCredentials_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,

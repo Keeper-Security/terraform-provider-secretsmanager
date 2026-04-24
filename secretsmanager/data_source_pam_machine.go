@@ -55,6 +55,7 @@ func dataSourcePamMachine() *schema.Resource {
 			"provider_region":        schemaTextField(),
 			"file_ref":               schemaFileRefField(),
 			"totp":                   schemaOneTimeCodeField(),
+			"custom":                 schemaCustomFieldData(),
 		},
 	}
 }
@@ -159,6 +160,11 @@ func dataSourcePamMachineRead(ctx context.Context, d *schema.ResourceData, m int
 
 	fileItems := getFileItemsData(secret.Files)
 	if err := d.Set("file_ref", fileItems); err != nil {
+		return diag.FromErr(err)
+	}
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	if err := d.Set("custom", customItems); err != nil {
 		return diag.FromErr(err)
 	}
 

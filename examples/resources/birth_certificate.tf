@@ -2,7 +2,7 @@ terraform {
   required_providers {
     secretsmanager = {
       source  = "keeper-security/secretsmanager"
-      version = ">= 1.2.0"
+      version = ">= 1.3.0"
     }
     local = {
       source  = "hashicorp/local"
@@ -39,6 +39,14 @@ resource "secretsmanager_birth_certificate" "my_birth_certificate" {
     # unix time in milliseconds
     # unix time seconds can be produced using time_static resource from hashicorp/time provider
   }
+
+  # Custom fields — attach arbitrary typed data to the record
+  custom {
+    type  = "text"
+    label = "Environment"
+    value = "production"
+  }
+
 }
 
 resource "local_file" "out" {

@@ -56,6 +56,8 @@ func resourceSoftwareLicense() *schema.Resource {
 			"activation_date": schemaDateField(),
 			"expiration_date": schemaExpirationDateField(),
 			"file_ref":        schemaFileRefField(),
+			// custom[]
+			"custom": schemaCustomField(),
 		},
 	}
 }
@@ -125,6 +127,14 @@ func resourceSoftwareLicenseCreate(ctx context.Context, d *schema.ResourceData, 
 			if err := SetFieldTypeInSchema(d, "file_ref", "fileRef"); err != nil {
 				return diag.FromErr(err)
 			}
+		}
+	}
+
+	if customData := d.Get("custom"); customData != nil {
+		if fields, err := customFieldsFromSchema(customData.([]interface{})); err != nil {
+			return diag.FromErr(err)
+		} else {
+			nrc.Custom = fields
 		}
 	}
 
@@ -224,6 +234,11 @@ func resourceSoftwareLicenseRead(ctx context.Context, d *schema.ResourceData, m 
 		return diag.FromErr(err)
 	}
 
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	if err := d.Set("custom", customItems); err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.SetId(uid)
 	return diags
 }
@@ -277,6 +292,15 @@ func resourceSoftwareLicenseUpdate(ctx context.Context, d *schema.ResourceData, 
 		if _, err := ApplyFieldChange("fields", "file_ref", d, secret); err != nil {
 			return diag.FromErr(err)
 		}
+	}
+
+	if d.HasChange("custom") {
+		customData := d.Get("custom").([]interface{})
+		fields, err := customFieldsFromSchema(customData)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		secret.RecordDict["custom"] = customFieldsToDict(fields)
 	}
 
 	secret.RawJson = core.DictToJson(secret.RecordDict)
