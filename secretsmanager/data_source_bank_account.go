@@ -225,6 +225,7 @@ func dataSourceBankAccount() *schema.Resource {
 					},
 				},
 			},
+			"custom": schemaCustomFieldData(),
 		},
 	}
 }
@@ -309,6 +310,11 @@ func dataSourceBankAccountRead(ctx context.Context, d *schema.ResourceData, m in
 		}
 	}
 	if err = d.Set("totp", totpItems); err != nil {
+		return diag.FromErr(err)
+	}
+
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	if err := d.Set("custom", customItems); err != nil {
 		return diag.FromErr(err)
 	}
 

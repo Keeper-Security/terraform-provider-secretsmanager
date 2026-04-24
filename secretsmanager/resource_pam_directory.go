@@ -67,6 +67,8 @@ func resourcePamDirectory() *schema.Resource {
 			"alternative_ips":    schemaMultilineField(),
 			"file_ref":           schemaFileRefField(),
 			"totp":               schemaOneTimeCodeField(),
+			// custom[]
+			"custom": schemaCustomField(),
 		},
 	}
 }
@@ -247,6 +249,14 @@ func resourcePamDirectoryCreate(ctx context.Context, d *schema.ResourceData, m i
 		}
 	}
 
+	if customData := d.Get("custom"); customData != nil {
+		if fields, err := customFieldsFromSchema(customData.([]interface{})); err != nil {
+			return diag.FromErr(err)
+		} else {
+			nrc.Custom = fields
+		}
+	}
+
 	if folderUid == "*" {
 		if fuid, err := getTemplateFolder(folderUid, client); err != nil {
 			return diag.FromErr(err)
@@ -397,6 +407,11 @@ func resourcePamDirectoryRead(ctx context.Context, d *schema.ResourceData, m int
 		return diag.FromErr(err)
 	}
 
+	customItems := getFieldItemsData(secret.RecordDict, "custom")
+	if err := d.Set("custom", customItems); err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.SetId(uid)
 	return diags
 }
@@ -537,6 +552,16 @@ func resourcePamDirectoryUpdate(ctx context.Context, d *schema.ResourceData, m i
 		}
 	}
 
+	if d.HasChange("custom") {
+		customData := d.Get("custom").([]interface{})
+		fields, err := customFieldsFromSchema(customData)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		secret.RecordDict["custom"] = customFieldsToDict(fields)
+	}
+
+	secret.RawJson = core.DictToJson(secret.RecordDict)
 	if err := saveRecord(secret, client); err != nil {
 		return diag.FromErr(err)
 	}

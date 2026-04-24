@@ -1,13 +1,18 @@
 package secretsmanager
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/keeper-security/secrets-manager-go/core"
 )
@@ -16,9 +21,16 @@ const (
 	envCredential = "KEEPER_CREDENTIAL"
 )
 
-var testAccProviders map[string]*schema.Provider
-var testAccProvider *schema.Provider
+var testAccProtoV6ProviderFactories map[string]func() (tfprotov6.ProviderServer, error)
 var testAcc *testAccValues
+
+// testAccKSMClient is a lazily-initialized standalone KSM client for use in
+// test helpers and PreConfig hooks. It is independent of the provider lifecycle
+// so it works correctly when tests use testAccProtoV6ProviderFactories.
+var (
+	testAccKSMClient     *core.SecretsManager
+	testAccKSMClientOnce sync.Once
+)
 
 type testAccValues struct {
 	credential string
@@ -34,9 +46,24 @@ func (testAccValues) validate() error {
 }
 
 func init() {
-	testAccProvider = Provider()
-	testAccProviders = map[string]*schema.Provider{
-		"secretsmanager": testAccProvider,
+	testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
+		"secretsmanager": func() (tfprotov6.ProviderServer, error) {
+			ctx := context.Background()
+			sdkv2Provider := Provider()
+			upgradedSdkv2, err := tf5to6server.UpgradeServer(ctx, sdkv2Provider.GRPCProvider)
+			if err != nil {
+				return nil, err
+			}
+			servers := []func() tfprotov6.ProviderServer{
+				func() tfprotov6.ProviderServer { return upgradedSdkv2 },
+				providerserver.NewProtocol6(NewFWProvider()),
+			}
+			muxServer, err := tf6muxserver.NewMuxServer(ctx, servers...)
+			if err != nil {
+				return nil, err
+			}
+			return muxServer.ProviderServer(), nil
+		},
 	}
 
 	testAcc = &testAccValues{
@@ -93,9 +120,24 @@ func (testAccValues) getTestFolder() string {
 	return testAcc.folderUid
 }
 
-// func client() *ksm.SecretsManager {
-// 	return testAccProvider.Meta().(providerMeta).client
-// }
+// testAccClient returns a lazily-initialized standalone KSM client built
+// directly from KEEPER_CREDENTIAL. It does not depend on the Terraform
+// provider being configured, so it works correctly in tests that use
+// testAccProtoV6ProviderFactories.
+func testAccClient() *core.SecretsManager {
+	testAccKSMClientOnce.Do(func() {
+		creds := strings.TrimSpace(testAcc.credential)
+		if creds == "" {
+			return
+		}
+		config := core.NewMemoryKeyValueStorage(creds)
+		if config.Get(core.KEY_APP_KEY) == "" || config.Get(core.KEY_CLIENT_ID) == "" || config.Get(core.KEY_PRIVATE_KEY) == "" {
+			return
+		}
+		testAccKSMClient = core.NewSecretsManager(&core.ClientOptions{Config: config})
+	})
+	return testAccKSMClient
+}
 
 func testAccPreCheck(t *testing.T) func() {
 	return func() {
@@ -112,11 +154,37 @@ func TestProvider(t *testing.T) {
 	}
 }
 
+func TestValidatePamCustomFieldLabels(t *testing.T) {
+	cases := []struct {
+		label   string
+		wantErr bool
+	}{
+		{"Private Key Passphrase", true},  // exact canonical — blocked
+		{"private key passphrase", true},  // all lowercase — now blocked
+		{"PRIVATE KEY PASSPHRASE", true},  // all uppercase — now blocked
+		{"Private Key PASSPHRASE", true},  // mixed case — now blocked
+		{"Owner", false},                  // non-reserved — allowed
+		{"", false},                       // empty — allowed
+	}
+	for _, tc := range cases {
+		items := []interface{}{
+			map[string]interface{}{"label": tc.label, "type": "secret", "value": []interface{}{"x"}},
+		}
+		err := validatePamCustomFieldLabels(items, "secretsmanager_pam_machine")
+		if (err != nil) != tc.wantErr {
+			t.Errorf("label=%q: wantErr=%v got err=%v", tc.label, tc.wantErr, err)
+		}
+	}
+}
+
 func checkSecretExistsRemotely(uid string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		client := *testAccProvider.Meta().(providerMeta).client
+		client := testAccClient()
+		if client == nil {
+			return fmt.Errorf("cannot create KSM client from credentials")
+		}
 
-		records, err := getSecrets(client, []string{uid})
+		records, err := getSecrets(*client, []string{uid})
 		if err != nil {
 			return err
 		}
@@ -130,9 +198,12 @@ func checkSecretExistsRemotely(uid string) resource.TestCheckFunc {
 
 func checkFolderExistsRemotely(uid, name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		client := *testAccProvider.Meta().(providerMeta).client
+		client := testAccClient()
+		if client == nil {
+			return fmt.Errorf("cannot create KSM client from credentials")
+		}
 
-		folders, err := getFolders(client)
+		folders, err := getFolders(*client)
 		if err != nil {
 			return err
 		}

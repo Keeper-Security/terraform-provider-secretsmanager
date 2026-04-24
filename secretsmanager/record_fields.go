@@ -2,6 +2,7 @@ package secretsmanager
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -120,6 +121,7 @@ func schemaAccountNumberField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -290,11 +292,13 @@ func schemaBankAccountField() *schema.Schema {
 							"routing_number": {
 								Type:        schema.TypeString,
 								Optional:    true,
+								Sensitive:   true,
 								Description: "Routing number.",
 							},
 							"account_number": {
 								Type:        schema.TypeString,
 								Optional:    true,
+								Sensitive:   true,
 								Description: "Account number.",
 							},
 							"other_type": {
@@ -822,6 +826,7 @@ func schemaLicenseNumberField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -1000,6 +1005,7 @@ func schemaOneTimeCodeField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -1156,6 +1162,7 @@ func schemaPaymentCardField() *schema.Schema {
 							"card_number": {
 								Type:        schema.TypeString,
 								Optional:    true,
+								Sensitive:   true,
 								Description: "Card number.",
 							},
 							"card_expiration_date": {
@@ -1166,6 +1173,7 @@ func schemaPaymentCardField() *schema.Schema {
 							"card_security_code": {
 								Type:        schema.TypeString,
 								Optional:    true,
+								Sensitive:   true,
 								Description: "Card security code.",
 							},
 						},
@@ -1293,6 +1301,7 @@ func schemaPinCodeField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -1332,6 +1341,7 @@ func schemaSecretField() *schema.Schema {
 				"value": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					Description: "Field value.",
 				},
 			},
@@ -1475,6 +1485,47 @@ func schemaTextField() *schema.Schema {
 	}
 }
 
+func schemaTextSensitiveField() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeList,
+		Optional:    true,
+		Computed:    true,
+		MaxItems:    1,
+		Description: "Text field data (sensitive).",
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"type": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Description: "Field type.",
+				},
+				"label": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Computed:    true,
+					Description: "Field label.",
+				},
+				"required": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: "Required flag.",
+				},
+				"privacy_screen": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: "Privacy screen flag.",
+				},
+				"value": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+					Description: "Field value.",
+				},
+			},
+		},
+	}
+}
+
 func schemaUrlField() *schema.Schema {
 	return &schema.Schema{
 		Type:        schema.TypeList,
@@ -1508,6 +1559,117 @@ func schemaUrlField() *schema.Schema {
 					Type:        schema.TypeString,
 					Optional:    true,
 					Description: "Field value.",
+				},
+			},
+		},
+	}
+}
+
+// schemaCustomFieldData returns the read-only schema for the custom block used in data sources and
+// ephemeral resources. Unlike schemaCustomField(), all sub-fields are Computed because the data
+// originates from the vault and is never written by Terraform.
+func schemaCustomFieldData() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeList,
+		Computed:    true,
+		Description: "Custom fields defined by the user in Keeper. Each field has a type, label, and value.",
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"type": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Description: "Field type (e.g. text, secret, url, email, phone, paymentCard).",
+				},
+				"label": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Description: "Field label.",
+				},
+				"value": {
+					Type:        schema.TypeString,
+					Computed:    true,
+					Sensitive:   true,
+					Description: "Field value. Complex types (phone, name, address, paymentCard) are returned as JSON.",
+				},
+				"required": {
+					Type:        schema.TypeBool,
+					Computed:    true,
+					Description: "Whether this field is required.",
+				},
+				"privacy_screen": {
+					Type:        schema.TypeBool,
+					Computed:    true,
+					Description: "Whether this field is hidden behind a privacy screen in the Keeper UI.",
+				},
+			},
+		},
+	}
+}
+
+// schemaCustomField returns the schema for user-defined custom fields on a managed resource.
+// Each field has a type, label, and value. The value is always a string:
+// - Simple types (text, multiline, secret, url, email): plain string value
+// - Complex types (phone, name, address, paymentCard): jsonencode() of the nested object
+// - Date: YYYY-MM-DD format (e.g. "2024-01-15")
+// The provider interprets the value based on the type field.
+func schemaCustomField() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeList,
+		Optional:    true,
+		Description: "Custom fields defined by the user in Keeper. Each field has a type, label, and value.",
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"type": {
+					Type:        schema.TypeString,
+					Required:    true,
+					Description: "Field type. Input is case-insensitive and normalized to canonical casing (e.g. paymentcard → paymentCard). Unknown types are rejected at plan time. Common values: text, secret, url, email, multiline, date, phone, name, address, paymentCard, bankAccount, host, keyPair, securityQuestion, checkbox.",
+					StateFunc: func(val interface{}) string {
+						v := strings.ToLower(strings.TrimSpace(val.(string)))
+						if canonical, ok := customFieldTypeCanonical[v]; ok {
+							return canonical
+						}
+						return val.(string)
+					},
+					ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
+						v := strings.ToLower(strings.TrimSpace(i.(string)))
+						if _, ok := customFieldTypeCanonical[v]; ok {
+							return nil
+						}
+						valid := make([]string, 0, len(customFieldTypeCanonical))
+						for _, canonical := range customFieldTypeCanonical {
+							valid = append(valid, canonical)
+						}
+						sort.Strings(valid)
+						return diag.Diagnostics{diag.Diagnostic{
+							Severity:      diag.Error,
+							Summary:       fmt.Sprintf("invalid custom field type %q", i.(string)),
+							Detail:        fmt.Sprintf("valid types: %s", strings.Join(valid, ", ")),
+							AttributePath: p,
+						}}
+					},
+				},
+				"label": {
+					Type:        schema.TypeString,
+					Required:    true,
+					Description: "Field label. Used to identify the field within the record.",
+				},
+				"value": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+					Description: "Field value. Use a plain string for simple types. Use jsonencode() for complex types (phone, name, address, paymentCard).",
+				},
+				"required": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Computed:    true,
+					Description: "Whether this field is required.",
+				},
+				"privacy_screen": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Computed:    true,
+					Description: "Whether this field is hidden behind a privacy screen in the Keeper UI.",
 				},
 			},
 		},

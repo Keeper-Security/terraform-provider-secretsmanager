@@ -44,6 +44,8 @@ resource "secretsmanager_birth_certificate" "my_birth_certificate" {
 - **title** (String) The secret title.
 - **uid** (String) The UID of the new secret (using RFC4648 URL and Filename Safe Alphabet).
 
+- **custom** (Block List) User-defined custom fields. (see [below for nested schema](#nestedblock--custom))
+
 ### Read-Only
 
 - **type** (String) The secret type.
@@ -113,3 +115,17 @@ Optional:
 - **first** (String) First name.
 - **last** (String) Last name.
 - **middle** (String) MIddle name.
+
+<a id="nestedblock--custom"></a>
+### Nested Schema for `custom`
+
+Required:
+
+- **label** (String) Display name for the field in Keeper UI.
+- **type** (String) Keeper field type. Input is case-insensitive — any casing is accepted and normalized (e.g., `paymentcard` → `paymentCard`). Unknown types are rejected at plan time. Common values: `text`, `secret`, `url`, `email`, `phone`, `date`, `birthDate`, `expirationDate`, `name`, `address`, `paymentCard`, `bankAccount`, `host`, `keyPair`, `securityQuestion`, `checkbox`, `multiline`.
+
+Optional:
+
+- **privacy_screen** (Boolean) Whether this field is hidden behind a privacy screen in the Keeper UI.
+- **required** (Boolean) Whether this field is required.
+- **value** (String, Sensitive) Field value. Plain string for simple types. Use `jsonencode({...})` for structured types or `jsonencode([{...},{...}])` for multiple entries in one field. Format constraints: `checkbox` requires `"true"` or `"false"`; `date`, `birthDate`, and `expirationDate` require YYYY-MM-DD; `paymentCard` `jsonencode` keys use camelCase (`cardNumber`, `cardExpirationDate`, `cardSecurityCode`).

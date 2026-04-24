@@ -47,7 +47,7 @@ func TestAccResourcePamDatabase_create(t *testing.T) {
 
 	resourceName := fmt.Sprintf("secretsmanager_pam_database.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -129,7 +129,7 @@ func TestAccResourcePamDatabase_update(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_pam_database.%v", secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -192,7 +192,7 @@ func TestAccResourcePamDatabase_deleteDetection(t *testing.T) {
 	`, secretTitle, secretFolderUid, secretUid, secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		PreCheck:  testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
@@ -201,7 +201,7 @@ func TestAccResourcePamDatabase_deleteDetection(t *testing.T) {
 			{
 				PreConfig: func() {
 					// Delete secret outside of Terraform workspace
-					client := *testAccProvider.Meta().(providerMeta).client
+					client := *testAccClient()
 					if err := deleteRecord(secretUid, client); err != nil {
 						t.Fail()
 					}
@@ -235,7 +235,7 @@ func TestAccResourcePamDatabase_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  testAccPreCheck(t),
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -244,6 +244,45 @@ func TestAccResourcePamDatabase_import(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccResourcePamDatabase_customField(t *testing.T) {
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	secretTitle := "tf_acc_test_pam_database_custom"
+	if secretFolderUid == "" {
+		t.Skip("Skipping test - TF_ACC not set or test folder not configured")
+	}
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_pam_database" "custom" {
+			folder_uid = "%v"
+			uid        = "%v"
+			title      = "%v"
+
+			custom {
+				type  = "text"
+				label = "Environment"
+				value = "staging"
+			}
+		}
+	`, secretFolderUid, secretUid, secretTitle)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretExistsRemotely(secretUid),
+					resource.TestCheckResourceAttr("secretsmanager_pam_database.custom", "custom.#", "1"),
+					resource.TestCheckResourceAttr("secretsmanager_pam_database.custom", "custom.0.label", "Environment"),
+					resource.TestCheckResourceAttr("secretsmanager_pam_database.custom", "custom.0.value", "staging"),
+				),
 			},
 		},
 	})

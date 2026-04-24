@@ -43,7 +43,7 @@ terraform {
     # add keeper secrets manager plugin
     secretsmanager = {
       source  = "keeper-security/secretsmanager"
-      version = ">= 1.2.0"
+      version = ">= 1.3.0"
     }
   }
 }
@@ -135,7 +135,7 @@ terraform {
   required_providers {
     secretsmanager = {
       source  = "keeper-security/secretsmanager"
-      version = ">= 1.2.0"
+      version = ">= 1.3.0"
     }
   }
 }
@@ -178,6 +178,12 @@ curl -SfLOJ https://github.com/keeper-security/terraform-provider-secretsmanager
 ```
 Have a look at some working [examples](./examples) in this repo.
 
+### Alpine Linux and Container Compatibility
+
+All Linux binaries are compiled with `CGO_ENABLED=0`, producing a fully static binary with no C library dependencies. The `linux_amd64`, `linux_arm64`, and `linux_arm` builds run on any Linux distribution — including Alpine Linux and other musl-based container images — without modification.
+
+No special installation steps or alternative binaries are required for Alpine.
+
 ### Terraform v0.12 and below
 Manually install the Keeper Secrets Manager provider by downloading the corresponding archive for your platform then extract the executable and move it to `~/.terraform/plugins` or `%APPDATA%\terraform.d\plugins` on Windows.
 
@@ -186,7 +192,7 @@ Afterwards you can run the following example with Terraform.
 terraform {
   required_providers {
     secretsmanager = {
-      version = ">= 1.2.0"
+      version = ">= 1.3.0"
     }
   }
 }
