@@ -223,4 +223,6 @@ jobs:
 
       - name: Delete tag on build failure
         if: failure()
-        run: git push --delete origin ${{ steps.set-tag.outputs.tag_name }}
+        env:
+          TAG_NAME: ${{ steps.set-tag.outputs.tag_name }}
+        run: git push --delete origin "$TAG_NAME"
