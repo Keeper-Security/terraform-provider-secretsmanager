@@ -2,6 +2,7 @@ package secretsmanager
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -189,6 +190,111 @@ func TestAccResourceLogin_deleteDetection(t *testing.T) {
 				Config:             config,
 				PlanOnly:           true,
 				ExpectNonEmptyPlan: true, // The externally deleted secret should be planned in for recreation
+			},
+		},
+	})
+}
+
+func TestAccResourceLogin_generateNoSpecial(t *testing.T) {
+	secretType := "login"
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	_, secretTitle := testAcc.getRecordInfo(secretType)
+	if secretUid == "" || secretTitle == "" {
+		t.Fatal("Failed to access test data - missing secret UID and/or Title")
+	}
+	secretTitle += "_resource_no_special"
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_login" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			password {
+				generate = "yes"
+				complexity {
+					length  = 20
+					special = 0
+				}
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	resourceName := fmt.Sprintf("secretsmanager_login.%v", secretTitle)
+	const defaultSpecialChars = "!@#$%()+;<>=?[]{}^.,"
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:  testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretResourceState(resourceName, func(s *terraform.InstanceState) error {
+						pwd := s.Attributes["password.0.value"]
+						if len(pwd) != 20 {
+							return fmt.Errorf("expected a 20-char password, got %d chars", len(pwd))
+						}
+						if strings.ContainsAny(pwd, defaultSpecialChars) {
+							return fmt.Errorf("expected no special chars (special=0) but password contains one: %q", pwd)
+						}
+						return nil
+					}),
+					checkSecretExistsRemotely(secretUid),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceLogin_generateSpecialSet(t *testing.T) {
+	secretType := "login"
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	_, secretTitle := testAcc.getRecordInfo(secretType)
+	if secretUid == "" || secretTitle == "" {
+		t.Fatal("Failed to access test data - missing secret UID and/or Title")
+	}
+	secretTitle += "_resource_special_set"
+
+	config := fmt.Sprintf(`
+		resource "secretsmanager_login" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			password {
+				generate = "yes"
+				complexity {
+					length      = 20
+					special     = 2
+					special_set = "!@"
+				}
+			}
+		}
+	`, secretTitle, secretFolderUid, secretUid, secretTitle)
+
+	resourceName := fmt.Sprintf("secretsmanager_login.%v", secretTitle)
+	const disallowedSpecialChars = "#$%()+;<>=?[]{}^.,"
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:  testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretResourceState(resourceName, func(s *terraform.InstanceState) error {
+						pwd := s.Attributes["password.0.value"]
+						if len(pwd) != 20 {
+							return fmt.Errorf("expected a 20-char password, got %d chars", len(pwd))
+						}
+						if strings.ContainsAny(pwd, disallowedSpecialChars) {
+							return fmt.Errorf("expected only !@ as special chars but password contains a disallowed special: %q", pwd)
+						}
+						return nil
+					}),
+					checkSecretExistsRemotely(secretUid),
+				),
 			},
 		},
 	})

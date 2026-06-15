@@ -105,7 +105,8 @@ func resourceSshKeysCreate(ctx context.Context, d *schema.ResourceData, m interf
 		if field, err := NewFieldFromSchema("password", fieldData); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
-			if generated, err := applyGeneratePassword(fieldData, field); err != nil {
+			lc, uc, dc, sc := complexityCountStrings(d, "passphrase")
+			if generated, err := applyGeneratePassword(fieldData, field, lc, uc, dc, sc); err != nil {
 				return diag.FromErr(err)
 			} else if generated {
 				if err := d.Set("passphrase", fieldData); err != nil {
