@@ -49,6 +49,7 @@ func Provider() *schema.Provider {
 			"secretsmanager_health_insurance":     dataSourceHealthInsurance(),
 			"secretsmanager_login":                dataSourceLogin(),
 			"secretsmanager_membership":           dataSourceMembership(),
+			"secretsmanager_metadata":             dataSourceMetadata(),
 			"secretsmanager_pam_database":         dataSourcePamDatabase(),
 			"secretsmanager_pam_directory":        dataSourcePamDirectory(),
 			"secretsmanager_pam_machine":          dataSourcePamMachine(),
