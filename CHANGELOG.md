@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0]
+
+### Fixed
+- Fix `special=0` being ignored when password `length` exceeds the sum of category counts (KSM-989)
+
+### Added
+- Add `special_set` attribute to `complexity` block for configuring the special-character set used during password generation (KSM-990)
+
 ## [1.3.0]
 
 ### Security
@@ -168,7 +176,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix folder UID validation and empty folder restriction in resource schema descriptions
 
-[Unreleased]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.1.7...v1.2.0
 [1.1.7]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.1.6...v1.1.7
