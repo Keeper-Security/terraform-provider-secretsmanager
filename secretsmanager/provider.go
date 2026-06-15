@@ -2942,7 +2942,8 @@ func ApplyFieldChange(section, name string, d *schema.ResourceData, record *core
 				return modified, fmt.Errorf("apply change failed to convert schema '%s' to field '%s' from field data: '%v'", schemaFieldName, recordFieldName, fieldData)
 			} else {
 				if generate {
-					if generated, err := applyGeneratePassword(fieldData, field); err != nil {
+					lc, uc, dc, sc := complexityCountStrings(d, schemaFieldName)
+					if generated, err := applyGeneratePassword(fieldData, field, lc, uc, dc, sc); err != nil {
 						return modified, err
 					} else if generated {
 						if err := d.Set("password", fieldData); err != nil {
@@ -2977,26 +2978,91 @@ func ApplyFieldChange(section, name string, d *schema.ResourceData, record *core
 func mergePassword(schemaField interface{}, recordField interface{}) {
 	// password field must merge with schema to pull data not stored in record like generate=true
 	// merge schema only attributes back into the new value before schema update
-	if schemaField != nil && recordField != nil {
-		var generate interface{} = nil
-		if sfi, ok := schemaField.([]interface{}); ok && len(sfi) > 0 {
-			if sfmap, ok := sfi[0].(map[string]interface{}); ok {
-				if sfg, found := sfmap["generate"]; found {
-					generate = sfg
+	if schemaField == nil || recordField == nil {
+		return
+	}
+	var generate interface{}
+	var specialSet interface{}
+	if sfi, ok := schemaField.([]interface{}); ok && len(sfi) > 0 {
+		if sfmap, ok := sfi[0].(map[string]interface{}); ok {
+			if sfg, found := sfmap["generate"]; found {
+				generate = sfg
+			}
+			// special_set is a generation-time option not stored in the vault record
+			if cs, ok := sfmap["complexity"].([]interface{}); ok && len(cs) > 0 {
+				if cm, ok := cs[0].(map[string]interface{}); ok {
+					if ss, found := cm["special_set"]; found {
+						specialSet = ss
+					}
 				}
 			}
 		}
-		if generate != nil {
-			if sfi, ok := recordField.([]interface{}); ok && len(sfi) > 0 {
-				if sfmap, ok := sfi[0].(map[string]interface{}); ok {
-					sfmap["generate"] = generate
+	}
+	if sfi, ok := recordField.([]interface{}); ok && len(sfi) > 0 {
+		if sfmap, ok := sfi[0].(map[string]interface{}); ok {
+			if generate != nil {
+				sfmap["generate"] = generate
+			}
+			if specialSet != nil {
+				if cs, ok := sfmap["complexity"].([]interface{}); ok && len(cs) > 0 {
+					if cm, ok := cs[0].(map[string]interface{}); ok {
+						cm["special_set"] = specialSet
+					}
 				}
 			}
 		}
 	}
 }
 
-func applyGeneratePassword(fieldData interface{}, field interface{}) (generated bool, e error) {
+// complexityCountStrings reads the complexity category counts from the raw Terraform
+// config, returning "" for fields the user did not set and the integer string for
+// fields they explicitly set (including "0" to exclude a character class). This
+// correctly distinguishes TypeInt's default zero from an intentional zero.
+func complexityCountStrings(d *schema.ResourceData, fieldName string) (lc, uc, dc, sc string) {
+	raw := d.GetRawConfig()
+	if raw.IsNull() || !raw.IsKnown() {
+		return
+	}
+	fieldVal := raw.GetAttr(fieldName)
+	if fieldVal.IsNull() || !fieldVal.IsKnown() {
+		return
+	}
+	fieldList := fieldVal.AsValueSlice()
+	if len(fieldList) == 0 {
+		return
+	}
+	fieldElem := fieldList[0]
+	if fieldElem.IsNull() || !fieldElem.IsKnown() {
+		return
+	}
+	complexityVal := fieldElem.GetAttr("complexity")
+	if complexityVal.IsNull() || !complexityVal.IsKnown() {
+		return
+	}
+	complexityList := complexityVal.AsValueSlice()
+	if len(complexityList) == 0 {
+		return
+	}
+	complexityElem := complexityList[0]
+	if complexityElem.IsNull() || !complexityElem.IsKnown() {
+		return
+	}
+	extractCount := func(attrName string) string {
+		v := complexityElem.GetAttr(attrName)
+		if v.IsNull() || !v.IsKnown() {
+			return ""
+		}
+		n, _ := v.AsBigFloat().Int64()
+		return strconv.FormatInt(n, 10)
+	}
+	lc = extractCount("lowercase")
+	uc = extractCount("caps")
+	dc = extractCount("digits")
+	sc = extractCount("special")
+	return
+}
+
+func applyGeneratePassword(fieldData interface{}, field interface{}, lc, uc, dc, sc string) (generated bool, e error) {
 	if fv, ok := field.(*core.Password); ok {
 		complexity := core.PasswordComplexity{Length: 16}
 		if fv.Complexity != nil {
@@ -3009,13 +3075,16 @@ func applyGeneratePassword(fieldData interface{}, field interface{}) (generated 
 			}
 			complexity = *fv.Complexity
 		}
+		specialSet := ""
+		if fmap, ok := fieldData.([]interface{})[0].(map[string]interface{}); ok {
+			if cs, ok := fmap["complexity"].([]interface{}); ok && len(cs) > 0 {
+				if cm, ok := cs[0].(map[string]interface{}); ok {
+					specialSet, _ = cm["special_set"].(string)
+				}
+			}
+		}
 		if generate, _ := ParseGeneratePassword(fieldData); generate {
-			if pwd, err := core.GeneratePassword(complexity.Length,
-				strconv.Itoa(complexity.Lowercase),
-				strconv.Itoa(complexity.Caps),
-				strconv.Itoa(complexity.Digits),
-				strconv.Itoa(complexity.Special),
-				""); err != nil {
+			if pwd, err := core.GeneratePassword(complexity.Length, lc, uc, dc, sc, specialSet); err != nil {
 				return false, err
 			} else {
 				if len(fv.Value) > 0 {
