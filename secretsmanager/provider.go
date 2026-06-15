@@ -2978,19 +2978,36 @@ func ApplyFieldChange(section, name string, d *schema.ResourceData, record *core
 func mergePassword(schemaField interface{}, recordField interface{}) {
 	// password field must merge with schema to pull data not stored in record like generate=true
 	// merge schema only attributes back into the new value before schema update
-	if schemaField != nil && recordField != nil {
-		var generate interface{} = nil
-		if sfi, ok := schemaField.([]interface{}); ok && len(sfi) > 0 {
-			if sfmap, ok := sfi[0].(map[string]interface{}); ok {
-				if sfg, found := sfmap["generate"]; found {
-					generate = sfg
+	if schemaField == nil || recordField == nil {
+		return
+	}
+	var generate interface{}
+	var specialSet interface{}
+	if sfi, ok := schemaField.([]interface{}); ok && len(sfi) > 0 {
+		if sfmap, ok := sfi[0].(map[string]interface{}); ok {
+			if sfg, found := sfmap["generate"]; found {
+				generate = sfg
+			}
+			// special_set is a generation-time option not stored in the vault record
+			if cs, ok := sfmap["complexity"].([]interface{}); ok && len(cs) > 0 {
+				if cm, ok := cs[0].(map[string]interface{}); ok {
+					if ss, found := cm["special_set"]; found {
+						specialSet = ss
+					}
 				}
 			}
 		}
-		if generate != nil {
-			if sfi, ok := recordField.([]interface{}); ok && len(sfi) > 0 {
-				if sfmap, ok := sfi[0].(map[string]interface{}); ok {
-					sfmap["generate"] = generate
+	}
+	if sfi, ok := recordField.([]interface{}); ok && len(sfi) > 0 {
+		if sfmap, ok := sfi[0].(map[string]interface{}); ok {
+			if generate != nil {
+				sfmap["generate"] = generate
+			}
+			if specialSet != nil {
+				if cs, ok := sfmap["complexity"].([]interface{}); ok && len(cs) > 0 {
+					if cm, ok := cs[0].(map[string]interface{}); ok {
+						cm["special_set"] = specialSet
+					}
 				}
 			}
 		}
