@@ -28,7 +28,7 @@ func dataSourceFolder() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "The parent folder uid. When specified, restricts the lookup to folders that are direct children of this parent — useful when multiple folders share the same name under different parents.",
+				Description: "The parent folder uid. When specified, restricts the lookup to folders that are direct children of this parent, useful when multiple folders share the same name under different parents.",
 			},
 			"shared": {
 				Type:        schema.TypeBool,
