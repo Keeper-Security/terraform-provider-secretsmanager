@@ -1110,7 +1110,7 @@ func schemaPasswordField(attributeName string) *schema.Schema {
 							"special_set": {
 								Type:        schema.TypeString,
 								Optional:    true,
-								Description: "Custom set of special characters to draw from during password generation. Empty string uses the SDK default set (!@#$%()+;<>=?[]{}^.,).",
+								Description: "Custom set of special characters to draw from during password generation. Empty string uses the SDK default set \"!@#$%()+;<>=?[]{}^., (note the leading double-quote).",
 							},
 						},
 					},
