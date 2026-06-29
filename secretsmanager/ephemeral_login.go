@@ -28,7 +28,7 @@ type ephemeralLoginModel struct {
 	URL      types.String `tfsdk:"url"`
 	FileRef  types.List   `tfsdk:"file_ref"`
 	TOTP     types.List   `tfsdk:"totp"`
-	Custom  types.List   `tfsdk:"custom"`
+	Custom   types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralLogin() ephemeral.EphemeralResource {
@@ -164,7 +164,6 @@ func (e *ephemeralLogin) Open(ctx context.Context, req ephemeral.OpenRequest, re
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

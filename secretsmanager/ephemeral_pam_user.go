@@ -33,7 +33,7 @@ type ephemeralPamUserModel struct {
 	Managed              types.Bool   `tfsdk:"managed"`
 	FileRef              types.List   `tfsdk:"file_ref"`
 	TOTP                 types.List   `tfsdk:"totp"`
-	Custom  types.List   `tfsdk:"custom"`
+	Custom               types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralPamUser() ephemeral.EphemeralResource {
@@ -202,7 +202,6 @@ func (e *ephemeralPamUser) Open(ctx context.Context, req ephemeral.OpenRequest, 
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

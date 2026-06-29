@@ -59,8 +59,8 @@ func (e *ephemeralRecord) Schema(_ context.Context, _ ephemeral.SchemaRequest, r
 				Computed:    true,
 				Description: "The secret notes.",
 			},
-			"fields": genericFieldEphemeralAttribute("Standard fields of the record."),
-			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
+			"fields":   genericFieldEphemeralAttribute("Standard fields of the record."),
+			"custom":   genericFieldEphemeralAttribute("Custom fields of the record."),
 			"file_ref": fileRefEphemeralAttribute(),
 		},
 	}

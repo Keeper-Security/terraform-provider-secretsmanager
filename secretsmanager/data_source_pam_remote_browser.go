@@ -49,7 +49,7 @@ func dataSourcePamRemoteBrowser() *schema.Resource {
 			"traffic_encryption_seed": schemaTextSensitiveField(),
 			"file_ref":                schemaFileRefField(),
 			"totp":                    schemaOneTimeCodeField(),
-			"custom": schemaCustomFieldData(),
+			"custom":                  schemaCustomFieldData(),
 		},
 	}
 }

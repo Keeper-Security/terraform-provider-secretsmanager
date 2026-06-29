@@ -68,7 +68,7 @@ func (e *ephemeralEncryptedNotes) Schema(_ context.Context, _ ephemeral.SchemaRe
 				Description: "Date.",
 			},
 			"file_ref": fileRefEphemeralAttribute(),
-			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
+			"custom":   genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -131,7 +131,6 @@ func (e *ephemeralEncryptedNotes) Open(ctx context.Context, req ephemeral.OpenRe
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

@@ -59,7 +59,7 @@ func (e *ephemeralAddress) Schema(_ context.Context, _ ephemeral.SchemaRequest, 
 			},
 			"address":  addressEphemeralAttribute(),
 			"file_ref": fileRefEphemeralAttribute(),
-			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
+			"custom":   genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -124,7 +124,6 @@ func (e *ephemeralAddress) Open(ctx context.Context, req ephemeral.OpenRequest, 
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

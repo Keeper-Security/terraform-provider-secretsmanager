@@ -64,7 +64,7 @@ func TestAccDataSourcePamUser(t *testing.T) {
 	dataName := fmt.Sprintf("data.secretsmanager_pam_user.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,

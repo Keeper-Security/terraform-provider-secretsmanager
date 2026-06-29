@@ -33,7 +33,7 @@ type ephemeralPamDatabaseModel struct {
 	ProviderRegion types.String `tfsdk:"provider_region"`
 	FileRef        types.List   `tfsdk:"file_ref"`
 	TOTP           types.List   `tfsdk:"totp"`
-	Custom  types.List   `tfsdk:"custom"`
+	Custom         types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralPamDatabase() ephemeral.EphemeralResource {
@@ -199,7 +199,6 @@ func (e *ephemeralPamDatabase) Open(ctx context.Context, req ephemeral.OpenReque
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

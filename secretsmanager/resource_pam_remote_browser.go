@@ -54,7 +54,7 @@ func resourcePamRemoteBrowser() *schema.Resource {
 				Description: "The secret notes.",
 			},
 			// PAM Remote Browser specific fields
-			"rbi_url":                 schemaTextField(),
+			"rbi_url": schemaTextField(),
 			"pam_remote_browser_settings": {
 				Type:             schema.TypeString,
 				Optional:         true,
