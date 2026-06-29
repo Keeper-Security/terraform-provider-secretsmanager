@@ -11,16 +11,17 @@ import (
 
 func TestAccDataSourceMetadata(t *testing.T) {
 	secretType := "login"
-	secretUid, secretTitle := testAcc.getRecordInfo(secretType)
-	if secretUid == "" || secretTitle == "" {
-		t.Fatal("Failed to access test data - missing secret UID and/or Title")
+	_, secretTitle := testAcc.getRecordInfo(secretType)
+	if secretTitle == "" {
+		t.Fatal("Failed to access test data - missing secret Title")
 	}
 
 	config := fmt.Sprintf(`
 		data "secretsmanager_metadata" "%v" {
-			path = "%v"
+			path  = "*"
+			title = "%v"
 		}
-	`, secretTitle, secretUid)
+	`, secretTitle, secretTitle)
 
 	resourceName := fmt.Sprintf("data.secretsmanager_metadata.%v", secretTitle)
 
@@ -31,9 +32,15 @@ func TestAccDataSourceMetadata(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "uid", secretUid),
 					resource.TestCheckResourceAttr(resourceName, "type", secretType),
 					resource.TestCheckResourceAttr(resourceName, "title", secretTitle),
+					// title lookup must resolve to a real record UID, not the "*" sentinel
+					checkSecretResourceState(resourceName, func(s *terraform.InstanceState) error {
+						if uid := s.Attributes["uid"]; uid == "" || uid == "*" {
+							return fmt.Errorf("expected a resolved record UID, got %q", uid)
+						}
+						return nil
+					}),
 					// revision must be a positive integer
 					checkSecretResourceState(resourceName, func(s *terraform.InstanceState) error {
 						rev, err := strconv.Atoi(s.Attributes["revision"])
@@ -42,7 +49,7 @@ func TestAccDataSourceMetadata(t *testing.T) {
 						}
 						return nil
 					}),
-					// no secret field values present in state
+					// metadata must not expose secret field values
 					resource.TestCheckNoResourceAttr(resourceName, "password"),
 					resource.TestCheckNoResourceAttr(resourceName, "login"),
 				),

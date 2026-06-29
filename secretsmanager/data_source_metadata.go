@@ -15,7 +15,7 @@ func dataSourceMetadata() *schema.Resource {
 			"path": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The record UID or title.",
+				Description: "The record UID, or \"*\" to look up the record by title.",
 			},
 			"uid": {
 				Type:        schema.TypeString,
@@ -29,8 +29,8 @@ func dataSourceMetadata() *schema.Resource {
 			},
 			"title": {
 				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The record title.",
+				Optional:    true,
+				Description: "The record title. Used to look up the record when path is \"*\".",
 			},
 			"notes": {
 				Type:        schema.TypeString,
@@ -64,7 +64,8 @@ func dataSourceMetadataRead(ctx context.Context, d *schema.ResourceData, m inter
 	var diags diag.Diagnostics
 
 	path := strings.TrimSpace(d.Get("path").(string))
-	secret, err := getRecord(path, "", client)
+	title := strings.TrimSpace(d.Get("title").(string))
+	secret, err := getRecord(path, title, client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
