@@ -29,7 +29,7 @@ type ephemeralHealthInsuranceModel struct {
 	Password      types.String `tfsdk:"password"`
 	URL           types.String `tfsdk:"url"`
 	FileRef       types.List   `tfsdk:"file_ref"`
-	Custom  types.List   `tfsdk:"custom"`
+	Custom        types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralHealthInsurance() ephemeral.EphemeralResource {
@@ -80,7 +80,7 @@ func (e *ephemeralHealthInsurance) Schema(_ context.Context, _ ephemeral.SchemaR
 				Description: "The secret url.",
 			},
 			"file_ref": fileRefEphemeralAttribute(),
-			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
+			"custom":   genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -149,7 +149,6 @@ func (e *ephemeralHealthInsurance) Open(ctx context.Context, req ephemeral.OpenR
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	_ provider.Provider                        = &fwProvider{}
-	_ provider.ProviderWithEphemeralResources  = &fwProvider{}
+	_ provider.Provider                       = &fwProvider{}
+	_ provider.ProviderWithEphemeralResources = &fwProvider{}
 )
 
 // fwProvider is the Plugin Framework provider that serves ephemeral resources.

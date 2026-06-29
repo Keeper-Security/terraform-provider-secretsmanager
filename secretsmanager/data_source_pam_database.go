@@ -50,7 +50,7 @@ func dataSourcePamDatabase() *schema.Resource {
 			"provider_region":  schemaTextField(),
 			"file_ref":         schemaFileRefField(),
 			"totp":             schemaOneTimeCodeField(),
-			"custom": schemaCustomFieldData(),
+			"custom":           schemaCustomFieldData(),
 		},
 	}
 }

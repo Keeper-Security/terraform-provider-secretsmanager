@@ -23,7 +23,7 @@ func TestAccResourceFolder_create(t *testing.T) {
 	}`, secretTitle, testFolderUid, secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -58,7 +58,7 @@ func TestAccResourceFolder_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: configInit,
@@ -102,7 +102,7 @@ func TestAccResourceFolder_deleteDetection(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -140,7 +140,7 @@ func TestAccResourceFolder_import(t *testing.T) {
 	}`, secretTitle, testFolderUid, secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{

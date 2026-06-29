@@ -21,7 +21,7 @@ func TestAccDataSourceRecord(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,

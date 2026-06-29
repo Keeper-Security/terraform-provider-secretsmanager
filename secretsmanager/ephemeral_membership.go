@@ -27,7 +27,7 @@ type ephemeralMembershipModel struct {
 	Name          types.List   `tfsdk:"name"`
 	Password      types.String `tfsdk:"password"`
 	FileRef       types.List   `tfsdk:"file_ref"`
-	Custom  types.List   `tfsdk:"custom"`
+	Custom        types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralMembership() ephemeral.EphemeralResource {
@@ -70,7 +70,7 @@ func (e *ephemeralMembership) Schema(_ context.Context, _ ephemeral.SchemaReques
 				Description: "The secret password.",
 			},
 			"file_ref": fileRefEphemeralAttribute(),
-			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
+			"custom":   genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -137,7 +137,6 @@ func (e *ephemeralMembership) Open(ctx context.Context, req ephemeral.OpenReques
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

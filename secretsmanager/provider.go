@@ -371,33 +371,33 @@ func parseJSONItems(value string) ([]json.RawMessage, error) {
 // case-insensitive user input while preserving the casing the KSM vault
 // expects when storing fields.
 var customFieldTypeCanonical = map[string]string{
-	"text":                "text",
-	"multiline":           "multiline",
-	"secret":              "secret",
-	"url":                 "url",
-	"email":               "email",
-	"login":               "login",
-	"password":            "password",
-	"pincode":             "pinCode",
-	"accountnumber":       "accountNumber",
-	"licensenumber":       "licenseNumber",
-	"checkbox":            "checkbox",
-	"date":                "date",
-	"birthdate":           "birthDate",
-	"expirationdate":      "expirationDate",
-	"phone":               "phone",
-	"name":                "name",
-	"address":             "address",
-	"paymentcard":         "paymentCard",
-	"bankaccount":         "bankAccount",
-	"host":                "host",
-	"securityquestion":    "securityQuestion",
-	"keypair":             "keyPair",
-	"script":              "script",
-	"addressref":          "addressRef",
-	"cardref":             "cardRef",
-	"fileref":             "fileRef",
-	"onetimecode":         "oneTimeCode",
+	"text":             "text",
+	"multiline":        "multiline",
+	"secret":           "secret",
+	"url":              "url",
+	"email":            "email",
+	"login":            "login",
+	"password":         "password",
+	"pincode":          "pinCode",
+	"accountnumber":    "accountNumber",
+	"licensenumber":    "licenseNumber",
+	"checkbox":         "checkbox",
+	"date":             "date",
+	"birthdate":        "birthDate",
+	"expirationdate":   "expirationDate",
+	"phone":            "phone",
+	"name":             "name",
+	"address":          "address",
+	"paymentcard":      "paymentCard",
+	"bankaccount":      "bankAccount",
+	"host":             "host",
+	"securityquestion": "securityQuestion",
+	"keypair":          "keyPair",
+	"script":           "script",
+	"addressref":       "addressRef",
+	"cardref":          "cardRef",
+	"fileref":          "fileRef",
+	"onetimecode":      "oneTimeCode",
 }
 
 // customFieldsFromSchema converts the "custom" TypeList from schema into a slice of
@@ -481,10 +481,18 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 						return nil, fmt.Errorf("custom field %q: invalid JSON for phone entry: %w", label, err)
 					}
 					phone := core.Phone{}
-					if s, ok := v["region"].(string); ok { phone.Region = s }
-					if s, ok := v["number"].(string); ok { phone.Number = s }
-					if s, ok := v["ext"].(string); ok { phone.Ext = s }
-					if s, ok := v["type"].(string); ok { phone.Type = s }
+					if s, ok := v["region"].(string); ok {
+						phone.Region = s
+					}
+					if s, ok := v["number"].(string); ok {
+						phone.Number = s
+					}
+					if s, ok := v["ext"].(string); ok {
+						phone.Ext = s
+					}
+					if s, ok := v["type"].(string); ok {
+						phone.Type = s
+					}
 					f.Value = append(f.Value, phone)
 				}
 			}
@@ -503,9 +511,15 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 						return nil, fmt.Errorf("custom field %q: invalid JSON for name entry: %w", label, err)
 					}
 					name := core.Name{}
-					if s, ok := v["first"].(string); ok { name.First = s }
-					if s, ok := v["middle"].(string); ok { name.Middle = s }
-					if s, ok := v["last"].(string); ok { name.Last = s }
+					if s, ok := v["first"].(string); ok {
+						name.First = s
+					}
+					if s, ok := v["middle"].(string); ok {
+						name.Middle = s
+					}
+					if s, ok := v["last"].(string); ok {
+						name.Last = s
+					}
 					f.Value = append(f.Value, name)
 				}
 			}
@@ -524,12 +538,24 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 						return nil, fmt.Errorf("custom field %q: invalid JSON for address entry: %w", label, err)
 					}
 					addr := core.Address{}
-					if s, ok := v["street1"].(string); ok { addr.Street1 = s }
-					if s, ok := v["street2"].(string); ok { addr.Street2 = s }
-					if s, ok := v["city"].(string); ok { addr.City = s }
-					if s, ok := v["state"].(string); ok { addr.State = s }
-					if s, ok := v["country"].(string); ok { addr.Country = s }
-					if s, ok := v["zip"].(string); ok { addr.Zip = s }
+					if s, ok := v["street1"].(string); ok {
+						addr.Street1 = s
+					}
+					if s, ok := v["street2"].(string); ok {
+						addr.Street2 = s
+					}
+					if s, ok := v["city"].(string); ok {
+						addr.City = s
+					}
+					if s, ok := v["state"].(string); ok {
+						addr.State = s
+					}
+					if s, ok := v["country"].(string); ok {
+						addr.Country = s
+					}
+					if s, ok := v["zip"].(string); ok {
+						addr.Zip = s
+					}
 					f.Value = append(f.Value, addr)
 				}
 			}
@@ -548,9 +574,15 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 						return nil, fmt.Errorf("custom field %q: invalid JSON for paymentCard entry: %w", label, err)
 					}
 					card := core.PaymentCard{}
-					if s, ok := v["cardNumber"].(string); ok { card.CardNumber = s }
-					if s, ok := v["cardExpirationDate"].(string); ok { card.CardExpirationDate = s }
-					if s, ok := v["cardSecurityCode"].(string); ok { card.CardSecurityCode = s }
+					if s, ok := v["cardNumber"].(string); ok {
+						card.CardNumber = s
+					}
+					if s, ok := v["cardExpirationDate"].(string); ok {
+						card.CardExpirationDate = s
+					}
+					if s, ok := v["cardSecurityCode"].(string); ok {
+						card.CardSecurityCode = s
+					}
 					f.Value = append(f.Value, card)
 				}
 			}
@@ -569,10 +601,18 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 						return nil, fmt.Errorf("custom field %q: invalid JSON for bankAccount entry: %w", label, err)
 					}
 					acct := core.BankAccount{}
-					if s, ok := v["accountType"].(string); ok { acct.AccountType = s }
-					if s, ok := v["routingNumber"].(string); ok { acct.RoutingNumber = s }
-					if s, ok := v["accountNumber"].(string); ok { acct.AccountNumber = s }
-					if s, ok := v["otherType"].(string); ok { acct.OtherType = s }
+					if s, ok := v["accountType"].(string); ok {
+						acct.AccountType = s
+					}
+					if s, ok := v["routingNumber"].(string); ok {
+						acct.RoutingNumber = s
+					}
+					if s, ok := v["accountNumber"].(string); ok {
+						acct.AccountNumber = s
+					}
+					if s, ok := v["otherType"].(string); ok {
+						acct.OtherType = s
+					}
 					f.Value = append(f.Value, acct)
 				}
 			}
@@ -591,8 +631,12 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 						return nil, fmt.Errorf("custom field %q: invalid JSON for host entry: %w", label, err)
 					}
 					h := core.Host{}
-					if s, ok := v["hostName"].(string); ok { h.Hostname = s }
-					if s, ok := v["port"].(string); ok { h.Port = s }
+					if s, ok := v["hostName"].(string); ok {
+						h.Hostname = s
+					}
+					if s, ok := v["port"].(string); ok {
+						h.Port = s
+					}
 					f.Value = append(f.Value, h)
 				}
 			}
@@ -611,8 +655,12 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 						return nil, fmt.Errorf("custom field %q: invalid JSON for securityQuestion entry: %w", label, err)
 					}
 					q := core.SecurityQuestion{}
-					if s, ok := v["question"].(string); ok { q.Question = s }
-					if s, ok := v["answer"].(string); ok { q.Answer = s }
+					if s, ok := v["question"].(string); ok {
+						q.Question = s
+					}
+					if s, ok := v["answer"].(string); ok {
+						q.Answer = s
+					}
 					f.Value = append(f.Value, q)
 				}
 			}
@@ -631,8 +679,12 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 						return nil, fmt.Errorf("custom field %q: invalid JSON for keyPair entry: %w", label, err)
 					}
 					kp := core.KeyPair{}
-					if s, ok := v["publicKey"].(string); ok { kp.PublicKey = s }
-					if s, ok := v["privateKey"].(string); ok { kp.PrivateKey = s }
+					if s, ok := v["publicKey"].(string); ok {
+						kp.PublicKey = s
+					}
+					if s, ok := v["privateKey"].(string); ok {
+						kp.PrivateKey = s
+					}
 					f.Value = append(f.Value, kp)
 				}
 			}
@@ -651,8 +703,12 @@ func customFieldsFromSchema(items []interface{}) ([]interface{}, error) {
 						return nil, fmt.Errorf("custom field %q: invalid JSON for script entry: %w", label, err)
 					}
 					s := core.Script{}
-					if str, ok := v["fileRef"].(string); ok { s.FileRef = str }
-					if str, ok := v["command"].(string); ok { s.Command = str }
+					if str, ok := v["fileRef"].(string); ok {
+						s.FileRef = str
+					}
+					if str, ok := v["command"].(string); ok {
+						s.Command = str
+					}
 					if arr, ok := v["recordRef"].([]interface{}); ok {
 						for _, r := range arr {
 							if str, ok := r.(string); ok {

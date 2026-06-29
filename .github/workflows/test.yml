@@ -2,7 +2,7 @@ name: Test-Terraform-Provider
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ master, "release-**" ]
 
   workflow_dispatch:
 
