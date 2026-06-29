@@ -65,7 +65,7 @@ func TestAccResourceLogin_create(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_login.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -124,7 +124,7 @@ func TestAccResourceLogin_generate(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: configInit,
@@ -174,7 +174,7 @@ func TestAccResourceLogin_deleteDetection(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -221,11 +221,11 @@ func TestAccResourceLogin_generateNoSpecial(t *testing.T) {
 	`, secretTitle, secretFolderUid, secretUid, secretTitle)
 
 	resourceName := fmt.Sprintf("secretsmanager_login.%v", secretTitle)
-	const defaultSpecialChars = "!@#$%()+;<>=?[]{}^.,"
+	const defaultSpecialChars = "\"!@#$%()+;<>=?[]{}^.,"
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -274,11 +274,11 @@ func TestAccResourceLogin_generateSpecialSet(t *testing.T) {
 	`, secretTitle, secretFolderUid, secretUid, secretTitle)
 
 	resourceName := fmt.Sprintf("secretsmanager_login.%v", secretTitle)
-	const disallowedSpecialChars = "#$%()+;<>=?[]{}^.,"
+	const disallowedSpecialChars = "\"#$%()+;<>=?[]{}^.,"
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -343,11 +343,11 @@ func TestAccResourceLogin_updateNoSpecial(t *testing.T) {
 	`, secretTitle, secretFolderUid, secretUid, secretTitle)
 
 	resourceName := fmt.Sprintf("secretsmanager_login.%v", secretTitle)
-	const defaultSpecialChars = "!@#$%()+;<>=?[]{}^.,"
+	const defaultSpecialChars = "\"!@#$%()+;<>=?[]{}^.,"
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{Config: configCreate},
 			{
@@ -412,11 +412,11 @@ func TestAccResourceLogin_updateSpecialSet(t *testing.T) {
 	`, secretTitle, secretFolderUid, secretUid, secretTitle)
 
 	resourceName := fmt.Sprintf("secretsmanager_login.%v", secretTitle)
-	const disallowedSpecialChars = "#$%()+;<>=?[]{}^.,"
+	const disallowedSpecialChars = "\"#$%()+;<>=?[]{}^.,"
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{Config: configCreate},
 			{
@@ -460,7 +460,7 @@ func TestAccResourceLogin_import(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_login.%v", secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
