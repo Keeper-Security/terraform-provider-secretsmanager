@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add `parent_uid` as an optional input on `secretsmanager_folder` data source to scope lookups to a specific parent folder, disambiguating folders with identical names under different parents (KSM-1016)
-- Add `secretsmanager_metadata` data source returning non-sensitive record metadata (`uid`, `type`, `title`, `notes`, `revision`, `folder_uid`, `is_editable`) — pair with ephemeral resources to drive write-only attribute versioning on other providers (KSM-970)
+- Add `secretsmanager_metadata` data source for reading non-sensitive record metadata (`uid`, `type`, `title`, `notes`, `revision`, `folder_uid`, `is_editable`) by record UID or title. Pair with ephemeral resources to drive write-only attribute versioning on other providers (KSM-970)
 - Add `special_set` attribute to `complexity` block for configuring the special-character set used during password generation (KSM-990)
 
 ## [1.3.0]
