@@ -159,12 +159,12 @@ func TestValidatePamCustomFieldLabels(t *testing.T) {
 		label   string
 		wantErr bool
 	}{
-		{"Private Key Passphrase", true},  // exact canonical — blocked
-		{"private key passphrase", true},  // all lowercase — now blocked
-		{"PRIVATE KEY PASSPHRASE", true},  // all uppercase — now blocked
-		{"Private Key PASSPHRASE", true},  // mixed case — now blocked
-		{"Owner", false},                  // non-reserved — allowed
-		{"", false},                       // empty — allowed
+		{"Private Key Passphrase", true}, // exact canonical — blocked
+		{"private key passphrase", true}, // all lowercase — now blocked
+		{"PRIVATE KEY PASSPHRASE", true}, // all uppercase — now blocked
+		{"Private Key PASSPHRASE", true}, // mixed case — now blocked
+		{"Owner", false},                 // non-reserved — allowed
+		{"", false},                      // empty — allowed
 	}
 	for _, tc := range cases {
 		items := []interface{}{

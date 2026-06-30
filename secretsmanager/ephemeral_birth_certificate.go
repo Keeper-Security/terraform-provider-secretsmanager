@@ -26,7 +26,7 @@ type ephemeralBirthCertificateModel struct {
 	Name      types.List   `tfsdk:"name"`
 	BirthDate types.String `tfsdk:"birth_date"`
 	FileRef   types.List   `tfsdk:"file_ref"`
-	Custom  types.List   `tfsdk:"custom"`
+	Custom    types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralBirthCertificate() ephemeral.EphemeralResource {
@@ -64,7 +64,7 @@ func (e *ephemeralBirthCertificate) Schema(_ context.Context, _ ephemeral.Schema
 				Description: "Date of birth.",
 			},
 			"file_ref": fileRefEphemeralAttribute(),
-			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
+			"custom":   genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -130,7 +130,6 @@ func (e *ephemeralBirthCertificate) Open(ctx context.Context, req ephemeral.Open
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

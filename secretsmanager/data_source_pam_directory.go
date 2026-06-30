@@ -54,7 +54,7 @@ func dataSourcePamDirectory() *schema.Resource {
 			"alternative_ips":    schemaMultilineField(),
 			"file_ref":           schemaFileRefField(),
 			"totp":               schemaOneTimeCodeField(),
-			"custom": schemaCustomFieldData(),
+			"custom":             schemaCustomFieldData(),
 		},
 	}
 }

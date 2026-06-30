@@ -19,16 +19,16 @@ type ephemeralBankCard struct {
 }
 
 type ephemeralBankCardModel struct {
-	Path            types.String `tfsdk:"path"`
-	Type            types.String `tfsdk:"type"`
-	Title           types.String `tfsdk:"title"`
-	Notes           types.String `tfsdk:"notes"`
-	PaymentCard     types.List   `tfsdk:"payment_card"`
-	CardholderName  types.String `tfsdk:"cardholder_name"`
-	PinCode         types.String `tfsdk:"pin_code"`
-	AddressRef      types.List   `tfsdk:"address_ref"`
-	FileRef         types.List   `tfsdk:"file_ref"`
-	Custom  types.List   `tfsdk:"custom"`
+	Path           types.String `tfsdk:"path"`
+	Type           types.String `tfsdk:"type"`
+	Title          types.String `tfsdk:"title"`
+	Notes          types.String `tfsdk:"notes"`
+	PaymentCard    types.List   `tfsdk:"payment_card"`
+	CardholderName types.String `tfsdk:"cardholder_name"`
+	PinCode        types.String `tfsdk:"pin_code"`
+	AddressRef     types.List   `tfsdk:"address_ref"`
+	FileRef        types.List   `tfsdk:"file_ref"`
+	Custom         types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralBankCard() ephemeral.EphemeralResource {
@@ -72,7 +72,7 @@ func (e *ephemeralBankCard) Schema(_ context.Context, _ ephemeral.SchemaRequest,
 			},
 			"address_ref": addressRefEphemeralAttribute(),
 			"file_ref":    fileRefEphemeralAttribute(),
-			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
+			"custom":      genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -143,7 +143,6 @@ func (e *ephemeralBankCard) Open(ctx context.Context, req ephemeral.OpenRequest,
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

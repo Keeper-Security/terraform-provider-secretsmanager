@@ -32,7 +32,7 @@ func TestAccResourcePamRemoteBrowser_create(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_pam_remote_browser.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -67,7 +67,7 @@ func TestAccResourcePamRemoteBrowser_create_no_uid(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_pam_remote_browser.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -103,7 +103,7 @@ func TestAccResourcePamRemoteBrowser_import(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_pam_remote_browser.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -113,8 +113,8 @@ func TestAccResourcePamRemoteBrowser_import(t *testing.T) {
 			},
 			{
 				ResourceName:      resourceName,
-				ImportState:        true,
-				ImportStateVerify:  true,
+				ImportState:       true,
+				ImportStateVerify: true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					return secretUid, nil
 				},
