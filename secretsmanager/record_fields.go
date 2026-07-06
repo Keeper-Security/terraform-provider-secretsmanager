@@ -58,22 +58,22 @@ func schemaGenericField() *schema.Schema {
 							"caps": {
 								Type:        schema.TypeInt,
 								Optional:    true,
-								Description: "Number of uppercase characters.",
+								Description: "Minimum number of uppercase characters.",
 							},
 							"lowercase": {
 								Type:        schema.TypeInt,
 								Optional:    true,
-								Description: "Number of lowercase characters.",
+								Description: "Minimum number of lowercase characters.",
 							},
 							"digits": {
 								Type:        schema.TypeInt,
 								Optional:    true,
-								Description: "Number of digits.",
+								Description: "Minimum number of digits.",
 							},
 							"special": {
 								Type:        schema.TypeInt,
 								Optional:    true,
-								Description: "Number of special characters.",
+								Description: "Minimum number of special characters.",
 							},
 						},
 					},
@@ -1090,22 +1090,22 @@ func schemaPasswordField(attributeName string) *schema.Schema {
 							"caps": {
 								Type:        schema.TypeInt,
 								Optional:    true,
-								Description: "Number of uppercase characters.",
+								Description: "Minimum number of uppercase characters.",
 							},
 							"lowercase": {
 								Type:        schema.TypeInt,
 								Optional:    true,
-								Description: "Number of lowercase characters.",
+								Description: "Minimum number of lowercase characters.",
 							},
 							"digits": {
 								Type:        schema.TypeInt,
 								Optional:    true,
-								Description: "Number of digits.",
+								Description: "Minimum number of digits.",
 							},
 							"special": {
 								Type:        schema.TypeInt,
 								Optional:    true,
-								Description: "Number of special characters.",
+								Description: "Minimum number of special characters.",
 							},
 							"special_set": {
 								Type:        schema.TypeString,

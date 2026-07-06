@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix `special=0` being ignored when password `length` exceeds the sum of category counts (KSM-989)
+- Clarify that `caps`, `lowercase`, `digits`, and `special` in the `complexity` block are minimum counts, not exact targets — the generator may produce more of each character class to satisfy the total `length` (KSM-1071)
 
 ### Added
 - Add `parent_uid` as an optional input on `secretsmanager_folder` data source to scope lookups to a specific parent folder, disambiguating folders with identical names under different parents (KSM-1016)
