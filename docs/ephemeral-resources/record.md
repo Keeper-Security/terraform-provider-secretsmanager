@@ -36,10 +36,11 @@ In addition to all arguments above, the following attributes are exported:
   - `enforce_generation` - Enforce generation flag (for password field)
   - `complexity` - A list containing password complexity information
     - `length` - Minimum Password length.
-    - `caps` Number of uppercase characters.
-    - `lowercase` Number of lowercase characters.
-    - `digits` Number of digits.
-    - `special` Number of special characters.
+    - `caps` Minimum number of uppercase characters.
+    - `lowercase` Minimum number of lowercase characters.
+    - `digits` Minimum number of digits.
+    - `special` Minimum number of special characters.
+    - Counts are minimums, not exact targets: when `length` exceeds their sum, the generator draws the remainder from all enabled character classes.
   - `value` - Field value
 * `custom` - A list containing custom fields information:
   - `type` - Field type
@@ -49,10 +50,11 @@ In addition to all arguments above, the following attributes are exported:
   - `enforce_generation` - Enforce generation flag (for password field)
   - `complexity` - A list containing password complexity information
     - `length` - Minimum Password length.
-    - `caps` Number of uppercase characters.
-    - `lowercase` Number of lowercase characters.
-    - `digits` Number of digits.
-    - `special` Number of special characters.
+    - `caps` Minimum number of uppercase characters.
+    - `lowercase` Minimum number of lowercase characters.
+    - `digits` Minimum number of digits.
+    - `special` Minimum number of special characters.
+    - Counts are minimums, not exact targets: when `length` exceeds their sum, the generator draws the remainder from all enabled character classes.
   - `value` - Field value
 * `file_ref` - A list containing file reference information:
   - `uid` - File UID
