@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.4.0]
 
+### Security
+- Build with Go 1.26.7, up from 1.26.2, clearing the standard library half of CVE-2026-39821 (Punycode-encoded label handling reachable through `net/http`) plus seven further stdlib advisories reported against the earlier 1.26.x patches (KSM-1246)
+- Bump `golang.org/x/net` to v0.57.0 from v0.48.0, clearing the `golang.org/x/net/idna` half of CVE-2026-39821 (KSM-1246)
+- Bump `golang.org/x/crypto` to v0.54.0 from v0.46.0, closing 13 advisories
+- Bump `google.golang.org/grpc` to v1.82.1 from v1.79.3, closing GHSA-hrxh-6v49-42gf
+
 ### Fixed
 - Fix `special=0` being ignored when password `length` exceeds the sum of category counts (KSM-989)
 - Clarify that `caps`, `lowercase`, `digits`, and `special` in the `complexity` block are minimum counts, not exact targets — the generator may produce more of each character class to satisfy the total `length` (KSM-1071)
