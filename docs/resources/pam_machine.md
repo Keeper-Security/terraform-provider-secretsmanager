@@ -81,7 +81,7 @@ resource "secretsmanager_pam_machine" "ssh_machine" {
 - **notes** (String) The secret notes.
 - **operating_system** (Block List, Max: 1) Text field data. Label: "Operating System".
 - **pam_hostname** (Block List, Max: 1) PAM Hostname field data.
-- **password** (Block List, Max: 1) Password field data.
+- **password** (Block List, Max: 1) Password field data. (see [below for nested schema](#nestedblock--password))
 - **private_key_passphrase** (Block List, Max: 1) Private key passphrase. Stored as a custom field labeled "Private Key Passphrase". When used with key generation, the passphrase encrypts the generated private key. (see [below for nested schema](#nestedblock--private_key_passphrase))
 - **private_pem_key** (Block List, Max: 1) Private PEM Key field data. Stored as a secret field labeled "Private PEM Key". Supports SSH key generation. (see [below for nested schema](#nestedblock--private_pem_key))
 - **provider_group** (Block List, Max: 1) Text field data. Label: "Provider Group".
@@ -97,6 +97,37 @@ resource "secretsmanager_pam_machine" "ssh_machine" {
 ### Read-Only
 
 - **type** (String) The secret type.
+
+<a id="nestedblock--password"></a>
+### Nested Schema for `password`
+
+Optional:
+
+- **complexity** (Block List, Max: 1) Password complexity. (see [below for nested schema](#nestedblock--password--complexity))
+- **enforce_generation** (Boolean) Enforce generation flag.
+- **generate** (String) Flag to force password generation (when set to 'yes' or 'true').
+- **label** (String) Field label.
+- **privacy_screen** (Boolean) Privacy screen flag.
+- **required** (Boolean) Required flag.
+- **value** (String, Sensitive) Field value.
+
+Read-Only:
+
+- **type** (String) Field type.
+
+<a id="nestedblock--password--complexity"></a>
+### Nested Schema for `password.complexity`
+
+Optional:
+
+- **caps** (Number) Minimum number of uppercase characters.
+- **digits** (Number) Minimum number of digits.
+- **length** (Number) Password length.
+- **lowercase** (Number) Minimum number of lowercase characters.
+- **special** (Number) Minimum number of special characters.
+- **special_set** (String) Custom set of special characters to draw from during password generation. Empty string uses the SDK default set `"!@#$%()+;<>=?[]{}^.,` (note the leading double-quote).
+
+The `caps`, `lowercase`, `digits`, and `special` counts are minimums, not exact targets. When `length` exceeds their sum, the generator draws the remaining characters from all enabled character classes, so a class may appear more times than its configured count.
 
 <a id="nestedblock--private_pem_key"></a>
 ### Nested Schema for `private_pem_key`
