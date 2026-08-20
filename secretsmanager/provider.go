@@ -2983,14 +2983,32 @@ func ApplyFieldChange(section, name string, d *schema.ResourceData, record *core
 							newg = og.(string)
 						}
 					}
+					oldHasValue := false
 					if oldf != nil && len(oldf.([]interface{})) > 0 {
 						if fmap, ok := oldf.([]interface{})[0].(map[string]interface{}); ok {
 							if og, found := fmap["generate"]; found {
 								oldg = og.(string)
 							}
+							if ov, found := fmap["value"]; found {
+								if ovs, ok := ov.(string); ok && ovs != "" {
+									oldHasValue = true
+								}
+							}
 						}
 					}
-					generate = newg != "" && newg != oldg
+					// Regenerate when the generate flag changes to a non-empty value.
+					//
+					// Exception: when there was no previous generate flag and the field
+					// already holds a value, the record is being adopted rather than a
+					// rotation being requested. The clearest case is the first apply
+					// after terraform import, where generate always reads back empty
+					// because it is never persisted to the vault, so any configuration
+					// declaring it looks like a change. Regenerating there replaces a
+					// live credential on a plan that reported the value unchanged.
+					//
+					// This apply still records the flag in state, so a later deliberate
+					// change to it rotates normally.
+					generate = newg != "" && newg != oldg && !(oldg == "" && oldHasValue)
 				}
 			}
 			if field, err := NewFieldFromSchema(recordFieldName, fieldData); err != nil {

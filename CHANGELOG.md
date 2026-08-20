@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `google.golang.org/grpc` to v1.82.1 from v1.79.3, closing GHSA-hrxh-6v49-42gf
 
 ### Fixed
+- Adopting an existing record into Terraform no longer rotates its generated password. `generate` is never stored in the vault, so after `terraform import` it read back empty and any configuration declaring it looked like a change, which regenerated the secret on the first apply while the plan reported the value unchanged. Declaring `generate` for the first time on a record that already holds a value is now treated as adoption rather than a rotation request; a later change to the flag still rotates (KSM-1305)
 - Fix `special=0` being ignored when password `length` exceeds the sum of category counts (KSM-989)
 - Clarify that `caps`, `lowercase`, `digits`, and `special` in the `complexity` block are minimum counts, not exact targets — the generator may produce more of each character class to satisfy the total `length` (KSM-1071)
 
