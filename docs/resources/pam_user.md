@@ -138,11 +138,14 @@ Read-Only:
 
 Optional:
 
-- **caps** (Number) Number of uppercase characters.
-- **digits** (Number) Number of digits.
+- **caps** (Number) Minimum number of uppercase characters.
+- **digits** (Number) Minimum number of digits.
 - **length** (Number) Passphrase length.
-- **lowercase** (Number) Number of lowercase characters.
-- **special** (Number) Number of special characters.
+- **lowercase** (Number) Minimum number of lowercase characters.
+- **special** (Number) Minimum number of special characters.
+- **special_set** (String) Custom set of special characters to draw from during passphrase generation. Empty string uses the SDK default set `"!@#$%()+;<>=?[]{}^.,` (note the leading double-quote).
+
+The `caps`, `lowercase`, `digits`, and `special` counts are minimums, not exact targets. When `length` exceeds their sum, the generator draws the remaining characters from all enabled character classes, so a class may appear more times than its configured count.
 
 <a id="nestedblock--custom"></a>
 ### Nested Schema for `custom`
