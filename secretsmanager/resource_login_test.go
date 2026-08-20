@@ -300,6 +300,11 @@ func TestAccResourceLogin_generateSpecialSet(t *testing.T) {
 	})
 }
 
+// NOTE: this test holds special = 0 CONSTANT across both steps and varies only the
+// generate flag. Regeneration does occur, because the gate in ApplyFieldChange
+// compares the raw generate string and "yes" differs from "true", so the assertion
+// is live. What it does not cover is special = 0 itself changing; see
+// TestAccResourceLogin_changeSpecialSet for that.
 func TestAccResourceLogin_updateNoSpecial(t *testing.T) {
 	secretType := "login"
 	secretFolderUid := testAcc.getTestFolder()
@@ -369,6 +374,11 @@ func TestAccResourceLogin_updateNoSpecial(t *testing.T) {
 	})
 }
 
+// NOTE: this test holds special_set CONSTANT across both steps and varies only the
+// generate flag. Regeneration does occur, because the gate in ApplyFieldChange
+// compares the raw generate string and "yes" differs from "true", so the assertion
+// is live. What it does not cover is special_set itself changing; see
+// TestAccResourceLogin_changeSpecialSet for that.
 func TestAccResourceLogin_updateSpecialSet(t *testing.T) {
 	secretType := "login"
 	secretFolderUid := testAcc.getTestFolder()
@@ -429,6 +439,115 @@ func TestAccResourceLogin_updateSpecialSet(t *testing.T) {
 						}
 						if strings.ContainsAny(pwd, disallowedSpecialChars) {
 							return fmt.Errorf("expected only !@ as special chars on update but password contains a disallowed special: %q", pwd)
+						}
+						return nil
+					}),
+				),
+			},
+		},
+	})
+}
+
+// TestAccResourceLogin_changeSpecialSet covers the case the two update tests above do
+// not: the complexity constraint itself changing between steps.
+//
+// TestAccResourceLogin_updateNoSpecial and TestAccResourceLogin_updateSpecialSet both
+// hold their constraint constant and vary only the generate flag, so they prove that a
+// regenerated password still satisfies an unchanged constraint. Neither proves that a
+// regenerated password satisfies a NEW constraint, which is the case a user hits when
+// they narrow special_set to suit a system that rejects certain characters.
+//
+// The password is compared across steps rather than only checked for set membership.
+// A membership assertion on its own would pass even if nothing regenerated, because the
+// original value already satisfied the original set.
+func TestAccResourceLogin_changeSpecialSet(t *testing.T) {
+	secretType := "login"
+	secretFolderUid := testAcc.getTestFolder()
+	secretUid := core.GenerateUid()
+	_, secretTitle := testAcc.getRecordInfo(secretType)
+	if secretUid == "" || secretTitle == "" {
+		t.Fatal("Failed to access test data - missing secret UID and/or Title")
+	}
+	secretTitle += "_resource_change_special_set"
+
+	const oldSet = "!@"
+	const newSet = "%^"
+
+	configTemplate := `
+		resource "secretsmanager_login" "%v" {
+			folder_uid = "%v"
+			uid = "%v"
+			title = "%v"
+			password {
+				generate = "%v"
+				complexity {
+					length      = 20
+					special     = 2
+					special_set = "%v"
+				}
+			}
+		}
+	`
+	configCreate := fmt.Sprintf(configTemplate, secretTitle, secretFolderUid, secretUid, secretTitle, "yes", oldSet)
+	configUpdate := fmt.Sprintf(configTemplate, secretTitle, secretFolderUid, secretUid, secretTitle, "true", newSet)
+
+	resourceName := fmt.Sprintf("secretsmanager_login.%v", secretTitle)
+
+	// specialsOutside returns any non-alphanumeric characters in pwd that are not part
+	// of allowed. Asserting positively against the configured set is stricter than
+	// listing disallowed characters, and it cannot drift as the SDK default set changes.
+	specialsOutside := func(pwd, allowed string) string {
+		unexpected := []rune{}
+		for _, r := range pwd {
+			switch {
+			case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+				continue
+			case strings.ContainsRune(allowed, r):
+				continue
+			default:
+				unexpected = append(unexpected, r)
+			}
+		}
+		return string(unexpected)
+	}
+
+	createdPwd := ""
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:                 testAccPreCheck(t),
+		Steps: []resource.TestStep{
+			{
+				Config: configCreate,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretResourceState(resourceName, func(s *terraform.InstanceState) error {
+						createdPwd = s.Attributes["password.0.value"]
+						if len(createdPwd) != 20 {
+							return fmt.Errorf("expected a 20-char password on create, got %d chars", len(createdPwd))
+						}
+						if unexpected := specialsOutside(createdPwd, oldSet); unexpected != "" {
+							return fmt.Errorf("create drew specials outside special_set %q: %q", oldSet, unexpected)
+						}
+						return nil
+					}),
+				),
+			},
+			{
+				Config: configUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					checkSecretResourceState(resourceName, func(s *terraform.InstanceState) error {
+						pwd := s.Attributes["password.0.value"]
+						if len(pwd) != 20 {
+							return fmt.Errorf("expected a 20-char password after update, got %d chars", len(pwd))
+						}
+						if pwd == createdPwd {
+							return fmt.Errorf("password was not regenerated after special_set changed from %q to %q", oldSet, newSet)
+						}
+						if unexpected := specialsOutside(pwd, newSet); unexpected != "" {
+							return fmt.Errorf("update drew specials outside the new special_set %q: %q", newSet, unexpected)
+						}
+						if !strings.ContainsAny(pwd, newSet) {
+							return fmt.Errorf("expected at least one character from the new special_set %q, got %q", newSet, pwd)
 						}
 						return nil
 					}),
