@@ -72,3 +72,15 @@ jobs:
         with:
           sarif_file: govulncheck.sarif
           category: govulncheck
+
+      # A per-commit, machine-readable record of why a module-level finding is not-affected,
+      # independent of whether a dashboard-created VEX document persists across future scans.
+      - name: Generate OpenVEX record
+        run: govulncheck -format openvex ./... > govulncheck-vex.json
+
+      - name: Archive OpenVEX record
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: govulncheck-openvex
+          path: govulncheck-vex.json
+          retention-days: 90
