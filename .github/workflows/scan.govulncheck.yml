@@ -83,4 +83,4 @@ jobs:
         with:
           name: govulncheck-openvex
           path: govulncheck-vex.json
-          retention-days: 90
+          retention-days: 10
