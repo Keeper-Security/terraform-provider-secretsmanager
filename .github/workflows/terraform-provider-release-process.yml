@@ -7,6 +7,11 @@ on:
         description: 'Terraform Provider Version (without v prefix)'
         required: true
         type: string
+      publish:
+        description: 'Create tag and publish release (uncheck to run SBOM scan only)'
+        required: false
+        default: 'true'
+        type: boolean
 
 # Default to read-only. tag-and-release overrides to write.
 permissions:
@@ -16,6 +21,7 @@ jobs:
   # First job: Check if tag already exists
   check-tag:
     name: "Check Tag Existence"
+    if: ${{ github.event.inputs.publish == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -42,7 +48,6 @@ jobs:
   # Second job: Generate SBOM
   sbom:
     name: "Generate SBOM for Terraform Provider"
-    needs: check-tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -53,7 +58,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
-          go-version: '1.26.2'
+          go-version: '1.26.7'
           check-latest: true
 
       - name: Generate SBOM
@@ -148,7 +153,8 @@ jobs:
   # Third job: Create Tag and Release (with approval)
   tag-and-release:
     name: "Create Tag and Release"
-    needs: sbom
+    needs: [check-tag, sbom]
+    if: ${{ github.event.inputs.publish == 'true' }}
     environment: prod
     runs-on: ubuntu-latest
     permissions:
@@ -214,7 +220,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
-          go-version: '1.26.2'
+          go-version: '1.26.7'
           cache: false
 
       - name: Import GPG key

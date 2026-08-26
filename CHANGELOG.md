@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0]
+
+### Security
+- Build with Go 1.26.7, up from 1.26.2, clearing the standard library half of CVE-2026-39821 (Punycode-encoded label handling reachable through `net/http`) plus seven further stdlib advisories reported against the earlier 1.26.x patches (KSM-1246)
+- Bump `golang.org/x/net` to v0.57.0 from v0.48.0, clearing the `golang.org/x/net/idna` half of CVE-2026-39821 (KSM-1246)
+- Bump `golang.org/x/crypto` to v0.54.0 from v0.46.0, closing 13 advisories
+- Bump `google.golang.org/grpc` to v1.82.1 from v1.79.3, closing GHSA-hrxh-6v49-42gf
+
+### Fixed
+- Adopting an existing record into Terraform no longer rotates its generated password. `generate` is never stored in the vault, so after `terraform import` it read back empty and any configuration declaring it looked like a change, which regenerated the secret on the first apply while the plan reported the value unchanged. Declaring `generate` for the first time on a record that already holds a value is now treated as adoption rather than a rotation request; a later change to the flag still rotates (KSM-1305)
+- Fix `special=0` being ignored when password `length` exceeds the sum of category counts (KSM-989)
+- Clarify that `caps`, `lowercase`, `digits`, and `special` in the `complexity` block are minimum counts, not exact targets — the generator may produce more of each character class to satisfy the total `length` (KSM-1071)
+
+### Added
+- Add `parent_uid` as an optional input on `secretsmanager_folder` data source to scope lookups to a specific parent folder, disambiguating folders with identical names under different parents (KSM-1016)
+- Add `secretsmanager_metadata` data source for reading non-sensitive record metadata (`uid`, `type`, `title`, `notes`, `revision`, `folder_uid`, `is_editable`) by record UID or title. Pair with ephemeral resources to drive write-only attribute versioning on other providers (KSM-970)
+- Add `special_set` attribute to `complexity` block for configuring the special-character set used during password generation (KSM-990)
+
 ## [1.3.0]
 
 ### Security
@@ -168,7 +186,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix folder UID validation and empty folder restriction in resource schema descriptions
 
-[Unreleased]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.1.7...v1.2.0
 [1.1.7]: https://github.com/Keeper-Security/terraform-provider-secretsmanager/compare/v1.1.6...v1.1.7

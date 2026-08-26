@@ -17,10 +17,10 @@ data "secretsmanager_folder" "folder" {
 - **id** (String) The ID of this resource.
 - **name** (String) The folder name.
 - **uid** (String) The folder uid.
+- **parent_uid** (String) The parent folder uid. When specified, restricts the lookup to folders that are direct children of this parent, useful when multiple folders share the same name under different parents.
 
 ### Read-Only
 
-- **parent_uid** (String) The parent folder uid.
 - **shared** (Boolean) Shared folder flag.
 
 

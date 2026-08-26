@@ -29,7 +29,7 @@ type ephemeralDriverLicenseModel struct {
 	ExpirationDate      types.String `tfsdk:"expiration_date"`
 	AddressRef          types.List   `tfsdk:"address_ref"`
 	FileRef             types.List   `tfsdk:"file_ref"`
-	Custom  types.List   `tfsdk:"custom"`
+	Custom              types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralDriverLicense() ephemeral.EphemeralResource {
@@ -76,7 +76,7 @@ func (e *ephemeralDriverLicense) Schema(_ context.Context, _ ephemeral.SchemaReq
 			},
 			"address_ref": addressRefEphemeralAttribute(),
 			"file_ref":    fileRefEphemeralAttribute(),
-			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
+			"custom":      genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -148,7 +148,6 @@ func (e *ephemeralDriverLicense) Open(ctx context.Context, req ephemeral.OpenReq
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

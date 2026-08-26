@@ -35,7 +35,7 @@ func TestAccDataSourcePamRemoteBrowser(t *testing.T) {
 	dataSourceName := fmt.Sprintf("data.secretsmanager_pam_remote_browser.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,

@@ -43,7 +43,7 @@ terraform {
     # add keeper secrets manager plugin
     secretsmanager = {
       source  = "keeper-security/secretsmanager"
-      version = ">= 1.3.0"
+      version = ">= 1.4.0"
     }
   }
 }
@@ -135,7 +135,7 @@ terraform {
   required_providers {
     secretsmanager = {
       source  = "keeper-security/secretsmanager"
-      version = ">= 1.3.0"
+      version = ">= 1.4.0"
     }
   }
 }
@@ -192,7 +192,7 @@ Afterwards you can run the following example with Terraform.
 terraform {
   required_providers {
     secretsmanager = {
-      version = ">= 1.3.0"
+      version = ">= 1.4.0"
     }
   }
 }

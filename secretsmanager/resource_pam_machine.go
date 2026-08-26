@@ -134,7 +134,8 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 		if field, err := NewFieldFromSchema("password", fieldData); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
-			if generated, err := applyGeneratePassword(fieldData, field); err != nil {
+			lc, uc, dc, sc := complexityCountStrings(d, "password")
+			if generated, err := applyGeneratePassword(fieldData, field, lc, uc, dc, sc); err != nil {
 				return diag.FromErr(err)
 			} else if generated {
 				if err := d.Set("password", fieldData); err != nil {
@@ -154,7 +155,8 @@ func resourcePamMachineCreate(ctx context.Context, d *schema.ResourceData, m int
 		if field, err := NewFieldFromSchema("password", fieldData); err != nil {
 			return diag.FromErr(err)
 		} else if field != nil {
-			if generated, err := applyGeneratePassword(fieldData, field); err != nil {
+			lc, uc, dc, sc := complexityCountStrings(d, "private_key_passphrase")
+			if generated, err := applyGeneratePassword(fieldData, field, lc, uc, dc, sc); err != nil {
 				return diag.FromErr(err)
 			} else if generated {
 				if err := d.Set("private_key_passphrase", fieldData); err != nil {

@@ -49,7 +49,7 @@ func TestAccResourcePamMachine_create(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_pam_machine.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -90,7 +90,7 @@ func TestAccResourcePamMachine_create_no_uid(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_pam_machine.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -164,7 +164,7 @@ func TestAccResourcePamMachine_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: configInit,
@@ -223,7 +223,7 @@ func TestAccResourcePamMachine_deleteDetection(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -264,7 +264,7 @@ func TestAccResourcePamMachine_import(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_pam_machine.%v", secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
@@ -308,7 +308,7 @@ func TestAccResourcePamMachine_generatePrivatePemKey(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_pam_machine.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -465,7 +465,7 @@ func TestAccResourcePamMachine_generatePrivatePemKeyWithPassphrase(t *testing.T)
 	resourceName := fmt.Sprintf("secretsmanager_pam_machine.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,

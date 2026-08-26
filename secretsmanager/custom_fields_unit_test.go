@@ -20,9 +20,9 @@ import (
 // any local timezone behind UTC would return the previous day without the fix.
 func TestEpochMsToDateUTC(t *testing.T) {
 	tests := []struct {
-		name  string
-		ms    float64
-		want  string
+		name string
+		ms   float64
+		want string
 	}{
 		{
 			// 2025-01-01T00:00:00Z — midnight UTC, New Year's Day.

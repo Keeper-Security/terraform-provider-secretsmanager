@@ -541,22 +541,27 @@ func schemaPrivateKeyPassphraseField() *schema.Schema {
 							"caps": {
 								Type:        schema.TypeInt,
 								Optional:    true,
-								Description: "Number of uppercase characters.",
+								Description: "Minimum number of uppercase characters.",
 							},
 							"lowercase": {
 								Type:        schema.TypeInt,
 								Optional:    true,
-								Description: "Number of lowercase characters.",
+								Description: "Minimum number of lowercase characters.",
 							},
 							"digits": {
 								Type:        schema.TypeInt,
 								Optional:    true,
-								Description: "Number of digits.",
+								Description: "Minimum number of digits.",
 							},
 							"special": {
 								Type:        schema.TypeInt,
 								Optional:    true,
-								Description: "Number of special characters.",
+								Description: "Minimum number of special characters.",
+							},
+							"special_set": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								Description: "Custom set of special characters to draw from during passphrase generation. Empty string uses the SDK default set \"!@#$%()+;<>=?[]{}^., (note the leading double-quote).",
 							},
 						},
 					},

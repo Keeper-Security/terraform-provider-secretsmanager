@@ -19,17 +19,17 @@ type ephemeralPamRemoteBrowser struct {
 }
 
 type ephemeralPamRemoteBrowserModel struct {
-	Path                      types.String `tfsdk:"path"`
-	Type                      types.String `tfsdk:"type"`
-	Title                     types.String `tfsdk:"title"`
-	Notes                     types.String `tfsdk:"notes"`
-	FolderUID                 types.String `tfsdk:"folder_uid"`
-	RbiUrl                    types.String `tfsdk:"rbi_url"`
-	PamRemoteBrowserSettings  types.String `tfsdk:"pam_remote_browser_settings"`
-	TrafficEncryptionSeed     types.String `tfsdk:"traffic_encryption_seed"`
-	FileRef                   types.List   `tfsdk:"file_ref"`
-	TOTP                      types.List   `tfsdk:"totp"`
-	Custom  types.List   `tfsdk:"custom"`
+	Path                     types.String `tfsdk:"path"`
+	Type                     types.String `tfsdk:"type"`
+	Title                    types.String `tfsdk:"title"`
+	Notes                    types.String `tfsdk:"notes"`
+	FolderUID                types.String `tfsdk:"folder_uid"`
+	RbiUrl                   types.String `tfsdk:"rbi_url"`
+	PamRemoteBrowserSettings types.String `tfsdk:"pam_remote_browser_settings"`
+	TrafficEncryptionSeed    types.String `tfsdk:"traffic_encryption_seed"`
+	FileRef                  types.List   `tfsdk:"file_ref"`
+	TOTP                     types.List   `tfsdk:"totp"`
+	Custom                   types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralPamRemoteBrowser() ephemeral.EphemeralResource {
@@ -191,7 +191,6 @@ func (e *ephemeralPamRemoteBrowser) Open(ctx context.Context, req ephemeral.Open
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

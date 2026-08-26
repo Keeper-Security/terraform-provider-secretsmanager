@@ -57,7 +57,7 @@ func (e *ephemeralPhoto) Schema(_ context.Context, _ ephemeral.SchemaRequest, re
 				Description: "The secret notes.",
 			},
 			"file_ref": fileRefEphemeralAttribute(),
-			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
+			"custom":   genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -118,7 +118,6 @@ func (e *ephemeralPhoto) Open(ctx context.Context, req ephemeral.OpenRequest, re
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

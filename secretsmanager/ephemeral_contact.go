@@ -29,7 +29,7 @@ type ephemeralContactModel struct {
 	Phone      types.List   `tfsdk:"phone"`
 	AddressRef types.List   `tfsdk:"address_ref"`
 	FileRef    types.List   `tfsdk:"file_ref"`
-	Custom  types.List   `tfsdk:"custom"`
+	Custom     types.List   `tfsdk:"custom"`
 }
 
 func NewEphemeralContact() ephemeral.EphemeralResource {
@@ -73,7 +73,7 @@ func (e *ephemeralContact) Schema(_ context.Context, _ ephemeral.SchemaRequest, 
 			"phone":       phoneEphemeralAttribute(),
 			"address_ref": addressRefEphemeralAttribute(),
 			"file_ref":    fileRefEphemeralAttribute(),
-			"custom": genericFieldEphemeralAttribute("Custom fields of the record."),
+			"custom":      genericFieldEphemeralAttribute("Custom fields of the record."),
 		},
 	}
 }
@@ -148,7 +148,6 @@ func (e *ephemeralContact) Open(ctx context.Context, req ephemeral.OpenRequest, 
 	customList, diags := genericFieldItemsToListValue(ctx, customItems)
 	resp.Diagnostics.Append(diags...)
 	data.Custom = customList
-
 
 	if resp.Diagnostics.HasError() {
 		return

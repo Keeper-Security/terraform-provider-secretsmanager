@@ -74,7 +74,7 @@ func TestAccResourcePamDirectory_create(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_pam_directory.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -160,7 +160,7 @@ func TestAccResourcePamDirectory_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: configInit,
@@ -219,7 +219,7 @@ func TestAccResourcePamDirectory_deleteDetection(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -267,7 +267,7 @@ func TestAccResourcePamDirectory_import(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_pam_directory.%v", secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{

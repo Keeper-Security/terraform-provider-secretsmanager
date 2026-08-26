@@ -91,7 +91,7 @@ func TestAccResourceBankAccount_create(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_bank_account.%v", secretTitle)
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -139,7 +139,7 @@ func TestAccResourceBankAccount_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: configInit,
@@ -189,7 +189,7 @@ func TestAccResourceBankAccount_deleteDetection(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -232,7 +232,7 @@ func TestAccResourceBankAccount_import(t *testing.T) {
 	resourceName := fmt.Sprintf("secretsmanager_bank_account.%v", secretTitle)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  testAccPreCheck(t),
+		PreCheck:                 testAccPreCheck(t),
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{

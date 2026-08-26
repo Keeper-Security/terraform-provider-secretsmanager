@@ -2,7 +2,7 @@ name: Test-Terraform-Provider
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ master, "release-**" ]
 
   workflow_dispatch:
 
@@ -10,7 +10,7 @@ jobs:
   test-terraform-provider:
     strategy:
       matrix:
-        go-version: [ '1.26.2' ]
+        go-version: [ '1.26.7' ]
         os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     name: Test with Go ${{ matrix.go-version }}
